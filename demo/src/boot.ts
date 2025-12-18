@@ -1,7 +1,14 @@
+import { initSomeModule } from "./server/some-module";
+
+
 export async function onBoot() {
-  console.log("[boot] Running demo app boot script...");
+  console.log("------------------------------");
+  console.log("Running demo app boot script...");
+  console.log("------------------------------");
 
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  await initSomeModule();
 
-  console.log("[boot] Demo app initialized");
+  console.log("------------------------------");
+  console.log("Demo app initialized");
+  console.log("------------------------------");
 }

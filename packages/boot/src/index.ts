@@ -8,6 +8,11 @@ export interface BootOptions {
    * @default "src/boot.ts"
    */
   entry?: string;
+  /**
+   * Enable HMR for the boot file. When true, `onBoot` will re-run when the boot file changes.
+   * @default false
+   */
+  hmr?: boolean;
 }
 
 interface BootModule {
@@ -27,6 +32,7 @@ function resolveEntry(entry: string | undefined): string {
 
 export default function boot(options: BootOptions = {}): AstroIntegration {
   const entry = resolveEntry(options.entry);
+  const hmr = options.hmr ?? false;
 
   let isBuild = false;
   let isSSR = false;
@@ -60,6 +66,26 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                       logger.error(`Error running boot script: ${error}`);
                     }
                   });
+
+                  if (hmr) {
+                    server.watcher.on("change", async (changedPath) => {
+                      if (!changedPath.endsWith(entry)) return;
+
+                      logger.info("boot file changed, re-running onBoot...");
+                      try {
+                        server.moduleGraph.invalidateAll();
+                        const module = (await server.ssrLoadModule(
+                          `/${entry}`,
+                        )) as BootModule;
+
+                        if (module.onBoot) {
+                          await module.onBoot();
+                        }
+                      } catch (error) {
+                        logger.error(`Error running boot script: ${error}`);
+                      }
+                    });
+                  }
                 },
                 configResolved(config) {
                   isSSR = !!config.build?.ssr;

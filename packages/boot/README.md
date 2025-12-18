@@ -50,6 +50,17 @@ Path to the boot file relative to the project root.
 boot({ entry: "src/startup.ts" });
 ```
 
+### `hmr`
+
+Re-run `onBoot` when the boot file changes during development. This is disabled by default to avoid side effects, because `onBoot` may perform operations that should only run once (e.g., database connections).
+
+- **Type**: `boolean`
+- **Default**: `false`
+
+```ts
+boot({ hmr: true });
+```
+
 ## How it works
 
 - **Development**: The boot file runs _after_ the dev server starts listening (Vite limitation)
