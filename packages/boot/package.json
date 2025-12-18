@@ -1,0 +1,50 @@
+{
+  "name": "@astroscope/boot",
+  "version": "0.0.0",
+  "description": "Boot integration for Astro",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smnbbrv/astroscope.git",
+    "directory": "packages/boot"
+  },
+  "keywords": [
+    "astro",
+    "astro-integration",
+    "boot"
+  ],
+  "author": "Simon Bobrov",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/smnbbrv/astroscope/issues"
+  },
+  "homepage": "https://github.com/smnbbrv/astroscope/tree/main/packages/boot#readme",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "astro": "^5.1.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "astro": "^5.0.0"
+  }
+}

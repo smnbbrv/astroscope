@@ -1,0 +1,17 @@
+.DS_Store
+.idea
+*.iml
+misc
+.envrc
+.envrc-*
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.env
+.mcp.json
+tmp/
+node_modules/
+dist/
+.astro/

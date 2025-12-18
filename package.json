@@ -1,0 +1,23 @@
+{
+  "name": "astroscope",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "demo"
+  ],
+  "scripts": {
+    "build": "bun run --filter '*' build",
+    "test": "bun test",
+    "typecheck": "bun run --filter '*' typecheck",
+    "lint": "bun run --filter '*' lint",
+    "dev": "bun run --cwd demo dev",
+    "ci:version": "changeset version && bun update",
+    "ci:publish": "for dir in packages/*; do (cd \"$dir\" && npm publish --access public --provenance || true); done && changeset tag"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.8",
+    "@types/bun": "^1.3.4",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  }
+}
