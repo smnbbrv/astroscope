@@ -8,6 +8,7 @@ A collection of Astro integrations.
 |---------|-------------|
 | [@astroscope/boot](./packages/boot) | Lifecycle hooks for Astro SSR (startup/shutdown) |
 | [@astroscope/csrf](./packages/csrf) | Extended CSRF protection middleware with path exclusions |
+| [@astroscope/opentelemetry](./packages/opentelemetry) | OpenTelemetry support for Astro SSR |
 
 ## Development
 

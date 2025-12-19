@@ -1,2 +1,2 @@
 export { createCsrfMiddleware } from "./middleware.js";
-export type { CsrfOptions, ExcludePattern } from "./types.js";
+export type { CsrfMiddlewareOptions, ExcludePattern } from "./types.js";

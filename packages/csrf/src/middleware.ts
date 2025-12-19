@@ -1,5 +1,5 @@
 import type { APIContext, MiddlewareHandler } from "astro";
-import type { CsrfOptions, ExcludePattern } from "./types.js";
+import type { CsrfMiddlewareOptions, ExcludePattern } from "./types.js";
 
 const FORBIDDEN_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -15,7 +15,7 @@ function matchesPattern(path: string, pattern: ExcludePattern): boolean {
 
 function shouldExclude(
   context: APIContext,
-  exclude: CsrfOptions["exclude"]
+  exclude: CsrfMiddlewareOptions["exclude"]
 ): boolean {
   if (!exclude) return false;
 
@@ -49,7 +49,7 @@ function normalizeOrigins(input: string | string[]): Set<string> {
  * );
  * ```
  */
-export function createCsrfMiddleware(options: CsrfOptions): MiddlewareHandler {
+export function createCsrfMiddleware(options: CsrfMiddlewareOptions): MiddlewareHandler {
   // Pre-compute allowed origins if static
   const staticAllowedOrigins =
     typeof options.origin !== "function"

@@ -2,7 +2,7 @@ import type { APIContext } from "astro";
 
 export type ExcludePattern = { pattern: RegExp } | { prefix: string } | { exact: string };
 
-export interface CsrfOptions {
+export interface CsrfMiddlewareOptions {
   /**
    * Paths to exclude from CSRF protection.
    * Can be an array of patterns or a function that returns true to exclude.
