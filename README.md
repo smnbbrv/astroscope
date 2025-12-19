@@ -6,7 +6,8 @@ A collection of Astro integrations.
 
 | Package | Description |
 |---------|-------------|
-| [@astroscope/boot](./packages/boot) | Boot integration for Astro |
+| [@astroscope/boot](./packages/boot) | Lifecycle hooks for Astro SSR (startup/shutdown) |
+| [@astroscope/csrf](./packages/csrf) | Extended CSRF protection middleware with path exclusions |
 
 ## Development
 

@@ -17,6 +17,7 @@
       "dependencies": {
         "@astrojs/node": "^9.0.0",
         "@astroscope/boot": "workspace:*",
+        "@astroscope/csrf": "workspace:*",
         "astro": "^5.1.0",
       },
       "devDependencies": {
@@ -26,7 +27,19 @@
     },
     "packages/boot": {
       "name": "@astroscope/boot",
-      "version": "0.0.1",
+      "version": "0.0.0",
+      "devDependencies": {
+        "astro": "^5.1.0",
+        "tsup": "^8.5.1",
+        "typescript": "^5.9.3",
+      },
+      "peerDependencies": {
+        "astro": "^5.0.0",
+      },
+    },
+    "packages/csrf": {
+      "name": "@astroscope/csrf",
+      "version": "0.0.0",
       "devDependencies": {
         "astro": "^5.1.0",
         "tsup": "^8.5.1",
@@ -57,6 +70,8 @@
     "@astrojs/yaml2ts": ["@astrojs/yaml2ts@0.2.2", "", { "dependencies": { "yaml": "^2.5.0" } }, "sha512-GOfvSr5Nqy2z5XiwqTouBBpy5FyI6DEe+/g/Mk5am9SjILN1S5fOEvYK0GuWHg98yS/dobP4m8qyqw/URW35fQ=="],
 
     "@astroscope/boot": ["@astroscope/boot@workspace:packages/boot"],
+
+    "@astroscope/csrf": ["@astroscope/csrf@workspace:packages/csrf"],
 
     "@babel/helper-string-parser": ["@babel/helper-string-parser@7.27.1", "", {}, "sha512-qMlSxKbpRlAridDExk92nSobyDdpPijUq2DW6oDnUqd0iOGxmQjyqhMIihI9+zv4LPyZdRje2cavWPbCbWm3eA=="],
 

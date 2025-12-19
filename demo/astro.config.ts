@@ -6,4 +6,7 @@ export default defineConfig({
   output: "server",
   adapter: node({ mode: "standalone" }),
   integrations: [boot()],
+  security: {
+    checkOrigin: false, // Using @astroscope/csrf instead
+  },
 });

@@ -13,6 +13,7 @@
   "dependencies": {
     "@astrojs/node": "^9.0.0",
     "@astroscope/boot": "workspace:*",
+    "@astroscope/csrf": "workspace:*",
     "astro": "^5.1.0"
   },
   "devDependencies": {
