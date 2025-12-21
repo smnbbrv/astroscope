@@ -9,6 +9,11 @@ import {
 } from "@opentelemetry/api";
 import { type RPCMetadata, RPCType, setRPCMetadata } from "@opentelemetry/core";
 import type { OpenTelemetryMiddlewareOptions, ExcludePattern } from "./types.js";
+import {
+  recordHttpRequestStart,
+  recordHttpRequestDuration,
+  recordActionDuration,
+} from "./metrics.js";
 
 const LIB_NAME = "@astroscope/opentelemetry";
 const ACTIONS_PREFIX = "/_actions/";
@@ -73,6 +78,8 @@ export function createOpenTelemetryMiddleware(
       return next();
     }
 
+    const startTime = performance.now();
+
     const { request, url } = ctx;
 
     // Extract trace context from incoming headers
@@ -114,6 +121,8 @@ export function createOpenTelemetryMiddleware(
     const spanContext = trace.setSpan(parentContext, span);
     const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span };
 
+    const endActiveRequest = recordHttpRequestStart({ method: request.method, route: url.pathname });
+
     return context.with(
       setRPCMetadata(spanContext, rpcMetadata),
       async () => {
@@ -131,6 +140,19 @@ export function createOpenTelemetryMiddleware(
           }
 
           span.end();
+
+          endActiveRequest();
+
+          const duration = performance.now() - startTime;
+
+          recordHttpRequestDuration(
+            { method: request.method, route: url.pathname, status },
+            duration
+          );
+
+          if (isAction) {
+            recordActionDuration({ name: actionName, status }, duration);
+          }
         };
 
         try {
@@ -171,6 +193,20 @@ export function createOpenTelemetryMiddleware(
             message: e instanceof Error ? e.message : "Unknown error",
           });
           span.end();
+
+          endActiveRequest();
+
+          const duration = performance.now() - startTime;
+
+          recordHttpRequestDuration(
+            { method: request.method, route: url.pathname, status: 500 },
+            duration
+          );
+
+          if (isAction) {
+            recordActionDuration({ name: actionName, status: 500 }, duration);
+          }
+
           throw e;
         }
       }

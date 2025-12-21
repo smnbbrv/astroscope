@@ -27,6 +27,7 @@ This package handles both issues by creating spans directly in Astro's request l
 | Outgoing fetch requests | ✅ | ❌ (ESM not supported) |
 | Astro actions | ✅ (named spans) | ❌ |
 | Component tracing | ✅ (`<Trace>` component) | ❌ |
+| Metrics (Prometheus-compatible) | ✅ | ✅ |
 | Other libraries | ❌ | ✅ (varies by library) |
 | Setup complexity | Simple | Requires `--import` flag |
 | Bundle size | Minimal | Heavy (30+ packages) |
@@ -120,6 +121,68 @@ Controls outgoing fetch request tracing.
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `enabled` | `boolean` | `true` | Enable/disable fetch tracing |
+
+## Metrics
+
+To export metrics, configure a metrics reader in your SDK (e.g., Prometheus exporter):
+
+```ts
+// src/boot.ts
+import { NodeSDK } from "@opentelemetry/sdk-node";
+import { PrometheusExporter } from "@opentelemetry/exporter-prometheus";
+
+const prometheusExporter = new PrometheusExporter({ port: 9464 });
+
+const sdk = new NodeSDK({
+  serviceName: "my-astro-app",
+  metricReader: prometheusExporter,
+});
+
+export function onStartup() {
+  sdk.start();
+}
+```
+
+or use OTLP metrics exporter (for Grafana, Datadog, etc.):
+
+```ts
+import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
+import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
+
+const metricReader = new PeriodicExportingMetricReader({
+  exporter: new OTLPMetricExporter(),
+  exportIntervalMillis: 60000,
+});
+
+const sdk = new NodeSDK({
+  metricReader,
+});
+
+### Collected Metrics
+
+| Metric | Type | Unit | Description |
+|--------|------|------|-------------|
+| `http.server.request.duration` | Histogram | seconds | Duration of incoming HTTP requests |
+| `http.server.active_requests` | UpDownCounter | requests | Number of active HTTP requests |
+| `http.client.request.duration` | Histogram | seconds | Duration of outgoing fetch requests |
+| `astro.action.duration` | Histogram | seconds | Duration of Astro action executions |
+
+### Metric Attributes
+
+**HTTP Server metrics:**
+- `http.request.method` - HTTP method (GET, POST, etc.)
+- `http.route` - Request path
+- `http.response.status_code` - Response status code
+
+**HTTP Client (fetch) metrics:**
+- `http.request.method` - HTTP method
+- `server.address` - Target hostname
+- `http.response.status_code` - Response status code
+
+**Astro Action metrics:**
+- `astro.action.name` - Action name (e.g., `newsletter.subscribe`)
+- `http.response.status_code` - Response status code
+```
 
 ## Component Tracing
 

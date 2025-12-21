@@ -45,6 +45,7 @@
         "@astroscope/boot": "workspace:*",
         "@astroscope/opentelemetry": "workspace:*",
         "@opentelemetry/api": "^1.9.0",
+        "@opentelemetry/exporter-prometheus": "^0.57.2",
         "@opentelemetry/exporter-trace-otlp-http": "^0.57.2",
         "@opentelemetry/sdk-node": "^0.57.2",
         "astro": "^5.1.0",

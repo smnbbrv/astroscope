@@ -5,6 +5,7 @@ import {
   propagation,
   trace,
 } from "@opentelemetry/api";
+import { recordFetchRequestDuration } from "./metrics.js";
 
 const LIB_NAME = "@astroscope/opentelemetry";
 
@@ -69,6 +70,8 @@ export function instrumentFetch(): void {
       headers.set(key, value);
     }
 
+    const startTime = performance.now();
+
     try {
       const response = await originalFetch(request.url, {
         ...init,
@@ -89,6 +92,13 @@ export function instrumentFetch(): void {
       }
 
       span.end();
+
+      // Record fetch metrics
+      recordFetchRequestDuration(
+        { method: request.method, host: url.hostname, status: response.status },
+        performance.now() - startTime
+      );
+
       return response;
     } catch (error) {
       span.setStatus({
@@ -96,6 +106,13 @@ export function instrumentFetch(): void {
         message: error instanceof Error ? error.message : "Unknown error",
       });
       span.end();
+
+      // Record fetch metrics for errors
+      recordFetchRequestDuration(
+        { method: request.method, host: url.hostname, status: 0 },
+        performance.now() - startTime
+      );
+
       throw error;
     }
   }

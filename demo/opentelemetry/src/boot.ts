@@ -1,13 +1,12 @@
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
+import { PrometheusExporter } from "@opentelemetry/exporter-prometheus";
 import { trace } from "@opentelemetry/api";
 
 const sdk = new NodeSDK({
   serviceName: "demo-opentelemetry",
-  traceExporter: new OTLPTraceExporter({
-    // Defaults to http://localhost:4318/v1/traces
-    // Set OTEL_EXPORTER_OTLP_ENDPOINT to override
-  }),
+  traceExporter: new OTLPTraceExporter(),
+  metricReader: new PrometheusExporter({ port: 9464 }),
 });
 
 export async function onStartup() {
