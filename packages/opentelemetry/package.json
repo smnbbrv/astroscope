@@ -13,10 +13,14 @@
     "./middleware": {
       "types": "./dist/middleware-entrypoint.d.ts",
       "import": "./dist/middleware-entrypoint.js"
+    },
+    "./components": {
+      "import": "./src/components/index.ts"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "src/components"
   ],
   "sideEffects": false,
   "publishConfig": {

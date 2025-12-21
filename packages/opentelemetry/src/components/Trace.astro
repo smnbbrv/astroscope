@@ -1,0 +1,64 @@
+---
+import {
+  trace,
+  context,
+  SpanStatusCode,
+  type AttributeValue,
+} from "@opentelemetry/api";
+
+interface Props {
+  name: string;
+  params?: Record<string, AttributeValue>;
+  enabled?: boolean;
+  /**
+   * When true, buffers slot content to measure accurate render duration.
+   * This disables streaming for children - use only for single components.
+   * @default false
+   */
+  withTimings?: boolean;
+}
+
+const { name, params = {}, enabled = true, withTimings = false } = Astro.props;
+
+const LIB_NAME = "@astroscope/opentelemetry";
+
+let html: string | undefined;
+
+if (enabled) {
+  const tracer = trace.getTracer(LIB_NAME);
+  const parentContext = context.active();
+
+  if (withTimings) {
+    // Buffer mode: accurate timing but blocks streaming
+    const span = tracer.startSpan(`RENDER ${name}`, { attributes: params }, parentContext);
+
+    try {
+      html = await context.with(trace.setSpan(parentContext, span), () =>
+        Astro.slots.render("default")
+      );
+      span.setStatus({ code: SpanStatusCode.OK });
+    } catch (e) {
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: e instanceof Error ? e.message : "Unknown error",
+      });
+      throw e;
+    } finally {
+      span.end();
+    }
+  } else {
+    // Streaming mode: instant span (marker only), preserves streaming
+    const span = tracer.startSpan(`>> ${name}`, { attributes: params }, parentContext);
+    span.setStatus({ code: SpanStatusCode.OK });
+    span.end();
+  }
+}
+---
+
+{!enabled ? (
+  <slot />
+) : withTimings ? (
+  <Fragment set:html={html} />
+) : (
+  <slot />
+)}

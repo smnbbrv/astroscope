@@ -26,6 +26,7 @@ This package handles both issues by creating spans directly in Astro's request l
 | Incoming HTTP requests | ✅ | ✅ |
 | Outgoing fetch requests | ✅ | ❌ (ESM not supported) |
 | Astro actions | ✅ (named spans) | ❌ |
+| Component tracing | ✅ (`<Trace>` component) | ❌ |
 | Other libraries | ❌ | ✅ (varies by library) |
 | Setup complexity | Simple | Requires `--import` flag |
 | Bundle size | Minimal | Heavy (30+ packages) |
@@ -119,6 +120,103 @@ Controls outgoing fetch request tracing.
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `enabled` | `boolean` | `true` | Enable/disable fetch tracing |
+
+## Component Tracing
+
+Trace specific sections or components using the `<Trace>` component:
+
+```astro
+---
+import { Trace } from "@astroscope/opentelemetry/components";
+---
+
+<Trace name="hero">
+  <HeroSection />
+</Trace>
+
+<Trace name="sidebar">
+  <Sidebar />
+</Trace>
+```
+
+### Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `name` | `string` | required | Span name |
+| `params` | `Record<string, AttributeValue>` | `{}` | Custom span attributes |
+| `enabled` | `boolean` | `true` | Enable/disable tracing (useful for conditional tracing) |
+| `withTimings` | `boolean` | `false` | Enable accurate duration measurement |
+
+### Streaming vs Timing Mode
+
+By default, `<Trace>` preserves Astro's streaming behavior by creating an instant marker span (`>> name`). This is safe to use anywhere without affecting performance.
+
+```astro
+<!-- Default: streaming preserved, instant span -->
+<Trace name="section">
+  <SlowComponent />
+  <FastComponent />
+</Trace>
+```
+
+For accurate render duration measurement, use `withTimings`:
+
+```astro
+<!-- With timing: accurate duration, but buffers content -->
+<Trace name="data-table" withTimings>
+  <DataTable data={data} />
+</Trace>
+```
+
+**Important:** `withTimings` buffers all children before streaming. Use it only when:
+- Wrapping a **single component** where you need timing
+- You understand it will block streaming for that section
+
+### Span Names
+
+| Mode | Span Name | Description |
+|------|-----------|-------------|
+| `withTimings={false}` | `>> section-name` | Instant marker, no duration |
+| `withTimings={true}` | `RENDER section-name` | Full render duration |
+
+### Conditional Tracing
+
+Use `enabled` to conditionally trace (e.g., in recursive components):
+
+```astro
+---
+const { depth = 0 } = Astro.props;
+---
+
+<Trace name="tree-node" enabled={depth < 3} params={{ depth }}>
+  <TreeNode>
+    {children.map(child => <Astro.self depth={depth + 1} {...child} />)}
+  </TreeNode>
+</Trace>
+```
+
+### Context Propagation
+
+Nested `<Trace>` components with `withTimings` create proper parent-child relationships:
+
+```astro
+<Trace name="page" withTimings>
+  <Trace name="header" withTimings>
+    <Header />
+  </Trace>
+  <Trace name="content" withTimings>
+    <Content />
+  </Trace>
+</Trace>
+```
+
+Results in:
+```
+RENDER page
+├── RENDER header
+└── RENDER content
+```
 
 ## Exclude Patterns
 

@@ -1,4 +1,7 @@
 ---
+import { Trace } from "@astroscope/opentelemetry/components";
+import SlowComponent from "../components/SlowComponent.astro";
+import DataFetcher from "../components/DataFetcher.astro";
 ---
 
 <html lang="en">
@@ -6,34 +9,110 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>OpenTelemetry Demo</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        line-height: 1.6;
+      }
+      h1 { border-bottom: 2px solid #333; padding-bottom: 0.5rem; }
+      h2 { margin-top: 2rem; color: #444; }
+      h3 { color: #666; }
+      code { background: #f4f4f4; padding: 0.2rem 0.4rem; border-radius: 3px; }
+      .section { margin: 1rem 0; padding: 1rem; background: #fafafa; border-radius: 8px; }
+      .note { background: #fff3cd; padding: 1rem; border-radius: 4px; margin: 1rem 0; }
+    </style>
   </head>
   <body>
     <h1>OpenTelemetry Demo</h1>
-    <p>This demo shows the @astroscope/opentelemetry middleware for request tracing.</p>
+    <p>
+      This demo showcases <code>@astroscope/opentelemetry</code> tracing capabilities.
+      Run a collector (like Jaeger) to see traces.
+    </p>
 
-    <h2>How it works</h2>
+    <h2>1. Component Tracing with <code>&lt;Trace&gt;</code></h2>
+
+    <h3>Streaming Mode (default)</h3>
+    <p>
+      Creates instant marker spans (<code>&gt;&gt; name</code>) without blocking streaming.
+      Components below render in parallel:
+    </p>
+    <div class="section">
+      <Trace name="hero">
+        <SlowComponent name="Hero" delay={150} />
+      </Trace>
+      <Trace name="sidebar">
+        <SlowComponent name="Sidebar" delay={100} />
+      </Trace>
+      <Trace name="footer">
+        <SlowComponent name="Footer" delay={50} />
+      </Trace>
+    </div>
+
+    <h3>Timing Mode (<code>withTimings</code>)</h3>
+    <p>
+      Creates spans with accurate duration (<code>RENDER name</code>).
+      Use for single components where you need timing:
+    </p>
+    <div class="section">
+      <Trace name="data-section" withTimings>
+        <SlowComponent name="Data Section" delay={200} />
+      </Trace>
+    </div>
+
+    <h3>Nested Tracing</h3>
+    <p>Traces nest properly showing parent-child relationships:</p>
+    <div class="section">
+      <Trace name="card-container" withTimings>
+        <Trace name="card-header" withTimings>
+          <SlowComponent name="Card Header" delay={50} />
+        </Trace>
+        <Trace name="card-body" withTimings>
+          <SlowComponent name="Card Body" delay={100} />
+        </Trace>
+      </Trace>
+    </div>
+
+    <h3>With Custom Parameters</h3>
+    <div class="section">
+      <Trace name="user-profile" params={{ userId: "123", role: "admin" }} withTimings>
+        <SlowComponent name="User Profile" delay={75} />
+      </Trace>
+    </div>
+
+    <h2>2. Fetch Tracing</h2>
+    <p>
+      Outgoing <code>fetch()</code> calls are automatically traced as
+      <code>FETCH GET</code> spans:
+    </p>
+    <div class="section">
+      <Trace name="api-calls" withTimings>
+        <DataFetcher endpoint="https://jsonplaceholder.typicode.com/posts/1" />
+      </Trace>
+    </div>
+
+    <h2>3. HTTP Request Tracing</h2>
+    <p>Every request creates a span with method and path:</p>
     <ul>
-      <li>Every request creates a span with route, method, and status</li>
-      <li>Traces are exported via OTLP (default: http://localhost:4318)</li>
-      <li>Static assets and dev server paths are excluded</li>
-      <li>Astro actions appear as <code>ACTION {'{'}name{'}'}</code> in traces</li>
+      <li><a href="/api/data">GET /api/data</a> - API endpoint with fetch</li>
+      <li><a href="/health">GET /health</a> - Excluded from tracing</li>
     </ul>
 
-    <h2>Try it</h2>
-    <p>Run a local collector (like Jaeger) and refresh this page to see traces.</p>
-
-    <h2>Links</h2>
-    <ul>
-      <li><a href="/api/data">API endpoint</a> - generates a traced request with fetch</li>
-      <li><a href="/health">Health check</a> - excluded from tracing</li>
-    </ul>
-
-    <h2>Astro Action</h2>
-    <form id="greet-form">
+    <h2>4. Astro Actions</h2>
+    <p>Actions appear as <code>ACTION actionName</code> spans:</p>
+    <form id="greet-form" class="section">
       <input type="text" name="name" placeholder="Your name" required />
       <button type="submit">Greet</button>
+      <p id="greet-result"></p>
     </form>
-    <p id="greet-result"></p>
+
+    <div class="note">
+      <strong>Tip:</strong> Open your browser's Network tab and watch the streaming behavior.
+      Components with <code>withTimings</code> buffer their content,
+      while default mode streams immediately.
+    </div>
 
     <script>
       import { actions } from "astro:actions";
