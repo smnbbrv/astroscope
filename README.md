@@ -20,7 +20,7 @@ Let's fill these gaps so Astro can stand on its own.
 | [@astroscope/boot](./packages/boot) | Lifecycle hooks for Astro SSR (startup/shutdown) |
 | [@astroscope/csrf](./packages/csrf) | Extended CSRF protection middleware with path exclusions |
 | [@astroscope/opentelemetry](./packages/opentelemetry) | OpenTelemetry support for Astro SSR |
-| [@astroscope/proxy](./packages/proxy) | HTTP proxy for Astro SSR - migrate legacy websites or proxy to backend APIs |
+| [@astroscope/proxy](./packages/proxy) | HTTP proxy for Astro SSR - migrate legacy websites or use Astro as gateway |
 
 ## Development
 

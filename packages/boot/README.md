@@ -1,6 +1,6 @@
 # @astroscope/boot
 
-Run initialization code before your Astro server starts handling requests.
+Run initialization and cleanup code for your Astro server.
 
 ## Installation
 
@@ -14,13 +14,22 @@ bun add @astroscope/boot
 
 ```ts
 // src/boot.ts
-export async function onBoot() {
+export async function onStartup() {
   // Initialize database connections, load config, etc.
-  console.log("Bootstrapping the app...");
+  console.log("Starting up...");
 
   await someAsyncInitialization();
 
   console.log("Ready!");
+}
+
+export async function onShutdown() {
+  // Close database connections, cleanup resources, etc.
+  console.log("Shutting down...");
+
+  await closeConnections();
+
+  console.log("Goodbye!");
 }
 ```
 
@@ -37,6 +46,26 @@ export default defineConfig({
 });
 ```
 
+## Lifecycle Hooks
+
+### `onStartup`
+
+Called before the server starts handling requests. Use this for:
+
+- Database connection initialization
+- Loading configuration
+- Warming caches
+- Setting up external service clients
+
+### `onShutdown`
+
+Called when the server is shutting down (SIGTERM in production, server close in development). Use this for:
+
+- Closing database connections
+- Flushing buffers
+- Cleaning up resources
+- Graceful shutdown of external services
+
 ## Options
 
 ### `entry`
@@ -52,7 +81,7 @@ boot({ entry: "src/startup.ts" });
 
 ### `hmr`
 
-Re-run `onBoot` when the boot file changes during development. This is disabled by default to avoid side effects, because `onBoot` may perform operations that should only run once (e.g., database connections).
+Re-run `onStartup` when the boot file changes during development. This is disabled by default to avoid side effects, because `onStartup` may perform operations that should only run once (e.g., database connections).
 
 - **Type**: `boolean`
 - **Default**: `false`
@@ -63,12 +92,11 @@ boot({ hmr: true });
 
 ## How it works
 
-- **Development**: The boot file runs _after_ the dev server starts listening (Vite limitation)
-- **Production**: The boot file runs _before_ the server starts handling requests
+- **Development**: The boot file runs _after_ the dev server starts listening (Vite limitation). `onShutdown` is called when the dev server closes.
+- **Production**: `onStartup` runs _before_ the server starts handling requests. `onShutdown` is called on SIGTERM.
 
 ## Requirements
 
-- The boot file must export a named `onBoot` function
 - Only works with SSR output mode (`output: "server"`)
 
 ## License

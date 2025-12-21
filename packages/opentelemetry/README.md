@@ -33,8 +33,12 @@ const sdk = new NodeSDK({
   // See: https://opentelemetry.io/docs/languages/js/getting-started/nodejs/
 });
 
-export function onBoot() {
+export function onStartup() {
   sdk.start();
+}
+
+export async function onShutdown() {
+  await sdk.shutdown();
 }
 ```
 

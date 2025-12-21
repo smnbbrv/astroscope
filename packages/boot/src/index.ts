@@ -9,14 +9,15 @@ export interface BootOptions {
    */
   entry?: string;
   /**
-   * Enable HMR for the boot file. When true, `onBoot` will re-run when the boot file changes.
+   * Enable HMR for the boot file. When true, `onStartup` will re-run when the boot file changes.
    * @default false
    */
   hmr?: boolean;
 }
 
 interface BootModule {
-  onBoot?: () => Promise<void> | void;
+  onStartup?: () => Promise<void> | void;
+  onShutdown?: () => Promise<void> | void;
 }
 
 function resolveEntry(entry: string | undefined): string {
@@ -59,11 +60,25 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                         `/${entry}`,
                       )) as BootModule;
 
-                      if (module.onBoot) {
-                        await module.onBoot();
+                      if (module.onStartup) {
+                        await module.onStartup();
                       }
                     } catch (error) {
-                      logger.error(`Error running boot script: ${error}`);
+                      logger.error(`Error running startup script: ${error}`);
+                    }
+                  });
+
+                  server.httpServer?.once("close", async () => {
+                    try {
+                      const module = (await server.ssrLoadModule(
+                        `/${entry}`,
+                      )) as BootModule;
+
+                      if (module.onShutdown) {
+                        await module.onShutdown();
+                      }
+                    } catch (error) {
+                      logger.error(`Error running shutdown script: ${error}`);
                     }
                   });
 
@@ -71,18 +86,18 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                     server.watcher.on("change", async (changedPath) => {
                       if (!changedPath.endsWith(entry)) return;
 
-                      logger.info("boot file changed, re-running onBoot...");
+                      logger.info("boot file changed, re-running onStartup...");
                       try {
                         server.moduleGraph.invalidateAll();
                         const module = (await server.ssrLoadModule(
                           `/${entry}`,
                         )) as BootModule;
 
-                        if (module.onBoot) {
-                          await module.onBoot();
+                        if (module.onStartup) {
+                          await module.onStartup();
                         }
                       } catch (error) {
-                        logger.error(`Error running boot script: ${error}`);
+                        logger.error(`Error running startup script: ${error}`);
                       }
                     });
                   }
@@ -124,7 +139,7 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                   }
 
                   let content = fs.readFileSync(entryPath, "utf-8");
-                  const bootImport = `import { onBoot } from './${bootChunkName}';\nawait onBoot();\n`;
+                  const bootImport = `import { onStartup, onShutdown } from './${bootChunkName}';\nawait onStartup?.();\nif (onShutdown) process.on('SIGTERM', async () => { await onShutdown(); process.exit(0); });\n`;
                   content = bootImport + content;
                   fs.writeFileSync(entryPath, content);
 
