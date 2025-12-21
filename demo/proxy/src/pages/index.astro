@@ -1,0 +1,27 @@
+---
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Proxy Demo</title>
+  </head>
+  <body>
+    <h1>Proxy Demo</h1>
+    <p>This demo shows the @astroscope/proxy package for HTTP proxying.</p>
+
+    <h2>How it works</h2>
+    <ul>
+      <li>This page is handled by Astro</li>
+      <li>Requests to <code>/api/*</code> are proxied to JSONPlaceholder API</li>
+      <li>Any unmatched routes would fall through to a legacy backend (strangler fig pattern)</li>
+    </ul>
+
+    <h2>Try it</h2>
+    <ul>
+      <li><a href="/api/posts/1">GET /api/posts/1</a> - Proxied to JSONPlaceholder</li>
+      <li><a href="/api/users/1">GET /api/users/1</a> - Proxied to JSONPlaceholder</li>
+    </ul>
+  </body>
+</html>

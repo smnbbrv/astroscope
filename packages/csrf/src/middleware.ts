@@ -48,15 +48,31 @@ function normalizeOrigins(input: string | string[]): Set<string> {
  *   }),
  * );
  * ```
+ *
+ * @example
+ * ```ts
+ * // Trust proxy mode (when behind a load balancer)
+ * createCsrfMiddleware({
+ *   trustProxy: true,
+ *   exclude: [{ prefix: '/webhook/' }],
+ * })
+ * ```
  */
-export function createCsrfMiddleware(options: CsrfMiddlewareOptions): MiddlewareHandler {
-  // Pre-compute allowed origins if static
+export function createCsrfMiddleware(
+  options: CsrfMiddlewareOptions
+): MiddlewareHandler {
+  // Pre-compute allowed origins if static and not trustProxy mode
   const staticAllowedOrigins =
-    typeof options.origin !== "function"
+    "origin" in options && typeof options.origin !== "function"
       ? normalizeOrigins(options.origin)
       : null;
 
   return (context, next) => {
+    // Skip if disabled
+    if (options.enabled === false) {
+      return next();
+    }
+
     // Skip excluded paths
     if (shouldExclude(context, options.exclude)) {
       return next();
@@ -68,6 +84,19 @@ export function createCsrfMiddleware(options: CsrfMiddlewareOptions): Middleware
     }
 
     const origin = context.request.headers.get("origin");
+
+    // Trust proxy mode: compare against context.url.origin
+    if ("trustProxy" in options) {
+      if (!origin || origin !== context.url.origin) {
+        return new Response(
+          `Cross-site ${context.request.method} request forbidden`,
+          { status: 403 }
+        );
+      }
+      return next();
+    }
+
+    // Explicit origin mode
     const allowedOrigins =
       staticAllowedOrigins ??
       normalizeOrigins((options.origin as () => string | string[])());

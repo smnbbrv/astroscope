@@ -1,0 +1,59 @@
+---
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>OpenTelemetry Demo</title>
+  </head>
+  <body>
+    <h1>OpenTelemetry Demo</h1>
+    <p>This demo shows the @astroscope/opentelemetry middleware for request tracing.</p>
+
+    <h2>How it works</h2>
+    <ul>
+      <li>Every request creates a span with route, method, and status</li>
+      <li>Traces are exported via OTLP (default: http://localhost:4318)</li>
+      <li>Static assets and dev server paths are excluded</li>
+      <li>Astro actions appear as <code>ACTION {'{'}name{'}'}</code> in traces</li>
+    </ul>
+
+    <h2>Try it</h2>
+    <p>Run a local collector (like Jaeger) and refresh this page to see traces.</p>
+
+    <h2>Links</h2>
+    <ul>
+      <li><a href="/api/data">API endpoint</a> - generates a traced request with fetch</li>
+      <li><a href="/health">Health check</a> - excluded from tracing</li>
+    </ul>
+
+    <h2>Astro Action</h2>
+    <form id="greet-form">
+      <input type="text" name="name" placeholder="Your name" required />
+      <button type="submit">Greet</button>
+    </form>
+    <p id="greet-result"></p>
+
+    <script>
+      import { actions } from "astro:actions";
+
+      const form = document.getElementById("greet-form") as HTMLFormElement;
+      const result = document.getElementById("greet-result") as HTMLParagraphElement;
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const name = formData.get("name") as string;
+
+        const { data, error } = await actions.greet({ name });
+
+        if (error) {
+          result.textContent = `Error: ${error.message}`;
+        } else {
+          result.textContent = data.message;
+        }
+      });
+    </script>
+  </body>
+</html>

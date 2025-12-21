@@ -11,6 +11,7 @@ import { type RPCMetadata, RPCType, setRPCMetadata } from "@opentelemetry/core";
 import type { OpenTelemetryMiddlewareOptions, ExcludePattern } from "./types.js";
 
 const LIB_NAME = "@astroscope/opentelemetry";
+const ACTIONS_PREFIX = "/_actions/";
 
 function matchesPattern(path: string, pattern: ExcludePattern): boolean {
   if ("pattern" in pattern) {
@@ -101,11 +102,14 @@ export function createOpenTelemetryMiddleware(
       kind: SpanKind.SERVER,
     };
 
-    const span = tracer.startSpan(
-      `${request.method} ${url.pathname}`,
-      spanOptions,
-      parentContext
-    );
+    // Detect Astro actions and use a cleaner span name
+    const isAction = url.pathname.startsWith(ACTIONS_PREFIX);
+    const actionName = url.pathname.slice(ACTIONS_PREFIX.length).replace(/\/$/, "");
+    const spanName = isAction
+      ? `ACTION ${actionName}`
+      : `${request.method} ${url.pathname}`;
+
+    const span = tracer.startSpan(spanName, spanOptions, parentContext);
 
     const spanContext = trace.setSpan(parentContext, span);
     const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span };

@@ -1,0 +1,37 @@
+---
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>OpenTelemetry Native ESM Demo</title>
+  </head>
+  <body>
+    <h1>OpenTelemetry Native ESM Demo</h1>
+    <p>This demo shows native OpenTelemetry auto-instrumentation using Node.js ESM loader hooks.</p>
+
+    <h2>How it works</h2>
+    <ul>
+      <li>Uses <code>node --import=./register.mjs</code> to load OpenTelemetry before the app</li>
+      <li>Auto-instruments HTTP, Express, and other supported libraries</li>
+      <li>No middleware required - instrumentation happens at the Node.js level</li>
+    </ul>
+
+    <h2>Usage</h2>
+    <pre><code>bun run build
+bun run start:prod</code></pre>
+
+    <h2>Limitations</h2>
+    <ul>
+      <li>Only works in production builds (not dev mode)</li>
+      <li>Not all instrumentations support ESM yet</li>
+    </ul>
+
+    <h2>Try it</h2>
+    <ul>
+      <li><a href="/api/data">API endpoint</a> - generates traced HTTP request</li>
+      <li><a href="/health">Health check</a></li>
+    </ul>
+  </body>
+</html>

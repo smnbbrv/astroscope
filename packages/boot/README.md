@@ -2,6 +2,10 @@
 
 Run initialization and cleanup code for your Astro server.
 
+## Examples
+
+See the [demo/boot](../../demo/boot) directory for a working example.
+
 ## Installation
 
 ```bash

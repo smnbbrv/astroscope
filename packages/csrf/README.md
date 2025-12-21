@@ -2,6 +2,10 @@
 
 CSRF protection middleware for Astro with path exclusions.
 
+## Examples
+
+See the [demo/csrf](../../demo/csrf) directory for a working example.
+
 ## Why?
 
 Astro has built-in CSRF protection via `security.checkOrigin`, but it doesn't support excluding paths. This is a problem when you need to allow cross-origin POST requests for:

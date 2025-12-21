@@ -1,0 +1,39 @@
+---
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Home - Migrated to Astro</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+      .badge { background: #10b981; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.875rem; }
+      .legacy { background: #6b7280; }
+      nav { display: flex; gap: 1rem; margin-bottom: 2rem; }
+      a { color: #3b82f6; }
+    </style>
+  </head>
+  <body>
+    <h1>Welcome to our site!</h1>
+    <p><span class="badge">Astro</span> This page has been migrated to Astro.</p>
+
+    <nav>
+      <a href="/">Home</a>
+      <a href="/about">About</a>
+      <a href="/contact">Contact (legacy)</a>
+      <a href="/products">Products (legacy)</a>
+    </nav>
+
+    <p>Test e.g. <a href="/headers" target="_blank">Headers (should show headers)</a></p>
+
+    <h2>Strangler Fig Migration</h2>
+    <p>This demo shows the strangler fig pattern for gradually migrating a legacy website to Astro:</p>
+    <ul>
+      <li><strong>/</strong> and <strong>/about</strong> - New Astro pages</li>
+      <li><strong>/contact</strong>, <strong>/products</strong>, etc. - Proxied to legacy backend (httpbin.org)</li>
+    </ul>
+
+    <p>As you build new pages in Astro, they automatically take precedence over the catch-all proxy route.</p>
+  </body>
+</html>

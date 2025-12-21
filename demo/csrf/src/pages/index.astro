@@ -1,0 +1,67 @@
+---
+if (Astro.request.method === "POST") {
+  const contentType = Astro.request.headers.get("content-type") ?? "";
+  if (contentType.includes("form")) {
+    const formData = await Astro.request.formData();
+    console.log("Form submitted:", Object.fromEntries(formData));
+  } else {
+    console.log("POST received (no form data)");
+  }
+}
+
+const baseUrl = Astro.url.origin;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>CSRF Demo</title>
+    <style>
+      section { margin-bottom: 2rem; }
+      pre { background: #1e1e1e; color: #d4d4d4; padding: 1rem; border-radius: 4px; overflow-x: auto; }
+      .success { color: #4ec9b0; }
+      .error { color: #f14c4c; }
+      code { background: #2d2d2d; padding: 0.2rem 0.4rem; border-radius: 3px; }
+    </style>
+  </head>
+  <body>
+    <h1>CSRF Demo</h1>
+    <p>This demo shows the @astroscope/csrf middleware with path exclusions.</p>
+
+    <section>
+      <h2>Protected Form (HTML)</h2>
+      <p>Standard HTML form - browser sends correct Origin header automatically.</p>
+      <form method="POST">
+        <input type="text" name="message" placeholder="Enter a message" />
+        <button type="submit">Submit Form</button>
+      </form>
+    </section>
+
+    <section>
+      <h2>Test CSRF Protection with curl</h2>
+      <p>Browsers protect the <code>Origin</code> header, so use curl to test CSRF scenarios:</p>
+
+      <h3><span class="success">✓</span> Same Origin (should succeed)</h3>
+      <pre>curl -X POST -H "Origin: {baseUrl}" {baseUrl}/</pre>
+
+      <h3><span class="error">✗</span> Cross Origin (should fail with 403)</h3>
+      <pre>curl -X POST -H "Origin: https://evil.com" {baseUrl}/</pre>
+
+      <h3><span class="error">✗</span> No Origin (should fail with 403)</h3>
+      <pre>curl -X POST {baseUrl}/</pre>
+
+      <h3><span class="success">✓</span> Excluded Path (should succeed without Origin)</h3>
+      <pre>curl -X POST {baseUrl}/webhook</pre>
+    </section>
+
+    <section>
+      <h2>Excluded Paths</h2>
+      <p>These paths bypass CSRF protection (useful for webhooks, OAuth callbacks, etc.):</p>
+      <ul>
+        <li><code>/auth/*</code> - OIDC callbacks (excluded)</li>
+        <li><code>/webhook</code> - Payment webhooks (excluded)</li>
+      </ul>
+    </section>
+  </body>
+</html>

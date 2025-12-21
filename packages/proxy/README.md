@@ -2,6 +2,11 @@
 
 HTTP proxy for Astro SSR - migrate from legacy backends or run Astro as a gateway.
 
+## Examples
+
+- [demo/proxy](../../demo/proxy) - API proxy to JSONPlaceholder
+- [demo/proxy-migration](../../demo/proxy-migration) - Strangler fig migration pattern
+
 ## Why?
 
 Astro has no built-in proxy support ([roadmap discussion #665](https://github.com/withastro/roadmap/discussions/665)). This package fills that gap with two powerful patterns:

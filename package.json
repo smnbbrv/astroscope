@@ -3,14 +3,14 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "demo"
+    "demo/*"
   ],
   "scripts": {
     "build": "bun run --filter '*' build",
     "test": "bun test",
     "typecheck": "bun run --filter '*' typecheck",
     "lint": "bun run --filter '*' lint",
-    "dev": "bun run --cwd demo dev",
+    "dev": "bun run --cwd demo/boot dev",
     "ci:version": "changeset version && bun update",
     "ci:publish": "for dir in packages/*; do (cd \"$dir\" && npm publish --access public --provenance || true); done && changeset tag"
   },
