@@ -1,6 +1,6 @@
 {
   "name": "@astroscope/csrf",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Extended CSRF protection middleware for Astro with path exclusions",
   "type": "module",
   "main": "./dist/index.js",
