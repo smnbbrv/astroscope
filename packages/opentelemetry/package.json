@@ -1,6 +1,6 @@
 {
   "name": "@astroscope/opentelemetry",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "OpenTelemetry tracing middleware for Astro SSR",
   "type": "module",
   "main": "./dist/index.js",
