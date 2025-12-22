@@ -17,11 +17,11 @@
     "@astrojs/node": "^9.0.0",
     "@astroscope/opentelemetry": "workspace:*",
     "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/auto-instrumentations-node": "^0.56.1",
-    "@opentelemetry/core": "^1.30.0",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.57.2",
-    "@opentelemetry/instrumentation": "^0.57.2",
-    "@opentelemetry/sdk-node": "^0.57.2",
+    "@opentelemetry/auto-instrumentations-node": "^0.67.3",
+    "@opentelemetry/core": "^2.2.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.208.0",
+    "@opentelemetry/instrumentation": "^0.208.0",
+    "@opentelemetry/sdk-node": "^0.208.0",
     "astro": "^5.1.0"
   },
   "devDependencies": {
