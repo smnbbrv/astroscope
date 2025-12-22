@@ -184,6 +184,42 @@ const sdk = new NodeSDK({
 - `http.response.status_code` - Response status code
 ```
 
+### Host & Runtime Metrics
+
+For system-level and Node.js runtime metrics (CPU, memory, event loop, GC), add these packages:
+
+```bash
+npm install @opentelemetry/host-metrics @opentelemetry/instrumentation-runtime-node
+```
+
+```ts
+// src/boot.ts
+import { NodeSDK } from "@opentelemetry/sdk-node";
+import { PrometheusExporter } from "@opentelemetry/exporter-prometheus";
+import { HostMetrics } from "@opentelemetry/host-metrics";
+import { RuntimeNodeInstrumentation } from "@opentelemetry/instrumentation-runtime-node";
+
+const sdk = new NodeSDK({
+  serviceName: "my-astro-app",
+  metricReader: new PrometheusExporter({ port: 9464 }),
+  instrumentations: [new RuntimeNodeInstrumentation()],
+});
+
+let hostMetrics: HostMetrics;
+
+export function onStartup() {
+  sdk.start();
+
+  // the host metrics should be called after sdk.start()
+  hostMetrics = new HostMetrics({ name: "my-astro-app" });
+  hostMetrics.start();
+}
+```
+
+This adds:
+- **Host metrics**: `process.cpu.*`, `system.cpu.*`, `system.memory.*`, `system.network.*`
+- **Runtime metrics**: `nodejs.eventloop.delay.*`, `nodejs.gc.duration`, `nodejs.eventloop.utilization`
+
 ## Component Tracing
 
 Trace specific sections or components using the `<Trace>` component:

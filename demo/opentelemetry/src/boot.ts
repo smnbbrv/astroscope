@@ -1,17 +1,29 @@
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { PrometheusExporter } from "@opentelemetry/exporter-prometheus";
+import { HostMetrics } from "@opentelemetry/host-metrics";
+import { RuntimeNodeInstrumentation } from "@opentelemetry/instrumentation-runtime-node";
 import { trace } from "@opentelemetry/api";
 
 const sdk = new NodeSDK({
   serviceName: "demo-opentelemetry",
   traceExporter: new OTLPTraceExporter(),
   metricReader: new PrometheusExporter({ port: 9464 }),
+  // Node.js runtime metrics (event loop, GC)
+  instrumentations: [new RuntimeNodeInstrumentation()],
 });
+
+let hostMetrics: HostMetrics;
 
 export async function onStartup() {
   // Start the SDK first - required before any spans can be created
   sdk.start();
+
+  // Start host metrics collection (CPU, memory, network)
+  // Must be called after sdk.start() so MeterProvider is available
+  hostMetrics = new HostMetrics({ name: "demo-opentelemetry" });
+  hostMetrics.start();
+
   console.log("OpenTelemetry SDK started");
 
   // Wrap startup work in a span to group related operations

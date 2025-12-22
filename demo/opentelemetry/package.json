@@ -19,6 +19,8 @@
     "@opentelemetry/sdk-node": "^0.57.2",
     "@opentelemetry/exporter-trace-otlp-http": "^0.57.2",
     "@opentelemetry/exporter-prometheus": "^0.57.2",
+    "@opentelemetry/host-metrics": "^0.37.0",
+    "@opentelemetry/instrumentation-runtime-node": "^0.12.0",
     "astro": "^5.1.0"
   },
   "devDependencies": {
