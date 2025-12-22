@@ -37,7 +37,9 @@
     "opentelemetry",
     "tracing",
     "observability",
-    "middleware"
+    "middleware",
+    "analytics",
+    "performance"
   ],
   "author": "smnbbrv",
   "license": "MIT",

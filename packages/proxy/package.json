@@ -25,11 +25,13 @@
   },
   "keywords": [
     "astro",
+    "astro-integration",
     "proxy",
     "http-proxy",
     "reverse-proxy",
     "migration",
-    "strangler-fig"
+    "strangler-fig",
+    "frameworks"
   ],
   "author": "smnbbrv",
   "license": "MIT",
