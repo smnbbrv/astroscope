@@ -47,9 +47,7 @@ Choose one of two modes:
 **Trust proxy** (recommended when behind a load balancer):
 
 ```ts
-csrf({
-  trustProxy: true, // Compares Origin header against Astro.url.origin
-})
+csrf({ trustProxy: true })
 ```
 
 **Explicit origins:**
@@ -102,7 +100,6 @@ import { createCsrfMiddleware } from "@astroscope/csrf";
 
 export const onRequest = sequence(
   createCsrfMiddleware({
-    // Dynamic origin from environment
     origin: () => process.env.ALLOWED_ORIGINS?.split(",") ?? [],
     exclude: [{ prefix: "/auth/" }],
   })

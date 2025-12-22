@@ -1,1 +1,2 @@
-export { default as Trace } from "./Trace.astro";
+// @ts-expect-error: Astro types
+export { default as Trace } from './Trace.astro';

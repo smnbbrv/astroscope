@@ -27,7 +27,7 @@ npm install @astroscope/proxy
 When migrating from a legacy backend, create a catch-all route that forwards unhandled requests to the old system. As you build new pages in Astro, they take precedence over the catch-all, gradually "strangling" the legacy backend.
 
 ```ts
-// src/pages/[...proxy].ts
+// src/pages/[...legacy].ts
 import { createProxyHandler } from "@astroscope/proxy";
 
 export const ALL = createProxyHandler({
@@ -71,13 +71,16 @@ createProxyHandler({
 
 Called before proxying. Can modify the request or short-circuit with a Response.
 
+Useful for adding headers, authentication, logging, rewriting URLs or blocking requests.
+
 ```ts
 createProxyHandler({
   upstream: "https://api.example.com",
   onRequest: (request, targetUrl) => {
-    // Add auth header
     const headers = new Headers(request.headers);
+
     headers.set("Authorization", `Bearer ${getToken()}`);
+
     return new Request(request, { headers });
   },
 });
@@ -101,9 +104,10 @@ Called after receiving a response from upstream. Can modify the response.
 createProxyHandler({
   upstream: "https://api.example.com",
   onResponse: (response, targetUrl) => {
-    // Rewrite cookies or headers
     const headers = new Headers(response.headers);
+    
     headers.set("X-Proxied-By", "astro");
+
     return new Response(response.body, {
       status: response.status,
       headers,
@@ -121,6 +125,7 @@ createProxyHandler({
   upstream: "https://api.example.com",
   onError: (error, targetUrl) => {
     console.error(`Proxy failed: ${targetUrl}`, error);
+    
     return new Response("Service temporarily unavailable", {
       status: 503,
       headers: { "Retry-After": "30" },
@@ -139,10 +144,10 @@ HTTP client configuration for connection pooling and HTTP/2.
 createProxyHandler({
   upstream: "https://api.example.com",
   client: {
-    pipelining: 10,           // Max concurrent requests per origin (default: 10)
-    allowH2: true,            // Enable HTTP/2 (default: true)
+    pipelining: 10,            // max concurrent requests per origin (default: 10)
+    allowH2: true,             // enable HTTP/2 (default: true)
     maxConcurrentStreams: 128, // HTTP/2 max streams (default: 128)
-    keepAliveTimeout: 60000,  // Keep-alive timeout in ms (default: 60000)
+    keepAliveTimeout: 60000,   // keep-alive timeout in ms (default: 60000)
   },
 });
 ```

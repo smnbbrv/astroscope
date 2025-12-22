@@ -1,27 +1,20 @@
-import { metrics, ValueType } from "@opentelemetry/api";
+import { ValueType, metrics } from '@opentelemetry/api';
 
-const LIB_NAME = "@astroscope/opentelemetry";
+const LIB_NAME = '@astroscope/opentelemetry';
 
-// Lazy initialization to avoid errors if metrics SDK isn't configured
-let httpRequestDuration: ReturnType<
-  ReturnType<typeof metrics.getMeter>["createHistogram"]
-> | null = null;
-let httpActiveRequests: ReturnType<
-  ReturnType<typeof metrics.getMeter>["createUpDownCounter"]
-> | null = null;
-let fetchRequestDuration: ReturnType<
-  ReturnType<typeof metrics.getMeter>["createHistogram"]
-> | null = null;
-let actionDuration: ReturnType<
-  ReturnType<typeof metrics.getMeter>["createHistogram"]
-> | null = null;
+// lazy initialization to avoid errors if metrics SDK isn't configured
+let httpRequestDuration: ReturnType<ReturnType<typeof metrics.getMeter>['createHistogram']> | null = null;
+let httpActiveRequests: ReturnType<ReturnType<typeof metrics.getMeter>['createUpDownCounter']> | null = null;
+let fetchRequestDuration: ReturnType<ReturnType<typeof metrics.getMeter>['createHistogram']> | null = null;
+let actionDuration: ReturnType<ReturnType<typeof metrics.getMeter>['createHistogram']> | null = null;
 
 function getHttpRequestDuration() {
   if (!httpRequestDuration) {
     const meter = metrics.getMeter(LIB_NAME);
-    httpRequestDuration = meter.createHistogram("http.server.request.duration", {
-      description: "Duration of HTTP server requests",
-      unit: "s",
+
+    httpRequestDuration = meter.createHistogram('http.server.request.duration', {
+      description: 'Duration of HTTP server requests',
+      unit: 's',
       valueType: ValueType.DOUBLE,
     });
   }
@@ -31,9 +24,10 @@ function getHttpRequestDuration() {
 function getHttpActiveRequests() {
   if (!httpActiveRequests) {
     const meter = metrics.getMeter(LIB_NAME);
-    httpActiveRequests = meter.createUpDownCounter("http.server.active_requests", {
-      description: "Number of active HTTP server requests",
-      unit: "{request}",
+
+    httpActiveRequests = meter.createUpDownCounter('http.server.active_requests', {
+      description: 'Number of active HTTP server requests',
+      unit: '{request}',
       valueType: ValueType.INT,
     });
   }
@@ -43,9 +37,10 @@ function getHttpActiveRequests() {
 function getFetchRequestDuration() {
   if (!fetchRequestDuration) {
     const meter = metrics.getMeter(LIB_NAME);
-    fetchRequestDuration = meter.createHistogram("http.client.request.duration", {
-      description: "Duration of HTTP client requests (fetch)",
-      unit: "s",
+
+    fetchRequestDuration = meter.createHistogram('http.client.request.duration', {
+      description: 'Duration of HTTP client requests (fetch)',
+      unit: 's',
       valueType: ValueType.DOUBLE,
     });
   }
@@ -55,15 +50,19 @@ function getFetchRequestDuration() {
 function getActionDuration() {
   if (!actionDuration) {
     const meter = metrics.getMeter(LIB_NAME);
-    actionDuration = meter.createHistogram("astro.action.duration", {
-      description: "Duration of Astro action executions",
-      unit: "s",
+
+    actionDuration = meter.createHistogram('astro.action.duration', {
+      description: 'Duration of Astro action executions',
+      unit: 's',
       valueType: ValueType.DOUBLE,
     });
   }
   return actionDuration;
 }
 
+/**
+ * Attributes for HTTP server request metrics.
+ */
 export interface HttpMetricsAttributes {
   method: string;
   route: string;
@@ -74,21 +73,16 @@ export interface HttpMetricsAttributes {
  * Record the start of an HTTP request.
  * Returns a function to call when the request ends.
  */
-export function recordHttpRequestStart(attributes: {
-  method: string;
-  route: string;
-}): () => void {
-  const startTime = performance.now();
-
+export function recordHttpRequestStart(attributes: { method: string; route: string }): () => void {
   getHttpActiveRequests().add(1, {
-    "http.request.method": attributes.method,
-    "http.route": attributes.route,
+    'http.request.method': attributes.method,
+    'http.route': attributes.route,
   });
 
   return () => {
     getHttpActiveRequests().add(-1, {
-      "http.request.method": attributes.method,
-      "http.route": attributes.route,
+      'http.request.method': attributes.method,
+      'http.route': attributes.route,
     });
   };
 }
@@ -96,17 +90,17 @@ export function recordHttpRequestStart(attributes: {
 /**
  * Record HTTP request duration.
  */
-export function recordHttpRequestDuration(
-  attributes: HttpMetricsAttributes,
-  durationMs: number
-): void {
+export function recordHttpRequestDuration(attributes: HttpMetricsAttributes, durationMs: number): void {
   getHttpRequestDuration().record(durationMs / 1000, {
-    "http.request.method": attributes.method,
-    "http.route": attributes.route,
-    "http.response.status_code": attributes.status,
+    'http.request.method': attributes.method,
+    'http.route': attributes.route,
+    'http.response.status_code': attributes.status,
   });
 }
 
+/**
+ * Attributes for fetch request metrics.
+ */
 export interface FetchMetricsAttributes {
   method: string;
   host: string;
@@ -116,17 +110,17 @@ export interface FetchMetricsAttributes {
 /**
  * Record fetch request duration.
  */
-export function recordFetchRequestDuration(
-  attributes: FetchMetricsAttributes,
-  durationMs: number
-): void {
+export function recordFetchRequestDuration(attributes: FetchMetricsAttributes, durationMs: number): void {
   getFetchRequestDuration().record(durationMs / 1000, {
-    "http.request.method": attributes.method,
-    "server.address": attributes.host,
-    "http.response.status_code": attributes.status,
+    'http.request.method': attributes.method,
+    'server.address': attributes.host,
+    'http.response.status_code': attributes.status,
   });
 }
 
+/**
+ * Attributes for Astro action metrics.
+ */
 export interface ActionMetricsAttributes {
   name: string;
   status: number;
@@ -135,12 +129,9 @@ export interface ActionMetricsAttributes {
 /**
  * Record Astro action duration.
  */
-export function recordActionDuration(
-  attributes: ActionMetricsAttributes,
-  durationMs: number
-): void {
+export function recordActionDuration(attributes: ActionMetricsAttributes, durationMs: number): void {
   getActionDuration().record(durationMs / 1000, {
-    "astro.action.name": attributes.name,
-    "http.response.status_code": attributes.status,
+    'astro.action.name': attributes.name,
+    'http.response.status_code': attributes.status,
   });
 }

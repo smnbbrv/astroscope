@@ -29,7 +29,7 @@
     "astro-integration",
     "boot"
   ],
-  "author": "Simon Bobrov",
+  "author": "smnbbrv",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/smnbbrv/astroscope/issues"
@@ -37,7 +37,9 @@
   "homepage": "https://github.com/smnbbrv/astroscope/tree/main/packages/boot#readme",
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint 'src/**/*.{ts,tsx}'",
+    "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix"
   },
   "devDependencies": {
     "astro": "^5.1.0",

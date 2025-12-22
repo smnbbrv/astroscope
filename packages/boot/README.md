@@ -19,7 +19,6 @@ bun add @astroscope/boot
 ```ts
 // src/boot.ts
 export async function onStartup() {
-  // Initialize database connections, load config, etc.
   console.log("Starting up...");
 
   await someAsyncInitialization();
@@ -28,7 +27,6 @@ export async function onStartup() {
 }
 
 export async function onShutdown() {
-  // Close database connections, cleanup resources, etc.
   console.log("Shutting down...");
 
   await closeConnections();

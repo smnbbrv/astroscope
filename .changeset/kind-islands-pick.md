@@ -1,5 +1,5 @@
 ---
-"@astroscope/opentelemetry": major
+"@astroscope/opentelemetry": minor
 ---
 
-initialize opentelemetry package
+initial opentelemetry package

@@ -1,5 +1,5 @@
 ---
-"@astroscope/proxy": major
+"@astroscope/proxy": minor
 ---
 
-initialize proxy package
+initial proxy package

@@ -1,5 +1,5 @@
 ---
-"@astroscope/boot": major
+"@astroscope/boot": minor
 ---
 
 initial version of boot package

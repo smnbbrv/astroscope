@@ -1,28 +1,18 @@
-import fs from "node:fs";
-import path from "node:path";
-import type { AstroIntegration } from "astro";
-import type { ExcludePattern } from "./types.js";
-import { RECOMMENDED_EXCLUDES } from "./excludes.js";
+import fs from 'node:fs';
+import path from 'node:path';
+import type { AstroIntegration } from 'astro';
+import { RECOMMENDED_EXCLUDES } from './excludes.js';
+import type { ExcludePattern } from './types.js';
 
-const VIRTUAL_MODULE_ID = "virtual:@astroscope/opentelemetry/config";
-const RESOLVED_VIRTUAL_MODULE_ID = "\0" + VIRTUAL_MODULE_ID;
+const VIRTUAL_MODULE_ID = 'virtual:@astroscope/opentelemetry/config';
+const RESOLVED_VIRTUAL_MODULE_ID = `\0${VIRTUAL_MODULE_ID}`;
 
 /**
  * Serialize exclude patterns to JavaScript code.
  * Handles RegExp objects which JSON.stringify cannot serialize.
  */
 function serializeExcludePatterns(patterns: ExcludePattern[]): string {
-  const items = patterns.map((p) => {
-    if ("pattern" in p) {
-      // Serialize RegExp as a literal
-      return `{ pattern: ${p.pattern.toString()} }`;
-    } else if ("prefix" in p) {
-      return `{ prefix: ${JSON.stringify(p.prefix)} }`;
-    } else {
-      return `{ exact: ${JSON.stringify(p.exact)} }`;
-    }
-  });
-  return `[${items.join(", ")}]`;
+  return `[${patterns.map((p) => ('pattern' in p ? `{ pattern: ${p.pattern.toString()} }` : JSON.stringify(p))).join(', ')}]`;
 }
 
 export interface OpenTelemetryIntegrationOptions {
@@ -92,38 +82,27 @@ export interface OpenTelemetryIntegrationOptions {
  * })
  * ```
  */
-export function opentelemetry(
-  options: OpenTelemetryIntegrationOptions = {}
-): AstroIntegration {
+export function opentelemetry(options: OpenTelemetryIntegrationOptions = {}): AstroIntegration {
   const httpConfig = options.instrumentations?.http ?? {
     enabled: true,
     exclude: RECOMMENDED_EXCLUDES,
   };
   const fetchConfig = options.instrumentations?.fetch ?? { enabled: true };
-
-  // Get exclude patterns, defaulting to RECOMMENDED_EXCLUDES if http is enabled but no exclude specified
-  const httpExclude =
-    httpConfig.exclude ?? (httpConfig.enabled ? RECOMMENDED_EXCLUDES : []);
+  const httpExclude = httpConfig.exclude ?? (httpConfig.enabled ? RECOMMENDED_EXCLUDES : []);
 
   let isBuild = false;
   let isSSR = false;
 
   return {
-    name: "@astroscope/opentelemetry",
+    name: '@astroscope/opentelemetry',
     hooks: {
-      "astro:config:setup": ({
-        command,
-        updateConfig,
-        logger,
-        addMiddleware,
-      }) => {
-        isBuild = command === "build";
+      'astro:config:setup': ({ command, updateConfig, logger, addMiddleware }) => {
+        isBuild = command === 'build';
 
-        // Add HTTP middleware if enabled
         if (httpConfig.enabled) {
           addMiddleware({
-            entrypoint: "@astroscope/opentelemetry/middleware",
-            order: "pre",
+            entrypoint: '@astroscope/opentelemetry/middleware',
+            order: 'pre',
           });
         }
 
@@ -131,7 +110,7 @@ export function opentelemetry(
           vite: {
             plugins: [
               {
-                name: "@astroscope/opentelemetry/virtual",
+                name: '@astroscope/opentelemetry/virtual',
                 resolveId(id) {
                   if (id === VIRTUAL_MODULE_ID) {
                     return RESOLVED_VIRTUAL_MODULE_ID;
@@ -143,22 +122,18 @@ export function opentelemetry(
                   }
                 },
               },
-              // Only add fetch instrumentation plugin if enabled
               ...(fetchConfig.enabled
                 ? [
                     {
-                      name: "@astroscope/opentelemetry/fetch",
+                      name: '@astroscope/opentelemetry/fetch',
                       configureServer(server: any) {
-                        // Skip in build mode
                         if (isBuild) return;
 
-                        server.httpServer?.once("listening", async () => {
+                        server.httpServer?.once('listening', async () => {
                           try {
-                            const { instrumentFetch } = await import(
-                              "./fetch.js"
-                            );
+                            const { instrumentFetch } = await import('./fetch.js');
                             instrumentFetch();
-                            logger.info("fetch instrumentation enabled");
+                            logger.info('fetch instrumentation enabled');
                           } catch (error) {
                             logger.error(`Error instrumenting fetch: ${error}`);
                           }
@@ -171,19 +146,21 @@ export function opentelemetry(
                         if (!isSSR) return;
 
                         const outDir = outputOptions.dir;
+
                         if (!outDir) return;
 
-                        const entryPath = path.join(outDir, "entry.mjs");
+                        const entryPath = path.join(outDir, 'entry.mjs');
+
                         if (!fs.existsSync(entryPath)) return;
 
-                        let content = fs.readFileSync(entryPath, "utf-8");
-                        const instrumentCode = `import { instrumentFetch } from '@astroscope/opentelemetry';\ninstrumentFetch();\n`;
-                        content = instrumentCode + content;
-                        fs.writeFileSync(entryPath, content);
+                        const content = fs.readFileSync(entryPath, 'utf-8');
 
-                        logger.info(
-                          "injected fetch instrumentation into entry.mjs"
+                        fs.writeFileSync(
+                          entryPath,
+                          `import { instrumentFetch } from '@astroscope/opentelemetry';\ninstrumentFetch();\n${content}`,
                         );
+
+                        logger.info('injected fetch instrumentation into entry.mjs');
                       },
                     },
                   ]

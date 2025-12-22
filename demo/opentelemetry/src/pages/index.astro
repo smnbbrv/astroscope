@@ -1,7 +1,7 @@
 ---
-import { Trace } from "@astroscope/opentelemetry/components";
-import SlowComponent from "../components/SlowComponent.astro";
-import DataFetcher from "../components/DataFetcher.astro";
+import { Trace } from '@astroscope/opentelemetry/components';
+import DataFetcher from '../components/DataFetcher.astro';
+import SlowComponent from '../components/SlowComponent.astro';
 ---
 
 <html lang="en">
@@ -11,33 +11,54 @@ import DataFetcher from "../components/DataFetcher.astro";
     <title>OpenTelemetry Demo</title>
     <style>
       body {
-        font-family: system-ui, sans-serif;
         max-width: 800px;
         margin: 0 auto;
         padding: 2rem;
         line-height: 1.6;
       }
-      h1 { border-bottom: 2px solid #333; padding-bottom: 0.5rem; }
-      h2 { margin-top: 2rem; color: #444; }
-      h3 { color: #666; }
-      code { background: #f4f4f4; padding: 0.2rem 0.4rem; border-radius: 3px; }
-      .section { margin: 1rem 0; padding: 1rem; background: #fafafa; border-radius: 8px; }
-      .note { background: #fff3cd; padding: 1rem; border-radius: 4px; margin: 1rem 0; }
+      h1 {
+        border-bottom: 2px solid #333;
+        padding-bottom: 0.5rem;
+      }
+      h2 {
+        margin-top: 2rem;
+        color: #444;
+      }
+      h3 {
+        color: #666;
+      }
+      code {
+        background: #f4f4f4;
+        padding: 0.2rem 0.4rem;
+        border-radius: 3px;
+      }
+      .section {
+        margin: 1rem 0;
+        padding: 1rem;
+        background: #fafafa;
+        border-radius: 8px;
+      }
+      .note {
+        background: #fff3cd;
+        padding: 1rem;
+        border-radius: 4px;
+        margin: 1rem 0;
+      }
     </style>
   </head>
   <body>
     <h1>OpenTelemetry Demo</h1>
     <p>
-      This demo showcases <code>@astroscope/opentelemetry</code> tracing capabilities.
-      Run a collector (like Jaeger) to see traces.
+      This demo showcases <code>@astroscope/opentelemetry</code> tracing capabilities. Run a collector (like Jaeger) to see
+      traces.
     </p>
 
     <h2>1. Component Tracing with <code>&lt;Trace&gt;</code></h2>
 
     <h3>Streaming Mode (default)</h3>
     <p>
-      Creates instant marker spans (<code>&gt;&gt; name</code>) without blocking streaming.
-      Components below render in parallel:
+      Creates instant marker spans (<code>&gt;&gt; name</code>) without blocking streaming. Components below render in
+      parallel:
     </p>
     <div class="section">
       <Trace name="hero">
@@ -53,8 +74,7 @@ import DataFetcher from "../components/DataFetcher.astro";
 
     <h3>Timing Mode (<code>withTimings</code>)</h3>
     <p>
-      Creates spans with accurate duration (<code>RENDER name</code>).
-      Use for single components where you need timing:
+      Creates spans with accurate duration (<code>RENDER name</code>). Use for single components where you need timing:
     </p>
     <div class="section">
       <Trace name="data-section" withTimings>
@@ -77,7 +97,7 @@ import DataFetcher from "../components/DataFetcher.astro";
 
     <h3>With Custom Parameters</h3>
     <div class="section">
-      <Trace name="user-profile" params={{ userId: "123", role: "admin" }} withTimings>
+      <Trace name="user-profile" params={{ userId: '123', role: 'admin' }} withTimings>
         <SlowComponent name="User Profile" delay={75} />
       </Trace>
     </div>
@@ -109,30 +129,34 @@ import DataFetcher from "../components/DataFetcher.astro";
     </form>
 
     <div class="note">
-      <strong>Tip:</strong> Open your browser's Network tab and watch the streaming behavior.
-      Components with <code>withTimings</code> buffer their content,
-      while default mode streams immediately.
+      <strong>Tip:</strong> Open your browser's Network tab and watch the streaming behavior. Components with <code
+        >withTimings</code
+      > buffer their content, while default mode streams immediately.
     </div>
 
     <script>
-      import { actions } from "astro:actions";
+      /* eslint-disable prettier/prettier */
+      import { actions } from 'astro:actions';
 
-      const form = document.getElementById("greet-form") as HTMLFormElement;
-      const result = document.getElementById("greet-result") as HTMLParagraphElement;
+      const form = document.querySelector<HTMLFormElement>('#greet-form');
+      const result = document.getElementById('greet-result');
 
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const formData = new FormData(form);
-        const name = formData.get("name") as string;
+      if (form && result) {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const formData = new FormData(form);
+          const name = formData.get('name');
 
-        const { data, error } = await actions.greet({ name });
+          const response = await actions.greet({ name: String(name) });
 
-        if (error) {
-          result.textContent = `Error: ${error.message}`;
-        } else {
-          result.textContent = data.message;
-        }
-      });
+          if (response.error) {
+            result.textContent = `Error: ${response.error.message}`;
+          } else {
+            result.textContent = response.data.message;
+          }
+        });
+      }
+      /* eslint-enable prettier/prettier */
     </script>
   </body>
 </html>

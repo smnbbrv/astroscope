@@ -1,2 +1,2 @@
-export { createProxyHandler } from "./handler.js";
-export type { ClientOptions, ProxyOptions } from "./types.js";
+export { createProxyHandler } from './handler.js';
+export type { ClientOptions, ProxyOptions } from './types.js';

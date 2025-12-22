@@ -31,7 +31,7 @@
     "migration",
     "strangler-fig"
   ],
-  "author": "Simon Bobrov",
+  "author": "smnbbrv",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/smnbbrv/astroscope/issues"
@@ -39,7 +39,9 @@
   "homepage": "https://github.com/smnbbrv/astroscope/tree/main/packages/proxy#readme",
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint 'src/**/*.{ts,tsx}'",
+    "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix"
   },
   "dependencies": {
     "undici": "^7.2.0"

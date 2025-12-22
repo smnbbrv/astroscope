@@ -1,9 +1,6 @@
-import type { APIContext } from "astro";
+import type { APIContext } from 'astro';
 
-export type ExcludePattern =
-  | { pattern: RegExp }
-  | { prefix: string }
-  | { exact: string };
+export type ExcludePattern = { pattern: RegExp } | { prefix: string } | { exact: string };
 
 type CsrfOptionsBase = {
   /**

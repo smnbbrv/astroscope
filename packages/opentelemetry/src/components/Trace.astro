@@ -1,15 +1,26 @@
 ---
-import {
-  trace,
-  context,
-  SpanStatusCode,
-  type AttributeValue,
-} from "@opentelemetry/api";
+import { type AttributeValue, SpanStatusCode, context, trace } from '@opentelemetry/api';
 
 interface Props {
-  name: string;
-  params?: Record<string, AttributeValue>;
+  /**
+   * Whether tracing is enabled for this component.
+   * When false, children render normally without any tracing overhead.
+   * @default true
+   */
   enabled?: boolean;
+
+  /**
+   * The name of the span to create. This will appear in your tracing dashboard
+   * prefixed with "RENDER " (when withTimings is true) or ">> " (streaming mode).
+   */
+  name: string;
+
+  /**
+   * Additional attributes to attach to the span.
+   * Useful for adding context like component props, IDs, or other metadata.
+   */
+  params?: Record<string, AttributeValue>;
+
   /**
    * When true, buffers slot content to measure accurate render duration.
    * This disables streaming for children - use only for single components.
@@ -20,7 +31,7 @@ interface Props {
 
 const { name, params = {}, enabled = true, withTimings = false } = Astro.props;
 
-const LIB_NAME = "@astroscope/opentelemetry";
+const LIB_NAME = '@astroscope/opentelemetry';
 
 let html: string | undefined;
 
@@ -29,36 +40,29 @@ if (enabled) {
   const parentContext = context.active();
 
   if (withTimings) {
-    // Buffer mode: accurate timing but blocks streaming
     const span = tracer.startSpan(`RENDER ${name}`, { attributes: params }, parentContext);
 
     try {
-      html = await context.with(trace.setSpan(parentContext, span), () =>
-        Astro.slots.render("default")
-      );
+      html = await context.with(trace.setSpan(parentContext, span), () => Astro.slots.render('default'));
+
       span.setStatus({ code: SpanStatusCode.OK });
     } catch (e) {
       span.setStatus({
         code: SpanStatusCode.ERROR,
-        message: e instanceof Error ? e.message : "Unknown error",
+        message: e instanceof Error ? e.message : 'Unknown error',
       });
+
       throw e;
     } finally {
       span.end();
     }
   } else {
-    // Streaming mode: instant span (marker only), preserves streaming
     const span = tracer.startSpan(`>> ${name}`, { attributes: params }, parentContext);
+
     span.setStatus({ code: SpanStatusCode.OK });
     span.end();
   }
 }
 ---
 
-{!enabled ? (
-  <slot />
-) : withTimings ? (
-  <Fragment set:html={html} />
-) : (
-  <slot />
-)}
+{enabled && withTimings ? <Fragment set:html={html} /> : <slot />}

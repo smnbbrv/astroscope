@@ -1,5 +1,5 @@
 ---
-"@astroscope/csrf": major
+"@astroscope/csrf": minor
 ---
 
 initial csrf package implementation

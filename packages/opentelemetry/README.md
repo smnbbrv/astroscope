@@ -51,8 +51,7 @@ The OpenTelemetry SDK must be initialized before traces can be collected. Use [`
 import { NodeSDK } from "@opentelemetry/sdk-node";
 
 const sdk = new NodeSDK({
-  // Configure exporters, resource attributes, etc.
-  // See: https://opentelemetry.io/docs/languages/js/getting-started/nodejs/
+  // configuration at https://opentelemetry.io/docs/languages/js/getting-started/nodejs/
 });
 
 export function onStartup() {
@@ -82,12 +81,11 @@ export default defineConfig({
 });
 ```
 
-**Important:** `opentelemetry()` must be listed before `boot()`. This ensures fetch is instrumented before any code (including your boot file) can cache a reference to the original fetch.
-
 This automatically:
 - Adds middleware to trace incoming HTTP requests
 - Instruments `fetch()` to trace outgoing requests
 - Uses `RECOMMENDED_EXCLUDES` to skip static assets
+- Provides `<Trace>` component for tracing specific sections or components
 
 ## Integration Options
 
@@ -154,9 +152,8 @@ const metricReader = new PeriodicExportingMetricReader({
   exportIntervalMillis: 60000,
 });
 
-const sdk = new NodeSDK({
-  metricReader,
-});
+const sdk = new NodeSDK({ metricReader });
+```
 
 ### Collected Metrics
 
@@ -411,8 +408,8 @@ If you only need tracing in production builds, you can use OpenTelemetry's nativ
 ```ts
 opentelemetry({
   instrumentations: {
-    http: { enabled: false }, // Let native handle incoming requests
-    // fetch remains enabled by default - native doesn't support it in ESM
+    http: { enabled: false }, // let native instrumentation work for incoming requests
+    // fetch remains enabled by default - native doesn't support it in ESM yet
   },
 })
 ```
@@ -427,8 +424,6 @@ import { register } from "node:module";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 
-// Register the OpenTelemetry ESM loader hook
-// See: https://github.com/open-telemetry/opentelemetry-js/issues/4392#issuecomment-2115512083
 register("@opentelemetry/instrumentation/hook.mjs", import.meta.url);
 
 const sdk = new NodeSDK({
@@ -448,12 +443,6 @@ process.on("SIGTERM", () => {
 ```bash
 node --import=./register.mjs ./dist/server/entry.mjs
 ```
-
-### ESM-Compatible Instrumentations
-
-The following instrumentations have ESM support ([full list](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1942)).
-
-**Note:** Native `fetch` is **not yet supported** in ESM mode. Outgoing HTTP requests made with `fetch()` won't generate child spans, unless you use this package's fetch instrumentation.
 
 ## License
 

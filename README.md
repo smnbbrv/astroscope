@@ -1,17 +1,15 @@
 # Astroscope
 
-SSR utilities for Astro - when standalone application is enough.
+A collection of Astro packages to make production-ready applications.
 
 ## Why?
-
-Want to run something when app starts? Migrate old website to Astro gradually? Have observability in place?
 
 Running Astro in middleware mode under Express/Fastify works, but comes with trade-offs:
 
 - extra moving parts and runtime overhead
 - two TypeScript compilers = duplicated constants, no easy code sharing
 
-Let's fill these gaps so Astro can stand on its own.
+Astroscope packages are designed to turn the standalone Astro into a production-ready web server with minimal complexity.
 
 ## Packages
 

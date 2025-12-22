@@ -1,5 +1,5 @@
-import { Agent } from "undici";
-import type { ClientOptions } from "./types.js";
+import { Agent } from 'undici';
+import type { ClientOptions } from './types.js';
 
 const DEFAULT_CLIENT_OPTIONS: Required<ClientOptions> = {
   pipelining: 10,

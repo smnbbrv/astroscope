@@ -1,15 +1,14 @@
-import type { APIContext } from "astro";
-import type { Agent } from "undici";
-import { request as undiciRequest } from "undici";
-import { createHttpAgent } from "./client.js";
-import type { ProxyOptions } from "./types.js";
+import type { APIContext } from 'astro';
+import { type Agent, request as undiciRequest } from 'undici';
+import { createHttpAgent } from './client.js';
+import type { ProxyOptions } from './types.js';
 
 /**
  * Creates an Astro API route handler that proxies requests to an upstream server.
  *
  * @example
  * ```ts
- * // src/pages/[...proxy].ts
+ * // src/pages/[...legacy].ts
  * import { createProxyHandler } from '@astroscope/proxy';
  *
  * export const ALL = createProxyHandler({
@@ -24,14 +23,12 @@ export function createProxyHandler(options: ProxyOptions) {
   return async (context: APIContext): Promise<Response> => {
     const { request } = context;
 
-    // Build target URL
     const targetUrl = new URL(request.url);
     targetUrl.protocol = upstreamUrl.protocol;
     targetUrl.hostname = upstreamUrl.hostname;
     targetUrl.port = upstreamUrl.port;
 
     try {
-      // Allow request modification or short-circuit
       if (options.onRequest) {
         const result = await options.onRequest(request, targetUrl);
         if (result instanceof Response) {
@@ -53,9 +50,9 @@ export function createProxyHandler(options: ProxyOptions) {
         }
       }
 
-      return new Response("Upstream is down", {
+      return new Response('Upstream is down', {
         status: 502,
-        headers: { "Content-Type": "text/plain" },
+        headers: { 'Content-Type': 'text/plain' },
       });
     }
   };
@@ -65,26 +62,23 @@ async function proxyRequest(
   request: Request,
   targetUrl: URL,
   httpAgent: Agent,
-  options: ProxyOptions
+  options: ProxyOptions,
 ): Promise<Response> {
   const { method, body, headers: reqHeaders } = request;
 
-  // Prepare headers with host rewrite
   const headers = new Headers(reqHeaders);
-  headers.set("host", targetUrl.host);
+  headers.set('host', targetUrl.host);
 
-  // Make upstream request
   const upstreamResponse = await undiciRequest(targetUrl, {
     method,
     headers: Object.fromEntries(headers.entries()),
-    body: method !== "GET" && method !== "HEAD" ? (body as never) : null,
+    body: method !== 'GET' && method !== 'HEAD' ? (body as never) : null,
     dispatcher: httpAgent,
     signal: request.signal,
   });
 
   const { statusCode, headers: resHeaders, body: resBody } = upstreamResponse;
 
-  // Convert response headers
   const responseHeaders = new Headers();
   for (const [key, value] of Object.entries(resHeaders)) {
     if (Array.isArray(value)) {
@@ -94,7 +88,6 @@ async function proxyRequest(
     }
   }
 
-  // 204 and 304 responses must not have a body
   if (statusCode === 204 || statusCode === 304) {
     resBody.destroy();
     const response = new Response(null, {
@@ -104,7 +97,6 @@ async function proxyRequest(
     return maybeTransformResponse(response, targetUrl, options);
   }
 
-  // Convert undici body to Web ReadableStream
   const stream = new ReadableStream({
     start(controller) {
       let closed = false;
@@ -116,12 +108,11 @@ async function proxyRequest(
         }
       };
 
-      // Handle request cancellation
       if (request.signal) {
-        request.signal.addEventListener("abort", cleanup);
+        request.signal.addEventListener('abort', cleanup);
       }
 
-      resBody.on("data", (chunk) => {
+      resBody.on('data', (chunk) => {
         if (!closed && !request.signal?.aborted) {
           try {
             controller.enqueue(chunk);
@@ -131,18 +122,18 @@ async function proxyRequest(
         }
       });
 
-      resBody.on("end", () => {
+      resBody.on('end', () => {
         if (!closed && !request.signal?.aborted) {
           closed = true;
           try {
             controller.close();
           } catch {
-            // Controller might already be closed due to cancellation
+            // controller might already be closed due to cancellation
           }
         }
       });
 
-      resBody.on("error", (err) => {
+      resBody.on('error', (err) => {
         cleanup();
         if (!closed) {
           controller.error(err);
@@ -151,24 +142,18 @@ async function proxyRequest(
     },
   });
 
-  const response = new Response(stream, {
-    status: statusCode,
-    headers: responseHeaders,
-  });
+  const response = new Response(stream, { status: statusCode, headers: responseHeaders });
 
   return maybeTransformResponse(response, targetUrl, options);
 }
 
-async function maybeTransformResponse(
-  response: Response,
-  targetUrl: URL,
-  options: ProxyOptions
-): Promise<Response> {
+async function maybeTransformResponse(response: Response, targetUrl: URL, options: ProxyOptions): Promise<Response> {
   if (options.onResponse) {
     const result = await options.onResponse(response, targetUrl);
     if (result instanceof Response) {
       return result;
     }
   }
+
   return response;
 }

@@ -1,53 +1,40 @@
-import type { APIContext, MiddlewareHandler } from "astro";
-import {
-  SpanKind,
-  SpanStatusCode,
-  context,
-  propagation,
-  trace,
-  type SpanOptions,
-} from "@opentelemetry/api";
-import { type RPCMetadata, RPCType, setRPCMetadata } from "@opentelemetry/core";
-import type { OpenTelemetryMiddlewareOptions, ExcludePattern } from "./types.js";
-import {
-  recordHttpRequestStart,
-  recordHttpRequestDuration,
-  recordActionDuration,
-} from "./metrics.js";
+import { SpanKind, type SpanOptions, SpanStatusCode, context, propagation, trace } from '@opentelemetry/api';
+import { type RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
+import type { APIContext, MiddlewareHandler } from 'astro';
+import { recordActionDuration, recordHttpRequestDuration, recordHttpRequestStart } from './metrics.js';
+import type { ExcludePattern, OpenTelemetryMiddlewareOptions } from './types.js';
 
-const LIB_NAME = "@astroscope/opentelemetry";
-const ACTIONS_PREFIX = "/_actions/";
+const LIB_NAME = '@astroscope/opentelemetry';
+const ACTIONS_PREFIX = '/_actions/';
 
 function matchesPattern(path: string, pattern: ExcludePattern): boolean {
-  if ("pattern" in pattern) {
+  if ('pattern' in pattern) {
     return pattern.pattern.test(path);
   }
-  if ("prefix" in pattern) {
+
+  if ('prefix' in pattern) {
     return path.startsWith(pattern.prefix);
   }
+
   return path === pattern.exact;
 }
 
-function shouldExclude(
-  ctx: APIContext,
-  exclude: OpenTelemetryMiddlewareOptions["exclude"]
-): boolean {
+function shouldExclude(ctx: APIContext, exclude: OpenTelemetryMiddlewareOptions['exclude']): boolean {
   if (!exclude) return false;
 
-  if (typeof exclude === "function") {
+  if (typeof exclude === 'function') {
     return exclude(ctx);
   }
 
-  const path = ctx.url.pathname;
-  return exclude.some((pattern) => matchesPattern(path, pattern));
+  return exclude.some((pattern) => matchesPattern(ctx.url.pathname, pattern));
 }
 
 function getClientIp(request: Request): string | undefined {
-  // Try common proxy headers in order of preference
   return (
-    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    request.headers.get("x-real-ip") ??
-    request.headers.get("cf-connecting-ip") ?? // Cloudflare
+    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
+    request.headers.get('x-real-ip') ??
+    request.headers.get('cf-connecting-ip') ??
+    // no native ip address access in Astro available
     undefined
   );
 }
@@ -68,9 +55,7 @@ function getClientIp(request: Request): string | undefined {
  * );
  * ```
  */
-export function createOpenTelemetryMiddleware(
-  options: OpenTelemetryMiddlewareOptions = {}
-): MiddlewareHandler {
+export function createOpenTelemetryMiddleware(options: OpenTelemetryMiddlewareOptions = {}): MiddlewareHandler {
   const tracer = trace.getTracer(LIB_NAME);
 
   return async (ctx, next) => {
@@ -81,135 +66,112 @@ export function createOpenTelemetryMiddleware(
     const startTime = performance.now();
 
     const { request, url } = ctx;
-
-    // Extract trace context from incoming headers
-    const input = {
-      traceparent: request.headers.get("traceparent"),
-      tracestate: request.headers.get("tracestate"),
-    };
+    const input = { traceparent: request.headers.get('traceparent'), tracestate: request.headers.get('tracestate') };
     const parentContext = propagation.extract(context.active(), input);
-
+    const contentLength = request.headers.get('content-length');
     const clientIp = getClientIp(request);
-
-    const contentLength = request.headers.get("content-length");
 
     const spanOptions: SpanOptions = {
       attributes: {
-        "http.request.method": request.method,
-        "url.full": request.url,
-        "url.path": url.pathname,
-        "url.query": url.search.slice(1), // Remove leading "?"
-        "url.scheme": url.protocol.replace(":", ""),
-        "server.address": url.hostname,
-        "server.port": url.port ? parseInt(url.port) : (url.protocol === "https:" ? 443 : 80),
-        "user_agent.original": request.headers.get("user-agent") ?? "",
-        ...(contentLength && { "http.request.body.size": parseInt(contentLength) }),
-        ...(clientIp && { "client.address": clientIp }),
+        'http.request.method': request.method,
+        'url.full': request.url,
+        'url.path': url.pathname,
+        'url.query': url.search.slice(1),
+        'url.scheme': url.protocol.replace(':', ''),
+        'server.address': url.hostname,
+        'server.port': url.port ? parseInt(url.port) : url.protocol === 'https:' ? 443 : 80,
+        'user_agent.original': request.headers.get('user-agent') ?? '',
+        ...(contentLength && { 'http.request.body.size': parseInt(contentLength) }),
+        ...(clientIp && { 'client.address': clientIp }),
       },
       kind: SpanKind.SERVER,
     };
 
-    // Detect Astro actions and use a cleaner span name
     const isAction = url.pathname.startsWith(ACTIONS_PREFIX);
-    const actionName = url.pathname.slice(ACTIONS_PREFIX.length).replace(/\/$/, "");
-    const spanName = isAction
-      ? `ACTION ${actionName}`
-      : `${request.method} ${url.pathname}`;
-
+    const actionName = url.pathname.slice(ACTIONS_PREFIX.length).replace(/\/$/, '');
+    const spanName = isAction ? `ACTION ${actionName}` : `${request.method} ${url.pathname}`;
     const span = tracer.startSpan(spanName, spanOptions, parentContext);
-
     const spanContext = trace.setSpan(parentContext, span);
     const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span };
 
     const endActiveRequest = recordHttpRequestStart({ method: request.method, route: url.pathname });
 
-    return context.with(
-      setRPCMetadata(spanContext, rpcMetadata),
-      async () => {
-        const finalize = (status: number, responseSize: number) => {
-          span.setAttribute("http.response.status_code", status);
-          span.setAttribute("http.response.body.size", responseSize);
+    return context.with(setRPCMetadata(spanContext, rpcMetadata), async () => {
+      const finalize = (status: number, responseSize: number) => {
+        span.setAttribute('http.response.status_code', status);
+        span.setAttribute('http.response.body.size', responseSize);
 
-          if (status >= 400) {
-            span.setStatus({
-              code: SpanStatusCode.ERROR,
-              message: `HTTP ${status}`,
-            });
-          } else {
-            span.setStatus({ code: SpanStatusCode.OK });
-          }
-
-          span.end();
-
-          endActiveRequest();
-
-          const duration = performance.now() - startTime;
-
-          recordHttpRequestDuration(
-            { method: request.method, route: url.pathname, status },
-            duration
-          );
-
-          if (isAction) {
-            recordActionDuration({ name: actionName, status }, duration);
-          }
-        };
-
-        try {
-          const response = await next();
-
-          // No body - finalize immediately
-          if (!response.body) {
-            finalize(response.status, 0);
-            return response;
-          }
-
-          // Stream body - tee to measure size
-          const [measureStream, clientStream] = response.body.tee();
-
-          let responseSize = 0;
-
-          // Consume measure stream in background (non-blocking)
-          (async () => {
-            const reader = measureStream.getReader();
-            try {
-              while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                responseSize += value.length;
-              }
-            } finally {
-              finalize(response.status, responseSize);
-            }
-          })();
-
-          return new Response(clientStream, {
-            status: response.status,
-            headers: response.headers,
-          });
-        } catch (e) {
+        if (status >= 400) {
           span.setStatus({
             code: SpanStatusCode.ERROR,
-            message: e instanceof Error ? e.message : "Unknown error",
+            message: `HTTP ${status}`,
           });
-          span.end();
-
-          endActiveRequest();
-
-          const duration = performance.now() - startTime;
-
-          recordHttpRequestDuration(
-            { method: request.method, route: url.pathname, status: 500 },
-            duration
-          );
-
-          if (isAction) {
-            recordActionDuration({ name: actionName, status: 500 }, duration);
-          }
-
-          throw e;
+        } else {
+          span.setStatus({ code: SpanStatusCode.OK });
         }
+
+        span.end();
+
+        endActiveRequest();
+
+        const duration = performance.now() - startTime;
+
+        recordHttpRequestDuration({ method: request.method, route: url.pathname, status }, duration);
+
+        if (isAction) {
+          recordActionDuration({ name: actionName, status }, duration);
+        }
+      };
+
+      try {
+        const response = await next();
+
+        if (!response.body) {
+          finalize(response.status, 0);
+          return response;
+        }
+
+        const [measureStream, clientStream] = response.body.tee();
+
+        let responseSize = 0;
+
+        (async () => {
+          const reader = measureStream.getReader();
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              responseSize += value.length;
+            }
+          } finally {
+            finalize(response.status, responseSize);
+          }
+        })();
+
+        return new Response(clientStream, {
+          status: response.status,
+          headers: response.headers,
+        });
+      } catch (e) {
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: e instanceof Error ? e.message : 'Unknown error',
+        });
+
+        span.end();
+
+        endActiveRequest();
+
+        const duration = performance.now() - startTime;
+
+        recordHttpRequestDuration({ method: request.method, route: url.pathname, status: 500 }, duration);
+
+        if (isAction) {
+          recordActionDuration({ name: actionName, status: 500 }, duration);
+        }
+
+        throw e;
       }
-    );
+    });
   };
 }

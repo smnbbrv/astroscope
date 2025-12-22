@@ -1,35 +1,32 @@
-import type { ExcludePattern } from "./types.js";
+import type { ExcludePattern } from './types.js';
 
 /**
  * Vite/Astro dev server paths - only relevant in development.
  */
 export const DEV_EXCLUDES: ExcludePattern[] = [
-  { prefix: "/@id/" },
-  { prefix: "/@fs/" },
-  { prefix: "/@vite/" },
-  { prefix: "/src/" },
-  { prefix: "/node_modules/" },
+  { prefix: '/@id/' },
+  { prefix: '/@fs/' },
+  { prefix: '/@vite/' },
+  { prefix: '/src/' },
+  { prefix: '/node_modules/' },
 ];
 
 /**
  * Astro internal paths for static assets and image optimization.
  */
-export const ASTRO_STATIC_EXCLUDES: ExcludePattern[] = [
-  { prefix: "/_astro/" },
-  { prefix: "/_image" },
-];
+export const ASTRO_STATIC_EXCLUDES: ExcludePattern[] = [{ prefix: '/_astro/' }, { prefix: '/_image' }];
 
 /**
  * Common static asset paths.
  */
 export const STATIC_EXCLUDES: ExcludePattern[] = [
-  { exact: "/favicon.ico" },
-  { exact: "/robots.txt" },
-  { exact: "/sitemap.xml" },
-  { exact: "/browserconfig.xml" },
-  { exact: "/manifest.json" },
-  { exact: "/manifest.webmanifest" },
-  { prefix: "/.well-known/" },
+  { exact: '/favicon.ico' },
+  { exact: '/robots.txt' },
+  { exact: '/sitemap.xml' },
+  { exact: '/browserconfig.xml' },
+  { exact: '/manifest.json' },
+  { exact: '/manifest.webmanifest' },
+  { prefix: '/.well-known/' },
 ];
 
 /**
@@ -46,8 +43,4 @@ export const STATIC_EXCLUDES: ExcludePattern[] = [
  * })
  * ```
  */
-export const RECOMMENDED_EXCLUDES: ExcludePattern[] = [
-  ...DEV_EXCLUDES,
-  ...ASTRO_STATIC_EXCLUDES,
-  ...STATIC_EXCLUDES,
-];
+export const RECOMMENDED_EXCLUDES: ExcludePattern[] = [...DEV_EXCLUDES, ...ASTRO_STATIC_EXCLUDES, ...STATIC_EXCLUDES];
