@@ -30,17 +30,23 @@ export default defineConfig({
 By default, `RECOMMENDED_EXCLUDES` (static assets like `/_astro/`) are excluded. To customize:
 
 ```ts
+// astro.config.ts
 import pino from '@astroscope/pino';
 import { RECOMMENDED_EXCLUDES } from '@astroscope/excludes';
+import { defineConfig } from 'astro/config';
 
-pino({
-  exclude: [...RECOMMENDED_EXCLUDES, { exact: '/health' }],
-})
+export default defineConfig({
+  integrations: [
+    pino({
+      exclude: [...RECOMMENDED_EXCLUDES, { exact: '/health' }],
+    }),
+  ],
+});
 ```
 
 ### Custom Logger Configuration
 
-For custom configuration (e.g., reading from environment variables at runtime), use `initLogger` in boot.ts:
+For custom configuration (e.g., reading from environment variables at runtime), use `initLogger` in boot.ts. This requires the [@astroscope/boot](https://github.com/smnbbrv/astroscope/tree/main/packages/boot) integration:
 
 ```ts
 // src/boot.ts
@@ -55,6 +61,8 @@ export function onStartup() {
 ```
 
 ### Manual Middleware
+
+If you need full control over middleware ordering, you can use `createPinoMiddleware` directly instead of the integration. When using manual middleware, do not add the pino integration to your astro.config.ts.
 
 ```ts
 // src/middleware.ts
