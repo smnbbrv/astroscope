@@ -1,0 +1,141 @@
+# @astroscope/pino
+
+Pino integration middleware for Astro SSR. Provides request-scoped logging with a familiar pino-http style API.
+
+## Features
+
+- **inspired by pino-http** - same log structure, messages, and field names
+- **request-scoped logging** - via AsyncLocalStorage
+
+## Installation
+
+```bash
+npm install @astroscope/pino pino @astroscope/excludes
+```
+
+## Quick Start
+
+### Integration
+
+```ts
+// astro.config.ts
+import pino from '@astroscope/pino';
+import { defineConfig } from 'astro/config';
+
+export default defineConfig({
+  integrations: [pino()],
+});
+```
+
+By default, `RECOMMENDED_EXCLUDES` (static assets like `/_astro/`) are excluded. To customize:
+
+```ts
+import pino from '@astroscope/pino';
+import { RECOMMENDED_EXCLUDES } from '@astroscope/excludes';
+
+pino({
+  exclude: [...RECOMMENDED_EXCLUDES, { exact: '/health' }],
+})
+```
+
+### Custom Logger Configuration
+
+For custom configuration (e.g., reading from environment variables at runtime), use `initLogger` in boot.ts:
+
+```ts
+// src/boot.ts
+import pino from 'pino';
+import { initLogger } from '@astroscope/pino';
+
+export function onStartup() {
+  initLogger({
+    level: process.env.LOG_LEVEL ?? 'info',
+  });
+}
+```
+
+### Manual Middleware
+
+```ts
+// src/middleware.ts
+import { sequence } from 'astro:middleware';
+import { createPinoMiddleware } from '@astroscope/pino';
+import { RECOMMENDED_EXCLUDES } from '@astroscope/excludes';
+
+export const onRequest = sequence(
+  createPinoMiddleware({
+    exclude: [...RECOMMENDED_EXCLUDES, { exact: '/health' }],
+  }),
+);
+```
+
+## Logger API
+
+### `log`
+
+Context-aware logger with getter-based API. Automatically uses request context when available.
+
+```ts
+import { log } from '@astroscope/pino';
+
+export async function GET() {
+  log.info('handling request');
+  log.info({ userId: 123 }, 'user logged in');
+  return new Response('ok');
+}
+```
+
+### `log.child(bindings)`
+
+Create a child logger with additional context.
+
+```ts
+import { log } from '@astroscope/pino';
+
+async function queryDatabase() {
+  const dbLog = log.child({ component: 'db' });
+  dbLog.debug('executing query');
+}
+```
+
+### `log.raw`
+
+Access the current context's raw pino Logger when you need full pino API.
+
+```ts
+import { log } from '@astroscope/pino';
+
+log.raw.level; // 'info'
+log.raw.bindings(); // { reqId: 'abc123' }
+log.raw.isLevelEnabled('debug');
+```
+
+### `log.root`
+
+Access the root logger (without request context bindings).
+
+```ts
+import { log } from '@astroscope/pino';
+
+// useful for startup/shutdown messages
+log.root.info('server starting');
+```
+
+### `initLogger(logger | options)`
+
+Override the root logger. Call this in boot.ts for custom configuration.
+
+```ts
+import pino from 'pino';
+import { initLogger } from '@astroscope/pino';
+
+// pass a pino instance
+initLogger(pino({ level: 'debug' }));
+
+// or pass options
+initLogger({ level: 'debug' });
+```
+
+## License
+
+MIT

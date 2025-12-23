@@ -1,16 +1,9 @@
+import { serializeExcludePatterns } from '@astroscope/excludes';
 import type { AstroIntegration } from 'astro';
-import type { CsrfIntegrationOptions, ExcludePattern } from './types.js';
+import type { CsrfIntegrationOptions } from './types.js';
 
 const VIRTUAL_MODULE_ID = 'virtual:@astroscope/csrf/config';
 const RESOLVED_VIRTUAL_MODULE_ID = `\0${VIRTUAL_MODULE_ID}`;
-
-/**
- * Serialize exclude patterns to JavaScript code.
- * Handles RegExp objects which JSON.stringify cannot serialize.
- */
-function serializeExcludePatterns(patterns: ExcludePattern[]): string {
-  return `[${patterns.map((p) => ('pattern' in p ? `{ pattern: ${p.pattern.toString()} }` : JSON.stringify(p))).join(', ')}]`;
-}
 
 /**
  * Astro integration for CSRF protection.
@@ -23,7 +16,7 @@ function serializeExcludePatterns(patterns: ExcludePattern[]): string {
  * ```ts
  * // astro.config.ts
  * import { defineConfig } from "astro/config";
- * import { csrf } from "@astroscope/csrf";
+ * import csrf from "@astroscope/csrf";
  *
  * export default defineConfig({
  *   integrations: [
@@ -50,7 +43,7 @@ function serializeExcludePatterns(patterns: ExcludePattern[]): string {
  * })
  * ```
  */
-export function csrf(options: CsrfIntegrationOptions): AstroIntegration {
+export default function csrf(options: CsrfIntegrationOptions): AstroIntegration {
   const enabled = options.enabled ?? true;
   const excludePatterns = Array.isArray(options.exclude) ? options.exclude : [];
   const trustProxy = 'trustProxy' in options;

@@ -74,7 +74,7 @@ Note, since this integration creates spans directly, you don't need to
 // astro.config.ts
 import { defineConfig } from "astro/config";
 import boot from "@astroscope/boot";
-import { opentelemetry } from "@astroscope/opentelemetry";
+import opentelemetry from "@astroscope/opentelemetry";
 
 export default defineConfig({
   integrations: [opentelemetry(), boot()], // opentelemetry() should come as early as possible in the list
@@ -336,10 +336,8 @@ exclude: [
 | `STATIC_EXCLUDES` | Common static files (`/assets/`, `/favicon.ico`, etc.) |
 
 ```ts
-import {
-  opentelemetry,
-  RECOMMENDED_EXCLUDES,
-} from "@astroscope/opentelemetry";
+import opentelemetry from "@astroscope/opentelemetry";
+import { RECOMMENDED_EXCLUDES } from "@astroscope/excludes";
 
 opentelemetry({
   instrumentations: {

@@ -1,17 +1,14 @@
 import node from '@astrojs/node';
-import csrf from '@astroscope/csrf';
+import { RECOMMENDED_EXCLUDES } from '@astroscope/excludes';
+import pino from '@astroscope/pino';
 import { defineConfig } from 'astro/config';
 
 export default defineConfig({
   output: 'server',
   adapter: node({ mode: 'standalone' }),
   integrations: [
-    csrf({
-      trustProxy: true,
-      exclude: [
-        { prefix: '/auth/' }, // OIDC callbacks
-        { exact: '/webhook' }, // Payment webhooks
-      ],
+    pino({
+      exclude: [...RECOMMENDED_EXCLUDES, { exact: '/health' }],
     }),
   ],
 });

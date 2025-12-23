@@ -23,7 +23,7 @@ The recommended approach - automatically configures middleware and disables Astr
 ```ts
 // astro.config.ts
 import { defineConfig } from "astro/config";
-import { csrf } from "@astroscope/csrf";
+import csrf from "@astroscope/csrf";
 
 export default defineConfig({
   integrations: [

@@ -1,7 +1,7 @@
 {
-  "name": "@astroscope/csrf",
-  "version": "0.2.0",
-  "description": "CSRF protection integration for Astro with path exclusions and proxy support",
+  "name": "@astroscope/excludes",
+  "version": "0.1.0",
+  "description": "Shared exclude patterns for Astro middleware packages",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -9,10 +9,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./middleware": {
-      "types": "./dist/middleware-entrypoint.d.ts",
-      "import": "./dist/middleware-entrypoint.js"
     }
   },
   "files": [
@@ -25,26 +21,25 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/smnbbrv/astroscope.git",
-    "directory": "packages/csrf"
+    "directory": "packages/excludes"
   },
   "keywords": [
     "astro",
-    "astro-integration",
-    "csrf",
-    "security",
-    "middleware"
+    "middleware",
+    "excludes",
+    "patterns"
   ],
   "author": "smnbbrv",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/smnbbrv/astroscope/issues"
   },
-  "homepage": "https://github.com/smnbbrv/astroscope/tree/main/packages/csrf#readme",
+  "homepage": "https://github.com/smnbbrv/astroscope/tree/main/packages/excludes#readme",
   "scripts": {
-    "build": "tsup src/index.ts src/middleware-entrypoint.ts --format esm --dts --external virtual:@astroscope/csrf/config",
+    "build": "tsup src/index.ts --format esm --dts",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint 'src/**/*.{ts,tsx}'",
-    "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix"
+    "lint": "eslint 'src/**/*.ts'",
+    "lint:fix": "eslint 'src/**/*.ts' --fix"
   },
   "devDependencies": {
     "astro": "^5.1.0",
@@ -52,7 +47,6 @@
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "@astroscope/excludes": "workspace:*",
     "astro": "^5.0.0"
   }
 }

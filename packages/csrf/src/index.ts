@@ -1,3 +1,3 @@
-export { csrf } from './integration.js';
+export { default } from './integration.js';
 export { createCsrfMiddleware } from './middleware.js';
-export type { CsrfIntegrationOptions, CsrfMiddlewareOptions, ExcludePattern } from './types.js';
+export type { CsrfIntegrationOptions, CsrfMiddlewareOptions } from './types.js';

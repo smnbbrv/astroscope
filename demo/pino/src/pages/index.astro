@@ -1,0 +1,89 @@
+---
+import { log } from '@astroscope/pino';
+
+log.info('rendering index page');
+
+const dbLog = log.child({ component: 'db' });
+
+dbLog.debug('simulating database query');
+
+await new Promise((resolve) => setTimeout(resolve, 50));
+
+log.info({ duration: 50 }, 'work completed');
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Pino Logging Demo</title>
+    <style>
+      body {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        font-family: system-ui, sans-serif;
+        line-height: 1.6;
+      }
+      h1 {
+        border-bottom: 2px solid #333;
+        padding-bottom: 0.5rem;
+      }
+      code {
+        background: #f4f4f4;
+        padding: 0.2rem 0.4rem;
+        border-radius: 3px;
+      }
+      pre {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+      }
+      .section {
+        margin: 1.5rem 0;
+        padding: 1rem;
+        background: #fafafa;
+        border-radius: 8px;
+      }
+      ul {
+        padding-left: 1.5rem;
+      }
+      li {
+        margin: 0.5rem 0;
+      }
+      a {
+        color: #0066cc;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Pino Logging Demo</h1>
+    <p>
+      This demo showcases <code>@astroscope/pino</code> HTTP logging. Check your console for structured JSON logs.
+    </p>
+
+    <h2>Features</h2>
+    <div class="section">
+      <ul>
+        <li><strong>pino-http compliant</strong> - Same log structure and messages</li>
+        <li><strong>Request-scoped logging</strong> - Via AsyncLocalStorage</li>
+        <li><strong>Automatic request logging</strong> - "request completed" with timing</li>
+        <li><strong>Log levels by status</strong> - info for 2xx/3xx, warn for 4xx, error for 5xx</li>
+      </ul>
+    </div>
+
+    <h2>Test Endpoints</h2>
+    <div class="section">
+      <ul>
+        <li><a href="/">GET /</a> - This page (200 OK, info level)</li>
+        <li><a href="/api/data">GET /api/data</a> - API endpoint with custom logging</li>
+        <li><a href="/api/slow">GET /api/slow</a> - Slow endpoint (300ms delay)</li>
+        <li><a href="/api/error">GET /api/error</a> - Error endpoint (500, error level)</li>
+        <li><a href="/not-found">GET /not-found</a> - 404 page (warn level)</li>
+        <li><a href="/health">GET /health</a> - Excluded from logging</li>
+      </ul>
+    </div>
+  </body>
+</html>

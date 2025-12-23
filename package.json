@@ -12,6 +12,7 @@
     "lint:fix": "bun run --filter '*' lint:fix",
     "typecheck": "bun run --filter '*' typecheck",
     "test": "bun test",
+    "validate": "bun test && bun run lint && bun run typecheck",
     "dev": "bun run --cwd demo/boot dev",
     "ci:version": "changeset version && bun update",
     "ci:publish": "for dir in packages/*; do (cd \"$dir\" && npm publish --access public --provenance || true); done && changeset tag"

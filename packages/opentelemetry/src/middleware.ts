@@ -1,33 +1,12 @@
+import { shouldExclude } from '@astroscope/excludes';
 import { SpanKind, type SpanOptions, SpanStatusCode, context, propagation, trace } from '@opentelemetry/api';
 import { type RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
-import type { APIContext, MiddlewareHandler } from 'astro';
+import type { MiddlewareHandler } from 'astro';
 import { recordActionDuration, recordHttpRequestDuration, recordHttpRequestStart } from './metrics.js';
-import type { ExcludePattern, OpenTelemetryMiddlewareOptions } from './types.js';
+import type { OpenTelemetryMiddlewareOptions } from './types.js';
 
 const LIB_NAME = '@astroscope/opentelemetry';
 const ACTIONS_PREFIX = '/_actions/';
-
-function matchesPattern(path: string, pattern: ExcludePattern): boolean {
-  if ('pattern' in pattern) {
-    return pattern.pattern.test(path);
-  }
-
-  if ('prefix' in pattern) {
-    return path.startsWith(pattern.prefix);
-  }
-
-  return path === pattern.exact;
-}
-
-function shouldExclude(ctx: APIContext, exclude: OpenTelemetryMiddlewareOptions['exclude']): boolean {
-  if (!exclude) return false;
-
-  if (typeof exclude === 'function') {
-    return exclude(ctx);
-  }
-
-  return exclude.some((pattern) => matchesPattern(ctx.url.pathname, pattern));
-}
 
 function getClientIp(request: Request): string | undefined {
   return (

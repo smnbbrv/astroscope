@@ -1,19 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { type ExcludePattern, RECOMMENDED_EXCLUDES, serializeExcludePatterns } from '@astroscope/excludes';
 import type { AstroIntegration } from 'astro';
-import { RECOMMENDED_EXCLUDES } from './excludes.js';
-import type { ExcludePattern } from './types.js';
 
 const VIRTUAL_MODULE_ID = 'virtual:@astroscope/opentelemetry/config';
 const RESOLVED_VIRTUAL_MODULE_ID = `\0${VIRTUAL_MODULE_ID}`;
-
-/**
- * Serialize exclude patterns to JavaScript code.
- * Handles RegExp objects which JSON.stringify cannot serialize.
- */
-function serializeExcludePatterns(patterns: ExcludePattern[]): string {
-  return `[${patterns.map((p) => ('pattern' in p ? `{ pattern: ${p.pattern.toString()} }` : JSON.stringify(p))).join(', ')}]`;
-}
 
 export interface OpenTelemetryIntegrationOptions {
   /**
@@ -49,7 +40,7 @@ export interface OpenTelemetryIntegrationOptions {
  * ```ts
  * // astro.config.ts
  * import { defineConfig } from "astro/config";
- * import { opentelemetry } from "@astroscope/opentelemetry";
+ * import opentelemetry from "@astroscope/opentelemetry";
  *
  * export default defineConfig({
  *   integrations: [opentelemetry()],
@@ -82,7 +73,7 @@ export interface OpenTelemetryIntegrationOptions {
  * })
  * ```
  */
-export function opentelemetry(options: OpenTelemetryIntegrationOptions = {}): AstroIntegration {
+export default function opentelemetry(options: OpenTelemetryIntegrationOptions = {}): AstroIntegration {
   const httpConfig = options.instrumentations?.http ?? {
     enabled: true,
     exclude: RECOMMENDED_EXCLUDES,

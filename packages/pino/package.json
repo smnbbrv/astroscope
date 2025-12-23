@@ -1,7 +1,7 @@
 {
-  "name": "@astroscope/opentelemetry",
-  "version": "0.2.0",
-  "description": "OpenTelemetry tracing middleware for Astro SSR",
+  "name": "@astroscope/pino",
+  "version": "0.1.0",
+  "description": "Pino HTTP logging middleware for Astro SSR",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -13,14 +13,10 @@
     "./middleware": {
       "types": "./dist/middleware-entrypoint.d.ts",
       "import": "./dist/middleware-entrypoint.js"
-    },
-    "./components": {
-      "import": "./src/components/index.ts"
     }
   },
   "files": [
-    "dist",
-    "src/components"
+    "dist"
   ],
   "sideEffects": false,
   "publishConfig": {
@@ -29,41 +25,38 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/smnbbrv/astroscope.git",
-    "directory": "packages/opentelemetry"
+    "directory": "packages/pino"
   },
   "keywords": [
     "astro",
     "astro-integration",
-    "opentelemetry",
-    "tracing",
-    "observability",
+    "pino",
+    "logging",
+    "http",
     "middleware",
-    "analytics",
-    "performance"
+    "observability"
   ],
   "author": "smnbbrv",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/smnbbrv/astroscope/issues"
   },
-  "homepage": "https://github.com/smnbbrv/astroscope/tree/main/packages/opentelemetry#readme",
+  "homepage": "https://github.com/smnbbrv/astroscope/tree/main/packages/pino#readme",
   "scripts": {
-    "build": "tsup src/index.ts src/middleware-entrypoint.ts --format esm --dts --external virtual:@astroscope/opentelemetry/config",
+    "build": "tsup src/index.ts src/middleware-entrypoint.ts --format esm --dts --external virtual:@astroscope/pino/config",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint 'src/**/*.{ts,tsx,astro}'",
-    "lint:fix": "eslint 'src/**/*.{ts,tsx,astro}' --fix"
+    "lint": "eslint 'src/**/*.ts'",
+    "lint:fix": "eslint 'src/**/*.ts' --fix"
   },
   "devDependencies": {
-    "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/core": "^2.2.0",
     "astro": "^5.1.0",
+    "pino": "^10.1.0",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "@astroscope/excludes": "workspace:*",
-    "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/core": "^2.0.0",
-    "astro": "^5.0.0"
+    "astro": "^5.0.0",
+    "pino": "^10.0.0"
   }
 }

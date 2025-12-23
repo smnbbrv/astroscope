@@ -1,6 +1,5 @@
+import type { ExcludePattern } from '@astroscope/excludes';
 import type { APIContext } from 'astro';
-
-export type ExcludePattern = { pattern: RegExp } | { prefix: string } | { exact: string };
 
 export interface OpenTelemetryMiddlewareOptions {
   /**

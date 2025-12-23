@@ -10,12 +10,13 @@
     "build": "astro build",
     "preview": "astro preview",
     "typecheck": "astro check",
-    "lint": "eslint 'src/**/*.{ts,tsx,astro}'",
-    "lint:fix": "eslint 'src/**/*.{ts,tsx,astro}' --fix"
+    "lint": "eslint 'src/**/*.{ts,tsx,astro}' astro.config.ts",
+    "lint:fix": "eslint 'src/**/*.{ts,tsx,astro}' astro.config.ts --fix"
   },
   "dependencies": {
     "@astrojs/node": "^9.0.0",
     "@astroscope/boot": "workspace:*",
+    "@astroscope/excludes": "workspace:*",
     "@astroscope/opentelemetry": "workspace:*",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/sdk-node": "^0.208.0",
