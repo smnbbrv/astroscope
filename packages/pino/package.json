@@ -49,7 +49,6 @@
     "lint:fix": "eslint 'src/**/*.ts' --fix"
   },
   "devDependencies": {
-    "@astroscope/excludes": "workspace:*",
     "astro": "^5.1.0",
     "pino": "^10.1.0",
     "tsup": "^8.5.1",

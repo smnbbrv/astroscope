@@ -7,7 +7,7 @@
     "demo/*"
   ],
   "scripts": {
-    "build": "bun run --filter '*' build",
+    "build": "bun run --filter '@astroscope/excludes' build && bun run --filter '!@astroscope/excludes' build",
     "lint": "bun run --filter '*' lint",
     "lint:fix": "bun run --filter '*' lint:fix",
     "typecheck": "bun run --filter '*' typecheck",
