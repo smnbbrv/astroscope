@@ -65,7 +65,6 @@ Common static files:
 - `/browserconfig.xml`
 - `/manifest.json`
 - `/manifest.webmanifest`
-- `/.well-known/*`
 
 ## Pattern Types
 
