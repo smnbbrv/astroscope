@@ -1,5 +1,11 @@
 # @astroscope/pino
 
+## 0.1.2
+
+### Patch Changes
+
+- fix internal package references
+
 ## 0.1.1
 
 ### Patch Changes

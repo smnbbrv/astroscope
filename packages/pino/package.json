@@ -1,6 +1,6 @@
 {
   "name": "@astroscope/pino",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Pino HTTP logging middleware for Astro SSR",
   "type": "module",
   "main": "./dist/index.js",
@@ -55,7 +55,7 @@
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "@astroscope/excludes": "workspace:*",
+    "@astroscope/excludes": "^0.1.0",
     "astro": "^5.0.0",
     "pino": "^10.0.0"
   }

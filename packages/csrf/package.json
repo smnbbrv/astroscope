@@ -1,6 +1,6 @@
 {
   "name": "@astroscope/csrf",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "CSRF protection integration for Astro with path exclusions and proxy support",
   "type": "module",
   "main": "./dist/index.js",
@@ -52,7 +52,7 @@
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "@astroscope/excludes": "workspace:*",
+    "@astroscope/excludes": "^0.1.0",
     "astro": "^5.0.0"
   }
 }
