@@ -28,7 +28,6 @@ export const STATIC_EXCLUDES: ExcludePattern[] = [
   { exact: '/browserconfig.xml' },
   { exact: '/manifest.json' },
   { exact: '/manifest.webmanifest' },
-  { prefix: '/.well-known/' },
 ];
 
 /**
