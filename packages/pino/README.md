@@ -1,6 +1,6 @@
 # @astroscope/pino
 
-Pino integration middleware for Astro SSR. Provides request-scoped logging with a familiar pino-http style API.
+Pino logging with request-scoped context via AsyncLocalStorage. Familiar pino-http style API.
 
 ## Features
 

@@ -1,7 +1,7 @@
 {
   "name": "@astroscope/pino",
   "version": "0.1.2",
-  "description": "Pino HTTP logging middleware for Astro SSR",
+  "description": "Pino logging for Astro — request-scoped context, pino-http style API",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
