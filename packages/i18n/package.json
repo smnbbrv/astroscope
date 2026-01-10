@@ -1,0 +1,105 @@
+{
+  "name": "@astroscope/i18n",
+  "version": "0.0.0",
+  "description": "i18n for Astro + React islands — automatic tree-shaking, parallel loading, any translation source",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./t": {
+      "types": "./dist/client/t.d.ts",
+      "browser": "./dist/client/t.js",
+      "default": "./dist/server/t.js"
+    },
+    "./client-directives/load.js": {
+      "types": "./dist/client/directives/load.d.ts",
+      "import": "./dist/client/directives/load.js"
+    },
+    "./client-directives/idle.js": {
+      "types": "./dist/client/directives/idle.d.ts",
+      "import": "./dist/client/directives/idle.js"
+    },
+    "./client-directives/visible.js": {
+      "types": "./dist/client/directives/visible.d.ts",
+      "import": "./dist/client/directives/visible.js"
+    },
+    "./client-directives/media.js": {
+      "types": "./dist/client/directives/media.d.ts",
+      "import": "./dist/client/directives/media.js"
+    },
+    "./client-directives/only.js": {
+      "types": "./dist/client/directives/only.d.ts",
+      "import": "./dist/client/directives/only.js"
+    },
+    "./components": {
+      "import": "./src/components/index.ts"
+    },
+    "./internal": {
+      "types": "./dist/internal.d.ts",
+      "import": "./dist/internal.js"
+    },
+    "./extraction": {
+      "types": "./dist/extraction/index.d.ts",
+      "import": "./dist/extraction/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src/components"
+  ],
+  "sideEffects": [
+    "./dist/client/directives/*.js",
+    "./dist/chunk-*.js"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smnbbrv/astroscope.git",
+    "directory": "packages/i18n"
+  },
+  "keywords": [
+    "astro",
+    "astro-integration",
+    "i18n",
+    "internationalization",
+    "translations",
+    "react",
+    "islands",
+    "ssr"
+  ],
+  "author": "smnbbrv",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/smnbbrv/astroscope/issues"
+  },
+  "homepage": "https://github.com/smnbbrv/astroscope/tree/main/packages/i18n#readme",
+  "scripts": {
+    "build": "tsup src/index.ts src/internal.ts src/extraction/index.ts src/server/t.ts src/client/t.ts src/client/directives/load.ts src/client/directives/idle.ts src/client/directives/visible.ts src/client/directives/media.ts src/client/directives/only.ts src/client/directives/utils.ts --format esm --dts --external astro --external astro/client/load.js --external astro/client/idle.js --external astro/client/visible.js --external astro/client/media.js --external astro/client/only.js --external virtual:@astroscope/i18n/manifest --external @babel/core",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint 'src/**/*.ts'",
+    "lint:fix": "eslint 'src/**/*.ts' --fix"
+  },
+  "dependencies": {
+    "@babel/core": "^7.26.0",
+    "@babel/preset-typescript": "^7.26.0",
+    "@messageformat/core": "^3.4.0",
+    "magic-string": "^0.30.17"
+  },
+  "devDependencies": {
+    "@babel/types": "^7.26.0",
+    "@types/babel__core": "^7.20.5",
+    "astro": "^5.1.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vite": "^6.0.0"
+  },
+  "peerDependencies": {
+    "astro": "^5.0.0"
+  }
+}
