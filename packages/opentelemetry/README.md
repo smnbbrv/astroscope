@@ -1,6 +1,6 @@
 # @astroscope/opentelemetry
 
-OpenTelemetry support for Astro SSR.
+OpenTelemetry for Astro — tracing, metrics, and component instrumentation that works in dev mode. No monkey-patching required.
 
 ## Examples
 
