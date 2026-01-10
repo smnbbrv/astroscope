@@ -1,6 +1,6 @@
 # @astroscope/proxy
 
-HTTP proxy for Astro SSR - migrate from legacy backends or run Astro as a gateway.
+HTTP proxy for Astro — strangler fig migrations and API gateway. Gradually migrate from any backend or proxy to upstream APIs.
 
 ## Examples
 
