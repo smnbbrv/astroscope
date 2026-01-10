@@ -139,6 +139,8 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                   }
                 },
                 writeBundle(outputOptions) {
+                  if (!isSSR) return;
+
                   const outDir = outputOptions.dir;
 
                   if (!outDir || !bootChunkRef) return;
@@ -168,7 +170,8 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
 
                   let content = fs.readFileSync(entryPath, 'utf-8');
 
-                  const bootImport = `import { onStartup, onShutdown } from './${bootChunkName}';\nawait onStartup?.();\nif (onShutdown) process.on('SIGTERM', async () => { await onShutdown(); process.exit(0); });\n`;
+                  // use namespace import to avoid errors when some of hooks are not exported
+                  const bootImport = `import * as __boot from './${bootChunkName}';\nawait __boot.onStartup?.();\nif (__boot.onShutdown) process.on('SIGTERM', async () => { await __boot.onShutdown(); process.exit(0); });\n`;
 
                   content = bootImport + content;
 

@@ -1,6 +1,6 @@
 # @astroscope/boot
 
-Run initialization and cleanup code for your Astro server.
+Startup and graceful shutdown hooks for Astro SSR. Run initialization code before the server starts and cleanup code when it shuts down.
 
 ## Examples
 
@@ -9,7 +9,7 @@ See the [demo/boot](../../demo/boot) directory for a working example.
 ## Installation
 
 ```bash
-bun add @astroscope/boot
+npm install @astroscope/boot
 ```
 
 ## Usage
