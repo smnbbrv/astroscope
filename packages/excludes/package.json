@@ -1,7 +1,7 @@
 {
   "name": "@astroscope/excludes",
   "version": "0.1.1",
-  "description": "Shared exclude patterns for Astro middleware packages",
+  "description": "Reusable exclude patterns and helpers for Astro middleware",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
