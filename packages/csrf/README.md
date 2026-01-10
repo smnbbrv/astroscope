@@ -1,6 +1,6 @@
 # @astroscope/csrf
 
-CSRF protection integration for Astro with path exclusions and proxy support.
+CSRF protection with path exclusions — for webhooks, OIDC callbacks, and third-party integrations.
 
 ## Why?
 
