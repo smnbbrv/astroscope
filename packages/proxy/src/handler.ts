@@ -30,21 +30,21 @@ export function createProxyHandler(options: ProxyOptions) {
 
     try {
       if (options.onRequest) {
-        const result = await options.onRequest(request, targetUrl);
+        const result = await options.onRequest(context, targetUrl);
         if (result instanceof Response) {
           return result;
         }
         if (result instanceof Request) {
-          return await proxyRequest(result, targetUrl, httpAgent, options);
+          return await proxyRequest(context, result, targetUrl, httpAgent, options);
         }
       }
 
-      return await proxyRequest(request, targetUrl, httpAgent, options);
+      return await proxyRequest(context, request, targetUrl, httpAgent, options);
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
 
       if (options.onError) {
-        const result = await options.onError(err, targetUrl);
+        const result = await options.onError(context, err, targetUrl);
         if (result instanceof Response) {
           return result;
         }
@@ -59,6 +59,7 @@ export function createProxyHandler(options: ProxyOptions) {
 }
 
 async function proxyRequest(
+  context: APIContext,
   request: Request,
   targetUrl: URL,
   httpAgent: Agent,
@@ -104,7 +105,7 @@ async function proxyRequest(
       status: statusCode,
       headers: responseHeaders,
     });
-    return maybeTransformResponse(response, targetUrl, options);
+    return maybeTransformResponse(context, response, targetUrl, options);
   }
 
   let streamClosed = false;
@@ -171,12 +172,17 @@ async function proxyRequest(
 
   const response = new Response(stream, { status: statusCode, headers: responseHeaders });
 
-  return maybeTransformResponse(response, targetUrl, options);
+  return maybeTransformResponse(context, response, targetUrl, options);
 }
 
-async function maybeTransformResponse(response: Response, targetUrl: URL, options: ProxyOptions): Promise<Response> {
+async function maybeTransformResponse(
+  context: APIContext,
+  response: Response,
+  targetUrl: URL,
+  options: ProxyOptions,
+): Promise<Response> {
   if (options.onResponse) {
-    const result = await options.onResponse(response, targetUrl);
+    const result = await options.onResponse(context, response, targetUrl);
     if (result instanceof Response) {
       return result;
     }

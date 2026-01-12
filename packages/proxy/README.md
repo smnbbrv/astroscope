@@ -76,12 +76,12 @@ Useful for adding headers, authentication, logging, rewriting URLs or blocking r
 ```ts
 createProxyHandler({
   upstream: "https://api.example.com",
-  onRequest: (request, targetUrl) => {
-    const headers = new Headers(request.headers);
+  onRequest: (context, targetUrl) => {
+    const headers = new Headers(context.request.headers);
 
     headers.set("Authorization", `Bearer ${getToken()}`);
 
-    return new Request(request, { headers });
+    return new Request(context.request, { headers });
   },
 });
 ```
@@ -89,10 +89,22 @@ createProxyHandler({
 To short-circuit (skip proxying):
 
 ```ts
-onRequest: (request, targetUrl) => {
+onRequest: (context, targetUrl) => {
   if (targetUrl.pathname === "/blocked") {
     return new Response("Not allowed", { status: 403 });
   }
+};
+```
+
+To override the pathname (e.g., use original path before any rewrites):
+
+```ts
+onRequest: (context, targetUrl) => {
+  const url = new URL(context.request.url);
+
+  url.pathname = context.originPathname;
+
+  return new Request(url, context.request);
 };
 ```
 
@@ -103,9 +115,9 @@ Called after receiving a response from upstream. Can modify the response.
 ```ts
 createProxyHandler({
   upstream: "https://api.example.com",
-  onResponse: (response, targetUrl) => {
+  onResponse: (context, response, targetUrl) => {
     const headers = new Headers(response.headers);
-    
+
     headers.set("X-Proxied-By", "astro");
 
     return new Response(response.body, {
@@ -123,9 +135,9 @@ Called when an error occurs during proxying. Can return a custom error response.
 ```ts
 createProxyHandler({
   upstream: "https://api.example.com",
-  onError: (error, targetUrl) => {
+  onError: (context, error, targetUrl) => {
     console.error(`Proxy failed: ${targetUrl}`, error);
-    
+
     return new Response("Service temporarily unavailable", {
       status: 503,
       headers: { "Retry-After": "30" },
