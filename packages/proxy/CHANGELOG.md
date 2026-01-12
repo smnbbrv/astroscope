@@ -1,5 +1,11 @@
 # @astroscope/proxy
 
+## 0.2.2
+
+### Patch Changes
+
+- 1a8f42c: fix destroy already destroyed body error
+
 ## 0.2.1
 
 ### Patch Changes
