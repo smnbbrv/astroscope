@@ -2,13 +2,11 @@ import { createProxyHandler } from '@astroscope/proxy';
 
 export const ALL = createProxyHandler({
   upstream: 'https://jsonplaceholder.typicode.com',
-  onRequest: (request, targetUrl) => {
+  onRequest: (context, targetUrl) => {
     targetUrl.pathname = targetUrl.pathname.replace(/^\/api/, '');
-    console.log(`Proxying: ${request.method} ${targetUrl}`);
-    return request;
+    console.log(`Proxying: ${context.request.method} ${targetUrl}`);
   },
-  onResponse: (response, targetUrl) => {
+  onResponse: (_context, response, targetUrl) => {
     console.log(`Response: ${response.status} from ${targetUrl}`);
-    return response;
   },
 });

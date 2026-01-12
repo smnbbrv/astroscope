@@ -100,11 +100,7 @@ To override the pathname (e.g., use original path before any rewrites):
 
 ```ts
 onRequest: (context, targetUrl) => {
-  const url = new URL(context.request.url);
-
-  url.pathname = context.originPathname;
-
-  return new Request(url, context.request);
+  targetUrl.pathname = context.originPathname;
 };
 ```
 

@@ -1,5 +1,5 @@
 import type { APIContext } from 'astro';
-import { type Agent, request as undiciRequest } from 'undici';
+import { type Agent, type Dispatcher, request as undiciRequest } from 'undici';
 import { createHttpAgent } from './client.js';
 import type { ProxyOptions } from './types.js';
 
@@ -100,11 +100,13 @@ async function proxyRequest(
   }
 
   if (statusCode === 204 || statusCode === 304) {
-    resBody.destroy();
+    safeDestroyBody(resBody);
+
     const response = new Response(null, {
       status: statusCode,
       headers: responseHeaders,
     });
+
     return maybeTransformResponse(context, response, targetUrl, options);
   }
 
@@ -114,7 +116,7 @@ async function proxyRequest(
     if (!streamClosed) {
       streamClosed = true;
       request.signal?.removeEventListener('abort', cleanup);
-      resBody.destroy();
+      safeDestroyBody(resBody);
     }
   };
 
@@ -189,4 +191,12 @@ async function maybeTransformResponse(
   }
 
   return response;
+}
+
+function safeDestroyBody(body: Dispatcher.ResponseData['body']) {
+  try {
+    body.destroy();
+  } catch {
+    // body may already be destroyed due to e.g. abort
+  }
 }
