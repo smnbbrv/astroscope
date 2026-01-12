@@ -44,7 +44,7 @@ export function createOpenTelemetryMiddleware(options: OpenTelemetryMiddlewareOp
 
     const startTime = performance.now();
 
-    const { request, url } = ctx;
+    const { request, url, routePattern } = ctx;
     const input = { traceparent: request.headers.get('traceparent'), tracestate: request.headers.get('tracestate') };
     const parentContext = propagation.extract(context.active(), input);
     const contentLength = request.headers.get('content-length');
@@ -53,6 +53,7 @@ export function createOpenTelemetryMiddleware(options: OpenTelemetryMiddlewareOp
     const spanOptions: SpanOptions = {
       attributes: {
         'http.request.method': request.method,
+        'http.route': routePattern,
         'url.full': request.url,
         'url.path': url.pathname,
         'url.query': url.search.slice(1),
@@ -68,12 +69,12 @@ export function createOpenTelemetryMiddleware(options: OpenTelemetryMiddlewareOp
 
     const isAction = url.pathname.startsWith(ACTIONS_PREFIX);
     const actionName = url.pathname.slice(ACTIONS_PREFIX.length).replace(/\/$/, '');
-    const spanName = isAction ? `ACTION ${actionName}` : `${request.method} ${url.pathname}`;
+    const spanName = isAction ? `ACTION ${actionName}` : `${request.method} ${routePattern}`;
     const span = tracer.startSpan(spanName, spanOptions, parentContext);
     const spanContext = trace.setSpan(parentContext, span);
     const rpcMetadata: RPCMetadata = { type: RPCType.HTTP, span };
 
-    const endActiveRequest = recordHttpRequestStart({ method: request.method, route: url.pathname });
+    const endActiveRequest = recordHttpRequestStart({ method: request.method, route: routePattern });
 
     return context.with(setRPCMetadata(spanContext, rpcMetadata), async () => {
       const finalize = (status: number, responseSize: number) => {
@@ -95,7 +96,7 @@ export function createOpenTelemetryMiddleware(options: OpenTelemetryMiddlewareOp
 
         const duration = performance.now() - startTime;
 
-        recordHttpRequestDuration({ method: request.method, route: url.pathname, status }, duration);
+        recordHttpRequestDuration({ method: request.method, route: routePattern, status }, duration);
 
         if (isAction) {
           recordActionDuration({ name: actionName, status }, duration);
@@ -143,7 +144,7 @@ export function createOpenTelemetryMiddleware(options: OpenTelemetryMiddlewareOp
 
         const duration = performance.now() - startTime;
 
-        recordHttpRequestDuration({ method: request.method, route: url.pathname, status: 500 }, duration);
+        recordHttpRequestDuration({ method: request.method, route: routePattern, status: 500 }, duration);
 
         if (isAction) {
           recordActionDuration({ name: actionName, status: 500 }, duration);
