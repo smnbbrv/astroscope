@@ -1,5 +1,11 @@
 # @astroscope/proxy
 
+## 0.2.1
+
+### Patch Changes
+
+- 98af2d0: fix abort errors for 204 / 304
+
 ## 0.2.0
 
 ### Minor Changes
