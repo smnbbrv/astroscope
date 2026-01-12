@@ -69,13 +69,23 @@ async function proxyRequest(
   const headers = new Headers(reqHeaders);
   headers.set('host', targetUrl.host);
 
-  const upstreamResponse = await undiciRequest(targetUrl, {
-    method,
-    headers: Object.fromEntries(headers.entries()),
-    body: method !== 'GET' && method !== 'HEAD' ? (body as never) : null,
-    dispatcher: httpAgent,
-    signal: request.signal,
-  });
+  let upstreamResponse;
+
+  try {
+    upstreamResponse = await undiciRequest(targetUrl, {
+      method,
+      headers: Object.fromEntries(headers.entries()),
+      body: method !== 'GET' && method !== 'HEAD' ? (body as never) : null,
+      dispatcher: httpAgent,
+      signal: request.signal,
+    });
+  } catch (error) {
+    // handle client abort gracefully - return empty response since client is gone
+    if (error instanceof Error && error.name === 'AbortError') {
+      return new Response(null, { status: 499 }); // 499 = Client Closed Request (nginx convention)
+    }
+    throw error;
+  }
 
   const { statusCode, headers: resHeaders, body: resBody } = upstreamResponse;
 
@@ -97,23 +107,22 @@ async function proxyRequest(
     return maybeTransformResponse(response, targetUrl, options);
   }
 
+  let streamClosed = false;
+
+  const cleanup = () => {
+    if (!streamClosed) {
+      streamClosed = true;
+      request.signal?.removeEventListener('abort', cleanup);
+      resBody.destroy();
+    }
+  };
+
   const stream = new ReadableStream({
     start(controller) {
-      let closed = false;
-
-      const cleanup = () => {
-        if (!closed) {
-          closed = true;
-          resBody.destroy();
-        }
-      };
-
-      if (request.signal) {
-        request.signal.addEventListener('abort', cleanup);
-      }
+      request.signal?.addEventListener('abort', cleanup);
 
       resBody.on('data', (chunk) => {
-        if (!closed && !request.signal?.aborted) {
+        if (!streamClosed && !request.signal?.aborted) {
           try {
             controller.enqueue(chunk);
           } catch {
@@ -123,8 +132,8 @@ async function proxyRequest(
       });
 
       resBody.on('end', () => {
-        if (!closed && !request.signal?.aborted) {
-          closed = true;
+        if (!streamClosed && !request.signal?.aborted) {
+          streamClosed = true;
           try {
             controller.close();
           } catch {
@@ -135,10 +144,28 @@ async function proxyRequest(
 
       resBody.on('error', (err) => {
         cleanup();
-        if (!closed) {
-          controller.error(err);
+
+        // don't propagate abort errors - client is gone
+        if (err instanceof Error && err.name === 'AbortError') {
+          try {
+            controller.close();
+          } catch {
+            // controller might already be closed
+          }
+
+          return;
+        }
+        if (!streamClosed) {
+          try {
+            controller.error(err);
+          } catch {
+            // controller might already be closed
+          }
         }
       });
+    },
+    cancel() {
+      cleanup();
     },
   });
 
