@@ -1,5 +1,11 @@
 # @astroscope/proxy
 
+## 0.2.0
+
+### Minor Changes
+
+- 93f48e8: change hooks signature to provide astro context
+
 ## 0.1.1
 
 ### Patch Changes
