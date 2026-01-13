@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { AstroIntegration } from 'astro';
+import { ignoredSuffixes } from './ignored';
 
 export interface BootOptions {
   /**
@@ -105,19 +106,73 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                   });
 
                   if (hmr) {
-                    server.watcher.on('change', async (changedPath) => {
-                      if (!changedPath.endsWith(entry)) return;
+                    const bootModuleId = `/${entry}`;
+                    const bootFilePath = path.resolve(server.config.root, entry);
 
-                      logger.info('boot file changed, re-running onStartup...');
+                    // collect all transitive dependencies of the boot module
+                    const getBootDependencies = (): Set<string> => {
+                      const deps = new Set<string>();
+                      const bootModules = server.moduleGraph.getModulesByFile(bootFilePath);
+                      const bootModule = bootModules ? [...bootModules][0] : undefined;
+
+                      if (!bootModule) return deps;
+
+                      const collectDeps = (mod: typeof bootModule, visited = new Set<string>()): void => {
+                        if (!mod?.file || visited.has(mod.file)) return;
+
+                        visited.add(mod.file);
+                        deps.add(mod.file);
+
+                        for (const imported of mod.importedModules) {
+                          collectDeps(imported, visited);
+                        }
+                      };
+
+                      collectDeps(bootModule);
+
+                      return deps;
+                    };
+
+                    const rerunBoot = async (changedFile: string) => {
+                      logger.info(`boot dependency changed: ${changedFile}, rerunning hooks...`);
+
                       try {
-                        server.moduleGraph.invalidateAll();
-                        const module = (await server.ssrLoadModule(`/${entry}`)) as BootModule;
+                        // call onShutdown first to cleanup resources
+                        const oldModule = (await server.ssrLoadModule(bootModuleId)) as BootModule;
 
-                        if (module.onStartup) {
-                          await module.onStartup();
+                        if (oldModule.onShutdown) {
+                          await oldModule.onShutdown();
+                        }
+
+                        // invalidate the module graph to reload fresh code
+                        server.moduleGraph.invalidateAll();
+
+                        // reload and run onStartup
+                        const newModule = (await server.ssrLoadModule(bootModuleId)) as BootModule;
+
+                        if (newModule.onStartup) {
+                          await newModule.onStartup();
                         }
                       } catch (error) {
-                        logger.error(`Error running startup script: ${error}`);
+                        logger.error(`Error during boot HMR: ${error}`);
+                      }
+                    };
+
+                    const shouldIgnore = (filePath: string): boolean => {
+                      const path = filePath.toLowerCase();
+
+                      return ignoredSuffixes.some((suffix) => path.endsWith(suffix));
+                    };
+
+                    server.watcher.on('change', async (changedPath) => {
+                      // skip static assets and non-runtime files
+                      if (shouldIgnore(changedPath)) return;
+
+                      // check if the changed file is the boot file or one of its dependencies
+                      const bootDeps = getBootDependencies();
+
+                      if (bootDeps.has(changedPath)) {
+                        await rerunBoot(changedPath);
                       }
                     });
                   }
