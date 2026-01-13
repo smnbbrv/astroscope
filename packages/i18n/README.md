@@ -51,6 +51,8 @@ export default defineConfig({
 
 ### 2. Configure i18n in your boot file
 
+**VERY IMPORTANT:** `i18n.configure` must be awaited during boot before handling any requests!
+
 ```ts
 // src/boot.ts
 import { i18n, type RawTranslations } from '@astroscope/i18n';
