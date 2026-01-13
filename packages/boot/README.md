@@ -83,7 +83,7 @@ boot({ entry: "src/startup.ts" });
 
 ### `hmr`
 
-Re-run `onStartup` when the boot file changes during development. This is disabled by default to avoid side effects, because `onStartup` may perform operations that should only run once (e.g., database connections).
+Re-run `onStartup` when the boot file changes during development. This is disabled by default to avoid side effects, because `onStartup` may perform operations that should only run once (e.g., database connections). Please ensure your `onShutdown` function destroys any resources created by `onStartup` to prevent leaks / unexpected behavior.
 
 - **Type**: `boolean`
 - **Default**: `false`
