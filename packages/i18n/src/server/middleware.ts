@@ -1,3 +1,4 @@
+import { type ExcludePattern, RECOMMENDED_EXCLUDES, shouldExclude } from '@astroscope/excludes';
 import type { APIContext, MiddlewareHandler } from 'astro';
 import type { RawTranslations } from '../shared/types.js';
 import { runWithContext } from './context.js';
@@ -6,6 +7,28 @@ import type { I18nContext } from './types.js';
 
 export type I18nMiddlewareOptions = {
   locale: (ctx: APIContext) => string;
+  /**
+   * Patterns to exclude from locale context setup.
+   * Defaults to RECOMMENDED_EXCLUDES if not provided.
+   *
+   * @example
+   * ```ts
+   * import { RECOMMENDED_EXCLUDES } from '@astroscope/excludes';
+   *
+   * // extend defaults
+   * createI18nMiddleware({
+   *   locale: (ctx) => ctx.locals.session?.locale ?? 'en',
+   *   exclude: [...RECOMMENDED_EXCLUDES, { exact: '/health' }],
+   * })
+   *
+   * // disable excludes entirely
+   * createI18nMiddleware({
+   *   locale: (ctx) => ctx.locals.session?.locale ?? 'en',
+   *   exclude: [],
+   * })
+   * ```
+   */
+  exclude?: ExcludePattern[] | ((context: APIContext) => boolean) | undefined;
 };
 
 const I18N_ENDPOINT_PREFIX = '/_i18n/';
@@ -122,6 +145,10 @@ export function createI18nChunkMiddleware(): MiddlewareHandler {
  */
 export function createI18nMiddleware(options: I18nMiddlewareOptions): MiddlewareHandler {
   return (ctx, next) => {
+    if (shouldExclude(ctx, options.exclude ?? RECOMMENDED_EXCLUDES)) {
+      return next();
+    }
+
     const locale = options.locale(ctx);
 
     const context: I18nContext = {

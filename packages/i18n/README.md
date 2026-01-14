@@ -28,7 +28,7 @@ i18n for Astro + React islands — automatic tree-shaking, parallel loading, any
 ## Installation
 
 ```bash
-npm install @astroscope/i18n @astroscope/boot
+npm install @astroscope/i18n @astroscope/boot @astroscope/excludes
 ```
 
 ## Usage
@@ -93,6 +93,24 @@ export const onRequest = sequence(
     locale: (ctx) =>
       ctx.cookies.get('locale')?.value ??
       i18n.getConfig().defaultLocale,
+  }),
+);
+```
+
+By default, `RECOMMENDED_EXCLUDES` (static assets like `/_astro/`) are excluded from locale context setup. To customize:
+
+```ts
+import { sequence } from 'astro:middleware';
+import { createI18nChunkMiddleware, createI18nMiddleware, i18n } from '@astroscope/i18n';
+import { RECOMMENDED_EXCLUDES } from '@astroscope/excludes';
+
+export const onRequest = sequence(
+  createI18nChunkMiddleware(),
+  createI18nMiddleware({
+    locale: (ctx) =>
+      ctx.cookies.get('locale')?.value ??
+      i18n.getConfig().defaultLocale,
+    exclude: [...RECOMMENDED_EXCLUDES, { exact: '/health' }],
   }),
 );
 ```
