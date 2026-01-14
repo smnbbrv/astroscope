@@ -1,5 +1,14 @@
 # @astroscope/csrf
 
+## 0.2.2
+
+### Patch Changes
+
+- 49d91c7: update dependencies
+- 9207065: add `| undefined` for `exactOptionalPropertyTypes` compatibility
+- Updated dependencies [49d91c7]
+  - @astroscope/excludes@0.1.2
+
 ## 0.2.1
 
 ### Patch Changes
