@@ -161,7 +161,14 @@ export function getManifest() { return _getManifest(); }
     generateBundle(_, bundle) {
       const state = getGlobalState();
 
-      state.chunkManifest = {}; // reset for each build (server + client run separately)
+      // reset for each build (server + client run separately)
+      state.chunkManifest = {};
+      state.importsManifest = {};
+
+      // first pass: collect keys, determine which chunks have i18n, and build direct imports map
+      const chunksWithI18n = new Set<string>();
+      const chunkNameToFileName = new Map<string, string>();
+      const directImports = new Map<string, string[]>(); // chunk → direct imports (chunks only)
 
       for (const [fileName, chunk] of Object.entries(bundle)) {
         if (chunk.type === 'chunk' && chunk.moduleIds) {
@@ -186,29 +193,87 @@ export function getManifest() { return _getManifest(); }
           }
 
           if (hasI18nModule) {
-            // prepare translation loader for chunks that use i18n
-            const loaderCode = `
-/* @astroscope/i18n loader */
-if (typeof window !== 'undefined' && window.__i18n__) {
-  const __i18n__ = window.__i18n__;
-  const __i18n_hash__ = __i18n__.hashes[${JSON.stringify(chunkName)}];
-  if (__i18n_hash__) {
-    await import(\`/_i18n/\${__i18n__.locale}/${chunkName}.\${__i18n_hash__}.js\`);
-  }
-}
-/* end @astroscope/i18n loader */
-`;
-
-            // inject loader at start of chunk preserving source maps
-            const s = new MagicString(chunk.code);
-
-            s.prepend(loaderCode);
-            chunk.code = s.toString();
-
-            if (chunk.map) {
-              chunk.map = s.generateMap({ hires: true }) as typeof chunk.map;
-            }
+            chunksWithI18n.add(chunkName);
           }
+
+          chunkNameToFileName.set(chunkName, fileName);
+
+          // store direct imports for flattening later
+          const imports: string[] = [];
+
+          for (const importedFile of chunk.imports) {
+            const baseName = importedFile.replace(/^.*\//, '').replace(/\.js$/, '');
+            const importedChunkName = chunkIdToName(baseName);
+
+            imports.push(importedChunkName);
+          }
+
+          directImports.set(chunkName, imports);
+        }
+      }
+
+      // build flattened imports manifest
+      // tracks all direct and indirect imports that have i18n translations
+      // circular dependency detection
+      const flattenImports = (chunkName: string, visited: Set<string>): string[] => {
+        if (visited.has(chunkName)) return []; // circular dependency, stop
+
+        visited.add(chunkName);
+
+        const result = new Set<string>();
+        const imports = directImports.get(chunkName) ?? [];
+
+        for (const imported of imports) {
+          // add the imported chunk itself if it has i18n translations
+          if (state.chunkManifest[imported]) {
+            result.add(imported);
+          }
+
+          // recursively add all descendants with i18n
+          for (const descendant of flattenImports(imported, visited)) {
+            result.add(descendant);
+          }
+        }
+
+        visited.delete(chunkName); // allow visiting from different paths
+
+        return Array.from(result);
+      };
+
+      // compute flattened imports for ALL chunks (not just those with i18n)
+      // because a chunk without i18n may import chunks that have i18n
+      for (const chunkName of directImports.keys()) {
+        const flattened = flattenImports(chunkName, new Set());
+
+        if (flattened.length > 0) {
+          state.importsManifest[chunkName] = flattened;
+        }
+      }
+
+      // second pass: inject loaders (prefetch is handled by directives)
+      for (const [fileName, chunk] of Object.entries(bundle)) {
+        if (chunk.type !== 'chunk') continue;
+
+        const chunkName = chunkIdToName(fileName.replace(/\.js$/, ''));
+
+        if (!chunksWithI18n.has(chunkName)) continue;
+
+        // simple translation loader - just load own translations
+        // prefetching is handled by directives using the imports manifest
+        const loaderCode =
+          `if(typeof window!=='undefined'&&window.__i18n__){` +
+          `const _=window.__i18n__,h=_.hashes[${JSON.stringify(chunkName)}];` +
+          `if(h)await import(\`/_i18n/\${_.locale}/${chunkName}.\${h}.js\`);` +
+          `}`;
+
+        // inject loader at start of chunk preserving source maps
+        const s = new MagicString(chunk.code);
+
+        s.prepend(loaderCode);
+        chunk.code = s.toString();
+
+        if (chunk.map) {
+          chunk.map = s.generateMap({ hires: true }) as typeof chunk.map;
         }
       }
 

@@ -1,14 +1,37 @@
-import type { ClientDirective } from 'astro';
-import originalVisible from 'astro/client/visible.js';
-import { loadI18nForChunk } from './utils.js';
-
 /**
  * i18n-aware client:visible directive
- * Loads translations in parallel before delegating to Astro's original visible directive
+ *
+ * Based on Astro's visible directive (MIT License)
+ * https://github.com/withastro/astro/blob/main/packages/astro/src/runtime/client/visible.ts
  */
-const visibleDirective: ClientDirective = async (load, options, el) => {
-  await loadI18nForChunk(el);
-  return originalVisible(load, options, el);
+import type { ClientDirective, ClientVisibleOptions } from 'astro';
+import { warmUpI18nForChunk } from './utils.js';
+
+const visibleDirective: ClientDirective = (load, options, el) => {
+  const cb = async () => {
+    warmUpI18nForChunk(el);
+    const hydrate = await load();
+    await hydrate();
+  };
+
+  const rawOptions = typeof options.value === 'object' ? (options.value as ClientVisibleOptions) : undefined;
+
+  const ioOptions: IntersectionObserverInit = {
+    rootMargin: rawOptions?.rootMargin,
+  };
+
+  const io = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      io.disconnect();
+      cb();
+      break;
+    }
+  }, ioOptions);
+
+  for (const child of el.children) {
+    io.observe(child);
+  }
 };
 
 export default visibleDirective;

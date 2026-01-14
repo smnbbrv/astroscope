@@ -1,29 +1,8 @@
 ---
-import { type I18nClientState, getContext, i18n } from '@astroscope/i18n/internal';
+import { getContext, i18n } from '@astroscope/i18n/internal';
 
 const context = getContext();
-
-let script: string | null = null;
-
-if (context) {
-  const { locale } = context;
-  const { chunks } = i18n.getManifest();
-  const hasChunks = Object.keys(chunks).length > 0;
-
-  let state: I18nClientState;
-
-  if (hasChunks) {
-    const hashes = i18n.getHashes(locale) ?? {};
-
-    state = { locale, hashes, translations: {} };
-  } else {
-    const raw = i18n.getTranslations(locale) ?? {};
-
-    state = { locale, hashes: {}, translations: raw };
-  }
-
-  script = `window.__i18n__=${JSON.stringify(state)};`;
-}
+const script = context ? i18n.getClientScript(context.locale) : null;
 ---
 
 {

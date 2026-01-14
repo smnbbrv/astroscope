@@ -5,7 +5,7 @@
  */
 
 import path from 'node:path';
-import type { ChunkManifest, ExtractedKey, ExtractionManifest } from './types.js';
+import type { ChunkManifest, ExtractedKey, ExtractionManifest, ImportsManifest } from './types.js';
 
 // global state for dev mode live access via globalThis
 // this allows the virtual module to access current extraction data
@@ -16,6 +16,7 @@ export type GlobalI18nState = {
   // actual manifest data
   extractedKeys: ExtractedKey[];
   chunkManifest: ChunkManifest;
+  importsManifest: ImportsManifest;
 
   // project root for relative paths
   projectRoot: string;
@@ -29,6 +30,7 @@ export function getGlobalState(): GlobalI18nState {
     g[I18N_MANIFEST_GLOBAL_KEY] = {
       extractedKeys: [],
       chunkManifest: {},
+      importsManifest: {},
       projectRoot: '',
     };
   }
@@ -50,5 +52,5 @@ export function getManifest(): ExtractionManifest {
     file: state.projectRoot ? path.relative(state.projectRoot, key.file) : key.file,
   }));
 
-  return { keys, chunks: state.chunkManifest };
+  return { keys, chunks: state.chunkManifest, imports: state.importsManifest };
 }

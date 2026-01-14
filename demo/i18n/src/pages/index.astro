@@ -4,14 +4,19 @@ import { i18n } from '@astroscope/i18n';
 import { I18nScript } from '@astroscope/i18n/components';
 import { t } from '@astroscope/i18n/t';
 import Layout from '../../../shared/Layout.astro';
+import AddToCartButton from '../components/AddToCartButton';
 import Cart from '../components/Cart';
+import CircularA from '../components/CircularA';
+import CircularB from '../components/CircularB';
 import CookieBanner from '../components/CookieBanner';
 import FallbackTest from '../components/FallbackTest';
 import LazyLoadDemo from '../components/LazyLoadDemo';
 import Newsletter from '../components/Newsletter';
 import ProductCard from '../components/ProductCard';
+import ProductCardNested from '../components/ProductCardNested';
+import ProductList from '../components/ProductList';
 
-const { keys, chunks } = i18n.getManifest();
+const { keys, chunks, imports } = i18n.getManifest();
 ---
 
 <Layout title="i18n Demo" package="@astroscope/i18n">
@@ -101,6 +106,39 @@ const { keys, chunks } = i18n.getManifest();
 
   <CookieBanner client:idle-x />
 
+  <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+      <h2 class="card-title">
+        Nested Components Test — <code class="badge badge-ghost">client:visible-x</code>
+      </h2>
+      <p class="text-sm text-base-content/70 mb-4">
+        Tests translation preloading for nested components: ProductList → ProductCardNested → AddToCartButton.
+        Open DevTools Network tab, filter by "i18n", and reload to see translation loading order.
+      </p>
+      <ProductList client:visible-x />
+    </div>
+  </div>
+
+  <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+      <h2 class="card-title">
+        Circular Dependency Test — <code class="badge badge-ghost">client:visible-x</code>
+      </h2>
+      <p class="text-sm text-base-content/70 mb-4">
+        Tests circular import handling: CircularA imports CircularB, and CircularB imports CircularA.
+        The flattening algorithm should detect and handle this without infinite loops.
+      </p>
+      <CircularA client:visible-x />
+    </div>
+  </div>
+
+  <!-- Hidden components to ensure Vite creates separate chunks (never hydrates) -->
+  <div style="display: none;">
+    <ProductCardNested client:visible name="Hidden" price="$0" image="#000" />
+    <AddToCartButton client:visible productName="Hidden" />
+    <CircularB client:visible />
+  </div>
+
   <div class="collapse collapse-arrow bg-base-100 shadow-xl mb-6">
     <input type="checkbox" />
     <div class="collapse-title font-semibold">
@@ -110,6 +148,18 @@ const { keys, chunks } = i18n.getManifest();
     <div class="collapse-content">
       <p class="text-sm text-base-content/70 mb-2">Shows which translation keys are mapped to which chunks.</p>
       <pre class="bg-base-300 p-4 rounded-lg overflow-x-auto text-xs"><code>{JSON.stringify(chunks, null, 2)}</code></pre>
+    </div>
+  </div>
+
+  <div class="collapse collapse-arrow bg-base-100 shadow-xl mb-6">
+    <input type="checkbox" />
+    <div class="collapse-title font-semibold">
+      Imports Manifest (Debug)
+      <span class="badge badge-neutral ml-2">{Object.keys(imports).length} chunks with deps</span>
+    </div>
+    <div class="collapse-content">
+      <p class="text-sm text-base-content/70 mb-2">Shows flattened import graph for translation prefetching. Circular deps are handled.</p>
+      <pre class="bg-base-300 p-4 rounded-lg overflow-x-auto text-xs"><code>{JSON.stringify(imports, null, 2)}</code></pre>
     </div>
   </div>
 

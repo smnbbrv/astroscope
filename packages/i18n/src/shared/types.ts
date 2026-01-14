@@ -37,6 +37,7 @@ export type I18nClientState = {
   locale: string;
   hashes: Record<string, string>;
   translations: Record<string, string>;
+  imports: Record<string, string[]>;
 };
 
 /**

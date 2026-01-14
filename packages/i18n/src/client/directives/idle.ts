@@ -1,14 +1,24 @@
-import type { ClientDirective } from 'astro';
-import originalIdle from 'astro/client/idle.js';
-import { loadI18nForChunk } from './utils.js';
-
 /**
  * i18n-aware client:idle directive
- * Loads translations in parallel before delegating to Astro's original idle directive
+ *
+ * Based on Astro's idle directive (MIT License)
+ * https://github.com/withastro/astro/blob/main/packages/astro/src/runtime/client/idle.ts
  */
-const idleDirective: ClientDirective = async (load, options, el) => {
-  await loadI18nForChunk(el);
-  return originalIdle(load, options, el);
+import type { ClientDirective } from 'astro';
+import { warmUpI18nForChunk } from './utils.js';
+
+const idleDirective: ClientDirective = (load, _options, el) => {
+  const cb = async () => {
+    warmUpI18nForChunk(el);
+    const hydrate = await load();
+    await hydrate();
+  };
+
+  if ('requestIdleCallback' in window) {
+    (window as unknown as { requestIdleCallback: (cb: () => void) => void }).requestIdleCallback(cb);
+  } else {
+    setTimeout(cb, 200);
+  }
 };
 
 export default idleDirective;
