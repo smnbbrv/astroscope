@@ -1,6 +1,6 @@
 {
   "name": "@astroscope/i18n",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "i18n for Astro + React islands — automatic tree-shaking, parallel loading, any translation source",
   "type": "module",
   "main": "./dist/index.js",
@@ -100,7 +100,7 @@
     "vite": "^6.4.1"
   },
   "peerDependencies": {
-    "@astroscope/excludes": "^0.1.0",
+    "@astroscope/excludes": "^0.1.2",
     "astro": "^5.0.0"
   }
 }

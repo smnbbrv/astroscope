@@ -1,5 +1,12 @@
 # @astroscope/proxy
 
+## 0.2.3
+
+### Patch Changes
+
+- 49d91c7: update dependencies
+- 9207065: add `| undefined` for `exactOptionalPropertyTypes` compatibility
+
 ## 0.2.2
 
 ### Patch Changes
