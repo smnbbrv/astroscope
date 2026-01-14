@@ -1,4 +1,7 @@
 ---
+import '../styles/index.css';
+import Layout from '../../../shared/Layout.astro';
+
 if (Astro.request.method === 'POST') {
   const contentType = Astro.request.headers.get('content-type') ?? '';
 
@@ -14,76 +17,75 @@ if (Astro.request.method === 'POST') {
 const baseUrl = Astro.url.origin;
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>CSRF Demo</title>
-    <style>
-      section {
-        margin-bottom: 2rem;
-      }
-      pre {
-        background: #1e1e1e;
-        color: #d4d4d4;
-        padding: 1rem;
-        border-radius: 4px;
-        overflow-x: auto;
-      }
-      .success {
-        color: #4ec9b0;
-      }
-      .error {
-        color: #f14c4c;
-      }
-      code {
-        background: #2d2d2d;
-        padding: 0.2rem 0.4rem;
-        border-radius: 3px;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>CSRF Demo</h1>
-    <p>This demo shows the @astroscope/csrf middleware with path exclusions.</p>
+<Layout title="CSRF Demo" package="@astroscope/csrf">
+  <p class="text-lg mb-6">This demo shows the @astroscope/csrf middleware with path exclusions.</p>
 
-    <section>
-      <h2>Protected Form (HTML)</h2>
-
-      <p>Standard HTML form - browser sends correct Origin header automatically.</p>
-
-      <form method="POST">
-        <input type="text" name="message" placeholder="Enter a message" />
-        <button type="submit">Submit Form</button>
+  <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+      <h2 class="card-title">Protected Form (HTML)</h2>
+      <p class="text-sm text-base-content/70 mb-4">
+        Standard HTML form - browser sends correct Origin header automatically.
+      </p>
+      <form method="POST" class="flex gap-2">
+        <input type="text" name="message" placeholder="Enter a message" class="input input-bordered flex-1" />
+        <button type="submit" class="btn btn-primary">Submit Form</button>
       </form>
-    </section>
+    </div>
+  </div>
 
-    <section>
-      <h2>Test CSRF Protection with curl</h2>
-      <p>Browsers protect the <code>Origin</code> header, so use curl to test CSRF scenarios:</p>
+  <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+      <h2 class="card-title">Test CSRF Protection with curl</h2>
+      <p class="text-sm text-base-content/70 mb-4">
+        Browsers protect the <code class="badge badge-ghost">Origin</code> header, so use curl to test CSRF scenarios:
+      </p>
 
-      <h3><span class="success">✓</span> Same Origin (should succeed)</h3>
-      <pre>curl -X POST -H "Origin: {baseUrl}" {baseUrl}/</pre>
+      <div class="space-y-4">
+        <div>
+          <h3 class="font-semibold">
+            <span class="text-success">✓</span> Same Origin (should succeed)
+          </h3>
+          <pre class="bg-base-300 p-3 rounded-lg overflow-x-auto text-sm mt-1"><code>curl -X POST -H "Origin: {baseUrl}" {baseUrl}/</code></pre>
+        </div>
 
-      <h3><span class="error">✗</span> Cross Origin (should fail with 403)</h3>
-      <pre>curl -X POST -H "Origin: https://evil.com" {baseUrl}/</pre>
+        <div>
+          <h3 class="font-semibold">
+            <span class="text-error">✗</span> Cross Origin (should fail with 403)
+          </h3>
+          <pre class="bg-base-300 p-3 rounded-lg overflow-x-auto text-sm mt-1"><code>curl -X POST -H "Origin: https://evil.com" {baseUrl}/</code></pre>
+        </div>
 
-      <h3><span class="error">✗</span> No Origin (should fail with 403)</h3>
-      <pre>curl -X POST {baseUrl}/</pre>
+        <div>
+          <h3 class="font-semibold">
+            <span class="text-error">✗</span> No Origin (should fail with 403)
+          </h3>
+          <pre class="bg-base-300 p-3 rounded-lg overflow-x-auto text-sm mt-1"><code>curl -X POST {baseUrl}/</code></pre>
+        </div>
 
-      <h3><span class="success">✓</span> Excluded Path (should succeed without Origin)</h3>
-      <pre>curl -X POST {baseUrl}/webhook</pre>
-    </section>
+        <div>
+          <h3 class="font-semibold">
+            <span class="text-success">✓</span> Excluded Path (should succeed without Origin)
+          </h3>
+          <pre class="bg-base-300 p-3 rounded-lg overflow-x-auto text-sm mt-1"><code>curl -X POST {baseUrl}/webhook</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <section>
-      <h2>Excluded Paths</h2>
-
-      <p>These paths bypass CSRF protection (useful for webhooks, OAuth callbacks, etc.):</p>
-
-      <ul>
-        <li><code>/auth/*</code> - OIDC callbacks (excluded)</li>
-        <li><code>/webhook</code> - Payment webhooks (excluded)</li>
+  <div class="card bg-base-100 shadow-xl">
+    <div class="card-body">
+      <h2 class="card-title">Excluded Paths</h2>
+      <p class="text-sm text-base-content/70 mb-4">
+        These paths bypass CSRF protection (useful for webhooks, OAuth callbacks, etc.):
+      </p>
+      <ul class="list-disc list-inside space-y-1">
+        <li>
+          <code class="badge badge-ghost">/auth/*</code> - OIDC callbacks (excluded)
+        </li>
+        <li>
+          <code class="badge badge-ghost">/webhook</code> - Payment webhooks (excluded)
+        </li>
       </ul>
-    </section>
-  </body>
-</html>
+    </div>
+  </div>
+</Layout>

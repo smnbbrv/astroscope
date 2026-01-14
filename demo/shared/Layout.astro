@@ -1,0 +1,28 @@
+---
+interface Props {
+  title: string;
+  package?: string | undefined;
+}
+
+const { title, package: pkg } = Astro.props;
+---
+
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{title}</title>
+    <slot name="head" />
+  </head>
+  <body class="min-h-screen bg-base-200 p-4">
+    <div class="mx-auto max-w-4xl">
+      <header class="mb-8">
+        <h1 class="text-3xl font-bold">{title}</h1>
+        {pkg && <div class="badge badge-primary mt-2">{pkg}</div>}
+      </header>
+      <main>
+        <slot />
+      </main>
+    </div>
+  </body>
+</html>

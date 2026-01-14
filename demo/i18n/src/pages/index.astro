@@ -1,7 +1,9 @@
 ---
+import '../styles/index.css';
 import { i18n } from '@astroscope/i18n';
 import { I18nScript } from '@astroscope/i18n/components';
 import { t } from '@astroscope/i18n/t';
+import Layout from '../../../shared/Layout.astro';
 import Cart from '../components/Cart';
 import CookieBanner from '../components/CookieBanner';
 import FallbackTest from '../components/FallbackTest';
@@ -12,131 +14,116 @@ import ProductCard from '../components/ProductCard';
 const { keys, chunks } = i18n.getManifest();
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>i18n Demo</title>
+<Layout title="i18n Demo" package="@astroscope/i18n">
+  <I18nScript slot="head" />
 
-    <style>
-      body {
-        font-family: system-ui, sans-serif;
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 2rem;
-        padding-bottom: 6rem;
-      }
-      .locale-switcher {
-        margin-bottom: 2rem;
-      }
-      .locale-switcher a {
-        margin-right: 1rem;
-        padding: 0.5rem 1rem;
-        background: #eee;
-        border-radius: 4px;
-        text-decoration: none;
-        color: inherit;
-      }
-      .locale-switcher a:hover {
-        background: #ddd;
-      }
-      .section {
-        margin: 2rem 0;
-        padding: 1rem;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-      }
-      .section h2 {
-        margin-top: 0;
-      }
-      .section code {
-        background: #f0f0f0;
-        padding: 0.2rem 0.4rem;
-        border-radius: 3px;
-        font-size: 0.9em;
-      }
-      .section .description {
-        color: #666;
-        font-size: 0.9rem;
-        margin-bottom: 1rem;
-      }
-      .product-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1rem;
-        margin-top: 1rem;
-      }
-    </style>
+  <p class="text-lg mb-6">
+    This demo shows the @astroscope/i18n integration with same t() API in Astro and React.
+  </p>
 
-    <I18nScript />
-  </head>
-  <body>
-    <h1>i18n Demo</h1>
-    <p>This demo shows the @astroscope/i18n integration with same t() API in Astro and React.</p>
+  <div class="flex gap-2 mb-6">
+    <span class="font-semibold">Switch locale:</span>
+    <a href="/?locale=en" class="btn btn-sm btn-ghost">English</a>
+    <a href="/?locale=de" class="btn btn-sm btn-ghost">Deutsch</a>
+  </div>
 
-    <div class="locale-switcher">
-      <strong>Switch locale:</strong>
-      <a href="/?locale=en">English</a>
-      <a href="/?locale=de">Deutsch</a>
-    </div>
-
-    <div class="section">
-      <h2>Astro Component (SSR)</h2>
-      <p class="description">Server-rendered, no client JS needed.</p>
-      <h3>{t('home.title', 'Welcome to our Store')}</h3>
+  <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+      <h2 class="card-title">Astro Component (SSR)</h2>
+      <p class="text-sm text-base-content/70 mb-4">Server-rendered, no client JS needed.</p>
+      <h3 class="text-xl font-semibold">{t('home.title', 'Welcome to our Store')}</h3>
       <p>{t('home.description', 'Find the best products here')}</p>
     </div>
+  </div>
 
-    <div class="section">
-      <h2>React Island — <code>client:load-x</code></h2>
-      <p class="description">Hydrates immediately on page load. Use for interactive components above the fold.</p>
+  <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+      <h2 class="card-title">
+        React Island — <code class="badge badge-ghost">client:load-x</code>
+      </h2>
+      <p class="text-sm text-base-content/70 mb-4">
+        Hydrates immediately on page load. Use for interactive components above the fold.
+      </p>
       <Cart client:load-x itemCount={3} total="$49.99" />
     </div>
+  </div>
 
-    <div class="section">
-      <h2>React Island — <code>client:idle-x</code></h2>
-      <p class="description">Hydrates when the browser is idle. Good for lower-priority interactivity.</p>
+  <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+      <h2 class="card-title">
+        React Island — <code class="badge badge-ghost">client:idle-x</code>
+      </h2>
+      <p class="text-sm text-base-content/70 mb-4">
+        Hydrates when the browser is idle. Good for lower-priority interactivity.
+      </p>
       <Newsletter client:idle-x />
     </div>
+  </div>
 
-    <div class="section">
-      <h2>React Island — <code>client:visible-x</code></h2>
-      <p class="description">Hydrates when scrolled into view. Perfect for content below the fold.</p>
-      <div class="product-grid">
+  <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+      <h2 class="card-title">
+        React Island — <code class="badge badge-ghost">client:visible-x</code>
+      </h2>
+      <p class="text-sm text-base-content/70 mb-4">
+        Hydrates when scrolled into view. Perfect for content below the fold.
+      </p>
+      <div class="grid grid-cols-3 gap-4 mt-4">
         <ProductCard client:visible-x name="Wireless Headphones" price="$79.99" image="#6366f1" />
         <ProductCard client:visible-x name="Smart Watch" price="$199.99" image="#ec4899" />
         <ProductCard client:visible-x name="USB-C Hub" price="$49.99" image="#14b8a6" />
       </div>
     </div>
+  </div>
 
-    <div class="section">
-      <h2>Fallback Behavior</h2>
-      <p class="description">When translations are missing from CMS, the example value is used as fallback.</p>
+  <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+      <h2 class="card-title">Fallback Behavior</h2>
+      <p class="text-sm text-base-content/70 mb-4">
+        When translations are missing from CMS, the example value is used as fallback.
+      </p>
       <FallbackTest client:load-x />
     </div>
+  </div>
 
-    <div class="section">
-      <h2>Lazy Loading with <code>importx</code></h2>
-      <p class="description">
-        Use <code>importx()</code> inside React components to dynamically import other components.
-        Translations for the lazy chunk load in parallel with the JS bundle.
+  <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+      <h2 class="card-title">
+        Lazy Loading with <code class="badge badge-ghost">importx</code>
+      </h2>
+      <p class="text-sm text-base-content/70 mb-4">
+        Use <code>importx()</code> inside React components to dynamically import other components. Translations for the
+        lazy chunk load in parallel with the JS bundle.
       </p>
       <LazyLoadDemo client:load-x />
     </div>
+  </div>
 
-    <CookieBanner client:idle-x />
+  <CookieBanner client:idle-x />
 
-    <div class="section">
-      <h2>Chunk Manifest (Debug)</h2>
-      <p class="description">Shows which translation keys are mapped to which chunks.</p>
-      <pre>{JSON.stringify(chunks, null, 2)}</pre>
+  <div class="collapse collapse-arrow bg-base-100 shadow-xl mb-6">
+    <input type="checkbox" />
+    <div class="collapse-title font-semibold">
+      Chunk Manifest (Debug)
+      <span class="badge badge-neutral ml-2">{Object.keys(chunks).length} chunks</span>
     </div>
-
-    <div class="section">
-      <h2>Extracted Keys (Debug)</h2>
-      <p class="description">Translation keys extracted from codebase with metadata. Use this to populate your CMS.</p>
-      <pre>{JSON.stringify(keys, null, 2)}</pre>
+    <div class="collapse-content">
+      <p class="text-sm text-base-content/70 mb-2">Shows which translation keys are mapped to which chunks.</p>
+      <pre class="bg-base-300 p-4 rounded-lg overflow-x-auto text-xs"><code>{JSON.stringify(chunks, null, 2)}</code></pre>
     </div>
+  </div>
 
-  </body>
-</html>
+  <div class="collapse collapse-arrow bg-base-100 shadow-xl mb-6">
+    <input type="checkbox" />
+    <div class="collapse-title font-semibold">
+      Extracted Keys (Debug)
+      <span class="badge badge-neutral ml-2">{Object.keys(keys).length} keys</span>
+    </div>
+    <div class="collapse-content">
+      <p class="text-sm text-base-content/70 mb-2">
+        Translation keys extracted from codebase with metadata. Use this to populate your CMS.
+      </p>
+      <pre class="bg-base-300 p-4 rounded-lg overflow-x-auto text-xs"><code>{JSON.stringify(keys, null, 2)}</code></pre>
+    </div>
+  </div>
+</Layout>

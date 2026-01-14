@@ -1,59 +1,73 @@
 ---
-
+import '../styles/index.css';
+import Layout from '../../../shared/Layout.astro';
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>Home - Migrated to Astro</title>
-    <style>
-      body {
-        font-family: system-ui, sans-serif;
-        max-width: 800px;
-        margin: 2rem auto;
-        padding: 0 1rem;
-      }
-      .badge {
-        background: #10b981;
-        color: white;
-        padding: 0.25rem 0.5rem;
-        border-radius: 0.25rem;
-        font-size: 0.875rem;
-      }
-      .legacy {
-        background: #6b7280;
-      }
-      nav {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 2rem;
-      }
-      a {
-        color: #3b82f6;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Welcome to our site!</h1>
-    <p><span class="badge">Astro</span> This page has been migrated to Astro.</p>
+<Layout title="Strangler Fig Migration" package="@astroscope/proxy">
+  <p class="text-lg mb-6">This demo shows the strangler fig pattern for gradually migrating a legacy website to Astro.</p>
 
-    <nav>
-      <a href="/">Home</a>
-      <a href="/about">About</a>
-      <a href="/contact">Contact (legacy)</a>
-      <a href="/products">Products (legacy)</a>
-    </nav>
+  <div class="flex gap-2 mb-6">
+    <a href="/" class="btn btn-primary btn-sm">Home</a>
+    <a href="/about" class="btn btn-primary btn-sm">About</a>
+    <a href="/contact" class="btn btn-ghost btn-sm">Contact (legacy)</a>
+    <a href="/products" class="btn btn-ghost btn-sm">Products (legacy)</a>
+  </div>
 
-    <p>Test e.g. <a href="/headers" target="_blank">Headers (should show headers)</a></p>
+  <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+      <h2 class="card-title">
+        <span class="badge badge-success">Astro</span> This page has been migrated
+      </h2>
+      <p>New pages built in Astro automatically take precedence over the catch-all proxy route.</p>
+    </div>
+  </div>
 
-    <h2>Strangler Fig Migration</h2>
-    <p>This demo shows the strangler fig pattern for gradually migrating a legacy website to Astro:</p>
-    <ul>
-      <li><strong>/</strong> and <strong>/about</strong> - New Astro pages</li>
-      <li><strong>/contact</strong>, <strong>/products</strong>, etc. - Proxied to legacy backend (httpbin.org)</li>
-    </ul>
+  <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+      <h2 class="card-title">Route Mapping</h2>
+      <div class="overflow-x-auto">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Path</th>
+              <th>Status</th>
+              <th>Handled by</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>/</code></td>
+              <td><span class="badge badge-success">migrated</span></td>
+              <td>Astro</td>
+            </tr>
+            <tr>
+              <td><code>/about</code></td>
+              <td><span class="badge badge-success">migrated</span></td>
+              <td>Astro</td>
+            </tr>
+            <tr>
+              <td><code>/contact</code></td>
+              <td><span class="badge badge-ghost">legacy</span></td>
+              <td>Proxied to httpbin.org</td>
+            </tr>
+            <tr>
+              <td><code>/products</code></td>
+              <td><span class="badge badge-ghost">legacy</span></td>
+              <td>Proxied to httpbin.org</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-    <p>As you build new pages in Astro, they automatically take precedence over the catch-all proxy route.</p>
-  </body>
-</html>
+  <div class="card bg-base-100 shadow-xl">
+    <div class="card-body">
+      <h2 class="card-title">Debug</h2>
+      <p class="mb-2">
+        Test: <a href="/headers" class="link link-primary" target="_blank">Headers endpoint</a> (should show request headers
+        from httpbin.org)
+      </p>
+    </div>
+  </div>
+</Layout>

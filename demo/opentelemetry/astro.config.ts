@@ -2,6 +2,7 @@ import node from '@astrojs/node';
 import boot from '@astroscope/boot';
 import { RECOMMENDED_EXCLUDES } from '@astroscope/excludes';
 import opentelemetry from '@astroscope/opentelemetry';
+import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'astro/config';
 
 export default defineConfig({
@@ -18,4 +19,7 @@ export default defineConfig({
     }),
     boot(),
   ],
+  vite: {
+    plugins: [tailwindcss()],
+  },
 });

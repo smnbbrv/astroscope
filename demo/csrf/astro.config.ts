@@ -1,5 +1,6 @@
 import node from '@astrojs/node';
 import csrf from '@astroscope/csrf';
+import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'astro/config';
 
 export default defineConfig({
@@ -14,4 +15,7 @@ export default defineConfig({
       ],
     }),
   ],
+  vite: {
+    plugins: [tailwindcss()],
+  },
 });

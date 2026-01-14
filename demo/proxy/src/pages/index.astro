@@ -1,28 +1,37 @@
 ---
-
+import '../styles/index.css';
+import Layout from '../../../shared/Layout.astro';
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>Proxy Demo</title>
-  </head>
-  <body>
-    <h1>Proxy Demo</h1>
-    <p>This demo shows the @astroscope/proxy package for HTTP proxying.</p>
+<Layout title="Proxy Demo" package="@astroscope/proxy">
+  <p class="text-lg mb-6">This demo shows the @astroscope/proxy package for HTTP proxying.</p>
 
-    <h2>How it works</h2>
-    <ul>
-      <li>This page is handled by Astro</li>
-      <li>Requests to <code>/api/*</code> are proxied to JSONPlaceholder API</li>
-      <li>Any unmatched routes would fall through to a legacy backend (strangler fig pattern)</li>
-    </ul>
+  <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+      <h2 class="card-title">How it works</h2>
+      <ul class="list-disc list-inside space-y-2">
+        <li>This page is handled by Astro</li>
+        <li>
+          Requests to <code class="badge badge-ghost">/api/*</code> are proxied to JSONPlaceholder API
+        </li>
+        <li>Any unmatched routes would fall through to a legacy backend (strangler fig pattern)</li>
+      </ul>
+    </div>
+  </div>
 
-    <h2>Try it</h2>
-    <ul>
-      <li><a href="/api/posts/1">GET /api/posts/1</a> - Proxied to JSONPlaceholder</li>
-      <li><a href="/api/users/1">GET /api/users/1</a> - Proxied to JSONPlaceholder</li>
-    </ul>
-  </body>
-</html>
+  <div class="card bg-base-100 shadow-xl">
+    <div class="card-body">
+      <h2 class="card-title">Try it</h2>
+      <ul class="space-y-2">
+        <li>
+          <a href="/api/posts/1" class="link link-primary">GET /api/posts/1</a>
+          <span class="badge badge-info ml-2">proxied</span> - JSONPlaceholder
+        </li>
+        <li>
+          <a href="/api/users/1" class="link link-primary">GET /api/users/1</a>
+          <span class="badge badge-info ml-2">proxied</span> - JSONPlaceholder
+        </li>
+      </ul>
+    </div>
+  </div>
+</Layout>

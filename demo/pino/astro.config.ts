@@ -1,6 +1,7 @@
 import node from '@astrojs/node';
 import { RECOMMENDED_EXCLUDES } from '@astroscope/excludes';
 import pino from '@astroscope/pino';
+import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'astro/config';
 
 export default defineConfig({
@@ -11,4 +12,7 @@ export default defineConfig({
       exclude: [...RECOMMENDED_EXCLUDES, { exact: '/health' }],
     }),
   ],
+  vite: {
+    plugins: [tailwindcss()],
+  },
 });
