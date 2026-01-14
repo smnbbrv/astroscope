@@ -8,17 +8,17 @@ export interface BootOptions {
    * Path to the boot file relative to the project root.
    * @default "src/boot.ts"
    */
-  entry?: string;
+  entry?: string | undefined;
   /**
    * Enable HMR for the boot file. When true, `onStartup` will re-run when the boot file changes.
    * @default false
    */
-  hmr?: boolean;
+  hmr?: boolean | undefined;
 }
 
 interface BootModule {
-  onStartup?: () => Promise<void> | void;
-  onShutdown?: () => Promise<void> | void;
+  onStartup?: (() => Promise<void> | void) | undefined;
+  onShutdown?: (() => Promise<void> | void) | undefined;
 }
 
 function resolveEntry(entry: string | undefined): string {

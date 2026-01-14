@@ -11,13 +11,13 @@ type CsrfOptionsBase = {
    * csrf({ enabled: import.meta.env.PROD, trustProxy: true })
    * ```
    */
-  enabled?: boolean;
+  enabled?: boolean | undefined;
 
   /**
    * Paths to exclude from CSRF protection.
    * Can be an array of patterns or a function that returns true to exclude.
    */
-  exclude?: ExcludePattern[] | ((context: APIContext) => boolean);
+  exclude?: ExcludePattern[] | ((context: APIContext) => boolean) | undefined;
 };
 
 /**

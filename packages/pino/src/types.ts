@@ -22,7 +22,7 @@ export interface PinoMiddlewareOptions {
    * });
    * ```
    */
-  exclude?: ExcludePattern[] | ((ctx: APIContext) => boolean);
+  exclude?: ExcludePattern[] | ((ctx: APIContext) => boolean) | undefined;
 }
 
 export interface PinoIntegrationOptions {
@@ -41,5 +41,5 @@ export interface PinoIntegrationOptions {
    * pino({ exclude: [...RECOMMENDED_EXCLUDES, { exact: '/health' }] })
    * ```
    */
-  exclude?: ExcludePattern[];
+  exclude?: ExcludePattern[] | undefined;
 }

@@ -10,23 +10,29 @@ export interface OpenTelemetryIntegrationOptions {
   /**
    * Configure instrumentations.
    */
-  instrumentations?: {
-    /**
-     * HTTP incoming request instrumentation (middleware).
-     * @default { enabled: true, exclude: RECOMMENDED_EXCLUDES }
-     */
-    http?: {
-      enabled: boolean;
-      exclude?: ExcludePattern[];
-    };
-    /**
-     * Fetch outgoing request instrumentation.
-     * @default { enabled: true }
-     */
-    fetch?: {
-      enabled: boolean;
-    };
-  };
+  instrumentations?:
+    | {
+        /**
+         * HTTP incoming request instrumentation (middleware).
+         * @default { enabled: true, exclude: RECOMMENDED_EXCLUDES }
+         */
+        http?:
+          | {
+              enabled: boolean;
+              exclude?: ExcludePattern[] | undefined;
+            }
+          | undefined;
+        /**
+         * Fetch outgoing request instrumentation.
+         * @default { enabled: true }
+         */
+        fetch?:
+          | {
+              enabled: boolean;
+            }
+          | undefined;
+      }
+    | undefined;
 }
 
 /**
