@@ -2,6 +2,7 @@ import { SpanKind, SpanStatusCode, context, propagation, trace } from '@opentele
 import { recordFetchRequestDuration } from './metrics.js';
 
 const LIB_NAME = '@astroscope/opentelemetry';
+const INSTRUMENTED = Symbol.for('@astroscope/opentelemetry/fetch');
 
 /**
  * Instruments the global fetch to create OpenTelemetry spans for outgoing HTTP requests.
@@ -22,22 +23,36 @@ const LIB_NAME = '@astroscope/opentelemetry';
  * ```
  */
 export function instrumentFetch(): void {
+  // prevent double instrumentation (e.g., during HMR)
+  if ((globalThis.fetch as any)[INSTRUMENTED]) {
+    return;
+  }
+
   const originalFetch = globalThis.fetch;
 
   async function instrumentedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     const tracer = trace.getTracer(LIB_NAME);
     const activeContext = context.active();
 
-    const request = new Request(input, init);
-    const url = new URL(request.url);
+    // extract URL and method without consuming the body
+    let url: URL;
+    let method: string;
+
+    if (input instanceof Request) {
+      url = new URL(input.url);
+      method = input.method;
+    } else {
+      url = new URL(input.toString(), globalThis.location?.href);
+      method = init?.method ?? 'GET';
+    }
 
     const span = tracer.startSpan(
-      `FETCH ${request.method}`,
+      `FETCH ${method}`,
       {
         kind: SpanKind.CLIENT,
         attributes: {
-          'http.request.method': request.method,
-          'url.full': request.url,
+          'http.request.method': method,
+          'url.full': url.href,
           'url.path': url.pathname,
           'url.scheme': url.protocol.replace(':', ''),
           'server.address': url.hostname,
@@ -47,24 +62,32 @@ export function instrumentFetch(): void {
       activeContext,
     );
 
-    const headers = new Headers(request.headers);
+    // inject trace headers
     const carrier: Record<string, string> = {};
-
     propagation.inject(trace.setSpan(activeContext, span), carrier);
+
+    // merge headers without consuming the request
+    const existingHeaders = init?.headers ?? (input instanceof Request ? input.headers : undefined);
+    const headers = new Headers(existingHeaders);
 
     for (const [key, value] of Object.entries(carrier)) {
       headers.set(key, value);
     }
 
+    // build new init, preserving all original options
+    const hasBody = init?.body !== undefined || (input instanceof Request && input.body !== null);
+    const newInit: RequestInit = {
+      ...init,
+      headers,
+      // required in node.js 18.13+
+      ...(hasBody && { duplex: 'half' }),
+    };
+
     const startTime = performance.now();
 
     try {
-      const response = await originalFetch(request.url, {
-        ...init,
-        method: request.method,
-        headers,
-        body: request.body,
-      });
+      // pass original input to preserve body stream
+      const response = await originalFetch(input, newInit);
 
       span.setAttribute('http.response.status_code', response.status);
 
@@ -80,7 +103,7 @@ export function instrumentFetch(): void {
       span.end();
 
       recordFetchRequestDuration(
-        { method: request.method, host: url.hostname, status: response.status },
+        { method, host: url.hostname, status: response.status },
         performance.now() - startTime,
       );
 
@@ -93,14 +116,12 @@ export function instrumentFetch(): void {
 
       span.end();
 
-      recordFetchRequestDuration(
-        { method: request.method, host: url.hostname, status: 0 },
-        performance.now() - startTime,
-      );
+      recordFetchRequestDuration({ method, host: url.hostname, status: 0 }, performance.now() - startTime);
 
       throw error;
     }
   }
 
+  (instrumentedFetch as any)[INSTRUMENTED] = true;
   globalThis.fetch = Object.assign(instrumentedFetch, originalFetch);
 }
