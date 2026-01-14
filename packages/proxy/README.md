@@ -1,5 +1,7 @@
 # @astroscope/proxy
 
+> **Note:** This package is in active development. APIs may change between versions.
+
 HTTP proxy for Astro — strangler fig migrations and API gateway. Gradually migrate from any backend or proxy to upstream APIs.
 
 ## Examples

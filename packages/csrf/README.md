@@ -1,5 +1,7 @@
 # @astroscope/csrf
 
+> **Note:** This package is in active development. APIs may change between versions.
+
 CSRF protection with path exclusions — for webhooks, OIDC callbacks, and third-party integrations.
 
 ## Why?

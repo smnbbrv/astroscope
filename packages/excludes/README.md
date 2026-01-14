@@ -1,5 +1,7 @@
 # @astroscope/excludes
 
+> **Note:** This package is in active development. APIs may change between versions.
+
 Shared exclude patterns for Astro middleware packages.
 
 ## Installation

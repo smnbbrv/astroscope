@@ -1,5 +1,7 @@
 # @astroscope/pino
 
+> **Note:** This package is in active development. APIs may change between versions.
+
 Pino logging with request-scoped context via AsyncLocalStorage. Familiar pino-http style API.
 
 ## Features

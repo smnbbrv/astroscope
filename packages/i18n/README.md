@@ -1,5 +1,7 @@
 # @astroscope/i18n
 
+> **Note:** This package is in active development. APIs may change between versions.
+
 i18n for Astro + React islands — automatic tree-shaking, parallel loading, any translation source.
 
 ## Why this library?

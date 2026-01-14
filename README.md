@@ -1,6 +1,8 @@
 # Astroscope
 
-Astro integrations built for production — logging, tracing, security, i18n, and more for real-world websites.
+> **Note:** This project is in active development. APIs may change between versions.
+
+A collection of Astro integrations for common server-side needs — logging, tracing, security, i18n, and more.
 
 ## Packages
 

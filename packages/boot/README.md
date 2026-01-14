@@ -1,5 +1,7 @@
 # @astroscope/boot
 
+> **Note:** This package is in active development. APIs may change between versions.
+
 Startup and graceful shutdown hooks for Astro SSR. Run initialization code before the server starts and cleanup code when it shuts down.
 
 ## Examples
