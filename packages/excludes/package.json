@@ -42,7 +42,7 @@
     "lint:fix": "eslint 'src/**/*.ts' --fix"
   },
   "devDependencies": {
-    "astro": "^5.1.0",
+    "astro": "^5.16.9",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },
