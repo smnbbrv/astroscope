@@ -1,5 +1,12 @@
 # @astroscope/excludes
 
+## 0.1.3
+
+### Patch Changes
+
+- 43c3be2: do not add STATIC_EXCLUDES in recommemded excludes
+- c39febd: add project under development disclaimer
+
 ## 0.1.2
 
 ### Patch Changes
