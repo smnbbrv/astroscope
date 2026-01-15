@@ -1,5 +1,15 @@
 # @astroscope/i18n
 
+## 0.2.1
+
+### Patch Changes
+
+- 50babbf: better performance for nested chunks with i18n tokens
+- c39febd: add project under development disclaimer
+- Updated dependencies [43c3be2]
+- Updated dependencies [c39febd]
+  - @astroscope/excludes@0.1.3
+
 ## 0.2.0
 
 ### Minor Changes

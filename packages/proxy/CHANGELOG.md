@@ -1,5 +1,11 @@
 # @astroscope/proxy
 
+## 0.2.4
+
+### Patch Changes
+
+- c39febd: add project under development disclaimer
+
 ## 0.2.3
 
 ### Patch Changes
