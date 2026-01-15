@@ -41,7 +41,9 @@ if (shouldExclude(ctx, (ctx) => ctx.url.pathname.startsWith('/admin'))) {
 
 ### `RECOMMENDED_EXCLUDES`
 
-All recommended excludes combined. Use this as a starting point.
+Combines `DEV_EXCLUDES` and `ASTRO_STATIC_EXCLUDES`. Use this as a starting point.
+
+Note: `STATIC_EXCLUDES` is **not** included by default, as these paths (like `/robots.txt` or `/sitemap.xml`) may be served dynamically. Use it on your own risk.
 
 ### `DEV_EXCLUDES`
 

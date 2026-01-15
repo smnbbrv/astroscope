@@ -32,7 +32,7 @@ export const STATIC_EXCLUDES: ExcludePattern[] = [
 
 /**
  * Recommended excludes for middleware.
- * Includes dev paths, Astro internals, and common static assets.
+ * Includes dev paths and Astro internals.
  *
  * @example
  * ```ts
@@ -44,7 +44,7 @@ export const STATIC_EXCLUDES: ExcludePattern[] = [
  * })
  * ```
  */
-export const RECOMMENDED_EXCLUDES: ExcludePattern[] = [...DEV_EXCLUDES, ...ASTRO_STATIC_EXCLUDES, ...STATIC_EXCLUDES];
+export const RECOMMENDED_EXCLUDES: ExcludePattern[] = [...DEV_EXCLUDES, ...ASTRO_STATIC_EXCLUDES];
 
 /**
  * Check if a path matches an exclude pattern.
