@@ -4,8 +4,10 @@ import type { AstroIntegrationLogger } from 'astro';
 import MagicString from 'magic-string';
 import type { Plugin } from 'vite';
 import { chunkIdToName } from '../shared/url.js';
+import { ALL_EXTENSIONS, extractKeysFromFile } from './extract.js';
+import { KeyStore } from './key-store.js';
 import { getGlobalState, getManifest } from './manifest.js';
-import type { ExtractedKey } from './types.js';
+import { scan } from './scan.js';
 
 const VIRTUAL_MODULE_ID = 'virtual:@astroscope/i18n/manifest';
 const isVirtualModuleId = (id: string) => id === VIRTUAL_MODULE_ID || id.startsWith(`${VIRTUAL_MODULE_ID}?`);
@@ -16,9 +18,6 @@ const isResolvedVirtualModuleId = (id: string) =>
 
 // manifest JSON file name (emitted during build)
 const MANIFEST_FILE_NAME = 'i18n-manifest.json';
-
-// file extensions to process for t() extraction
-const INCLUDE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.astro'];
 
 export type I18nVitePluginOptions = {
   logger: AstroIntegrationLogger;
@@ -37,12 +36,11 @@ export type I18nVitePluginOptions = {
 export function i18nVitePlugin(options: I18nVitePluginOptions): Plugin {
   const { logger } = options;
 
-  const extractedKeys: ExtractedKey[] = [];
-  const fileToKeys = new Map<string, string[]>();
-  const filesWithI18n = new Set<string>();
+  const store = new KeyStore();
 
   let isBuild = false;
   let isSSR = false;
+  let projectRoot = '';
 
   return {
     name: '@astroscope/i18n/extract',
@@ -51,10 +49,32 @@ export function i18nVitePlugin(options: I18nVitePluginOptions): Plugin {
     configResolved(config) {
       const state = getGlobalState();
       state.projectRoot = config.root;
-      state.extractedKeys = extractedKeys;
+      state.extractedKeys = store.extractedKeys;
 
       isBuild = config.command === 'build';
       isSSR = !!config.build.ssr;
+      projectRoot = config.root;
+    },
+
+    async configureServer(server) {
+      // configureServer can be called during astro build's internal dev server
+      // check isProduction to skip eager scanning during build
+      if (server.config.isProduction || isBuild) {
+        return;
+      }
+
+      // in dev mode, eagerly scan all files upfront
+      // this ensures all t() calls are found immediately
+      // (otherwise vite loads lazily as files are requested)
+      const result = await scan(projectRoot, logger);
+
+      store.merge(result);
+
+      if (store.duplicateCount) {
+        logger.warn(`duplicate keys detected: ${store.extractedKeys.length} total, ${store.uniqueKeyCount} unique`);
+      }
+
+      logger.info(`dev mode: scanned ${result.fileToKeys.size} files, found ${result.uniqueKeyCount} keys`);
     },
 
     resolveId(id) {
@@ -92,7 +112,7 @@ export function getManifest() { return _getManifest(); }
 
     async transform(code, filename) {
       // only process included file types
-      if (!INCLUDE_EXTENSIONS.some((ext) => filename.endsWith(ext))) {
+      if (!ALL_EXTENSIONS.some((ext) => filename.endsWith(ext))) {
         return null;
       }
 
@@ -106,52 +126,17 @@ export function getManifest() { return _getManifest(); }
         return null;
       }
 
-      filesWithI18n.add(filename); // that file imports i18n
-
-      const fileKeys: ExtractedKey[] = [];
-
-      // dynamic imports prevent Babel from being bundled into server runtime
-      // this allows the production build to work without Babel installed
-      const [{ transformAsync }, { i18nExtractPlugin }] = await Promise.all([
-        import('@babel/core'),
-        import('./babel-plugin.js'),
-      ]);
-
-      const result = await transformAsync(code, {
+      const result = await extractKeysFromFile({
         filename,
-        sourceMaps: true,
-        babelrc: false,
-        configFile: false,
-        parserOpts: {
-          plugins: [
-            ...(filename.endsWith('.ts') || filename.endsWith('.tsx') ? ['typescript' as const] : []),
-            ...(filename.endsWith('.jsx') || filename.endsWith('.tsx') ? ['jsx' as const] : []),
-          ],
-        },
-        plugins: [
-          [
-            i18nExtractPlugin,
-            {
-              stripFallbacks: isBuild, // only strip in production
-              onKeyExtracted: (key: ExtractedKey) => fileKeys.push(key),
-              logger,
-            },
-          ],
-        ],
+        code,
+        logger,
+        stripFallbacks: isBuild,
       });
 
-      // store extracted keys
-      if (fileKeys.length > 0) {
-        extractedKeys.push(...fileKeys);
-
-        fileToKeys.set(
-          filename,
-          fileKeys.map((k) => k.key),
-        );
-      }
+      store.addFileKeys(filename, result.keys);
 
       // build mode: return transformed code with source map
-      if (isBuild && result?.code) {
+      if (isBuild && result.code) {
         return { code: result.code, map: result.map };
       }
 
@@ -177,11 +162,11 @@ export function getManifest() { return _getManifest(); }
 
           // collect keys from all (sub)modules in the chunk
           for (const moduleId of chunk.moduleIds) {
-            const moduleKeys = fileToKeys.get(moduleId);
+            const moduleKeys = store.fileToKeys.get(moduleId);
 
             moduleKeys?.forEach((k) => keys.add(k));
 
-            if (filesWithI18n.has(moduleId)) {
+            if (store.filesWithI18n.has(moduleId)) {
               hasI18nModule = true;
             }
           }
@@ -277,7 +262,11 @@ export function getManifest() { return _getManifest(); }
         }
       }
 
-      logger.info(`manifest: ${Object.keys(state.chunkManifest).length} chunks, ${extractedKeys.length} keys`);
+      if (store.duplicateCount) {
+        logger.warn(`duplicate keys detected: ${store.extractedKeys.length} total, ${store.uniqueKeyCount} unique`);
+      }
+
+      logger.info(`manifest: ${Object.keys(state.chunkManifest).length} chunks, ${store.uniqueKeyCount} keys`);
     },
 
     writeBundle(outputOptions) {

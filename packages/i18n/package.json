@@ -89,6 +89,7 @@
     "@babel/core": "^7.28.6",
     "@babel/preset-typescript": "^7.28.5",
     "@messageformat/core": "^3.4.0",
+    "glob": "^11.0.0",
     "magic-string": "^0.30.21"
   },
   "devDependencies": {
