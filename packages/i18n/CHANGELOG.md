@@ -1,5 +1,11 @@
 # @astroscope/i18n
 
+## 0.2.3
+
+### Patch Changes
+
+- 08cd4b9: fix extracting from astro files w/ type imports
+
 ## 0.2.2
 
 ### Patch Changes
