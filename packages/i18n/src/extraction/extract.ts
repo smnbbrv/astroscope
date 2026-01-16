@@ -52,16 +52,17 @@ export async function extractKeysFromFile(options: ExtractOptions): Promise<Extr
     import('./babel-plugin.js'),
   ]);
 
+  // treat .astro files as TypeScript (otherwise type imports fail)
+  const isTypeScript = TS_EXTENSIONS.some((ext) => filename.endsWith(ext)) || filename.endsWith('.astro');
+  const isJSX = JSX_EXTENSIONS.some((ext) => filename.endsWith(ext));
+
   const result = await transformAsync(code, {
     filename,
     sourceMaps: stripFallbacks, // only need source maps when transforming
     babelrc: false,
     configFile: false,
     parserOpts: {
-      plugins: [
-        ...(TS_EXTENSIONS.some((ext) => filename.endsWith(ext)) ? ['typescript' as const] : []),
-        ...(JSX_EXTENSIONS.some((ext) => filename.endsWith(ext)) ? ['jsx' as const] : []),
-      ],
+      plugins: [...(isTypeScript ? ['typescript' as const] : []), ...(isJSX ? ['jsx' as const] : [])],
     },
     plugins: [
       [

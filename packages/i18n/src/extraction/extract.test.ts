@@ -214,5 +214,26 @@ describe('extractKeysFromFile', () => {
       expect(result.keys).toHaveLength(1);
       expect(result.keys[0]?.key).toBe('page.title');
     });
+
+    test('extracts from Astro file with TypeScript type imports', async () => {
+      // .astro files use TypeScript by default and can have type imports
+      const code = `
+        import { t } from '@astroscope/i18n/t';
+        import { type SomeType, someFunction } from './utils';
+        function $$render() {
+          const $$result = t('cart.title', 'Shopping Cart');
+          return '<h1>' + $$result + '</h1>';
+        }
+      `;
+
+      const result = await extractKeysFromFile({
+        filename: 'cart.astro',
+        code,
+        logger: mockLogger,
+      });
+
+      expect(result.keys).toHaveLength(1);
+      expect(result.keys[0]?.key).toBe('cart.title');
+    });
   });
 });
