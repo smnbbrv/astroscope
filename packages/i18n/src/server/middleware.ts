@@ -1,6 +1,5 @@
 import { type ExcludePattern, RECOMMENDED_EXCLUDES, shouldExclude } from '@astroscope/excludes';
 import type { APIContext, MiddlewareHandler } from 'astro';
-import type { RawTranslations } from '../shared/types.js';
 import { runWithContext } from './context.js';
 import { i18n } from './i18n.js';
 import type { I18nContext } from './types.js';
@@ -72,6 +71,17 @@ export function createI18nChunkMiddleware(): MiddlewareHandler {
     }
 
     const locale = path.slice(0, slashIdx);
+
+    // validate locale against configured locales to prevent arbitrary locale injection
+    const config = i18n.getConfig();
+
+    if (!config.locales.includes(locale)) {
+      return new Response('/* unknown locale */', {
+        status: 404,
+        headers: { 'Content-Type': 'application/javascript' },
+      });
+    }
+
     const rest = path.slice(slashIdx + 1);
 
     if (!rest.endsWith('.js')) {
@@ -86,34 +96,16 @@ export function createI18nChunkMiddleware(): MiddlewareHandler {
     }
 
     const chunkName = withoutJs.slice(0, lastDotIdx);
-    const keys = i18n.getManifest().chunks[chunkName];
+    const body = i18n.getChunkBody(locale, chunkName);
 
-    if (!keys) {
+    if (!body) {
       return new Response(`/* chunk not found: ${chunkName} */`, {
         status: 404,
         headers: { 'Content-Type': 'application/javascript' },
       });
     }
 
-    const translations = i18n.getTranslations(locale);
-    const chunkTranslations: RawTranslations = {};
-
-    for (const key of keys) {
-      if (translations[key]) {
-        chunkTranslations[key] = translations[key];
-      }
-    }
-
-    const js = `/* @astroscope/i18n chunk: ${chunkName} */
-(function() {
-  var i = window.__i18n__;
-  if (i) Object.assign(i.translations, ${JSON.stringify(chunkTranslations)});
-})();
-`;
-
-    const body = new TextEncoder().encode(js);
-
-    return new Response(body, {
+    return new Response(body as BodyInit, {
       status: 200,
       headers: {
         'Content-Type': 'text/javascript; charset=utf-8',

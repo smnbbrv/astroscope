@@ -36,6 +36,9 @@ class I18nSingleton {
   // locale -> inline script for I18nScript component
   private scriptCache = new Map<string, string>();
 
+  // "locale:chunkName" -> encoded chunk response body
+  private chunkCache = new Map<string, Uint8Array>();
+
   // manifest getter (set by init module, provides live data in dev mode)
   private manifestGetter: (() => ExtractionManifest) | null = null;
 
@@ -173,6 +176,48 @@ class I18nSingleton {
   }
 
   /**
+   * Get the encoded chunk response body for a locale/chunk combination.
+   * Cached to avoid repeated JSON.stringify and encoding on each request.
+   * Returns undefined if chunk not found in manifest.
+   */
+  getChunkBody(locale: string, chunkName: string): Uint8Array | undefined {
+    const keys = this.getManifest().chunks[chunkName];
+
+    if (!keys) {
+      return undefined;
+    }
+
+    const cacheKey = `${locale}:${chunkName}`;
+    const cached = this.chunkCache.get(cacheKey);
+
+    if (cached) {
+      return cached;
+    }
+
+    const translations = this.getTranslations(locale);
+    const chunkTranslations: RawTranslations = {};
+
+    for (const key of keys) {
+      if (translations[key]) {
+        chunkTranslations[key] = translations[key];
+      }
+    }
+
+    const js = `/* @astroscope/i18n chunk: ${chunkName} */
+(function() {
+  var i = window.__i18n__;
+  if (i) Object.assign(i.translations, ${JSON.stringify(chunkTranslations)});
+})();
+`;
+
+    const body = new TextEncoder().encode(js);
+
+    this.chunkCache.set(cacheKey, body);
+
+    return body;
+  }
+
+  /**
    * Get the inline script for I18nScript component.
    * Cached per locale, invalidated when translations change.
    */
@@ -257,6 +302,13 @@ class I18nSingleton {
       this.compiledCache.delete(locale);
       this.hashCache.delete(locale);
       this.scriptCache.delete(locale);
+
+      // clear chunk cache entries for this locale
+      for (const key of this.chunkCache.keys()) {
+        if (key.startsWith(`${locale}:`)) {
+          this.chunkCache.delete(key);
+        }
+      }
     }
   }
 
