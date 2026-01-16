@@ -190,10 +190,12 @@ export function i18nExtractPlugin({ types: t }: { types: typeof BabelTypes }): P
         // t('key', 'fallback') → t('key')
         // t('key', 'fallback', values) → t('key', undefined, values)
         if (state.opts.stripFallbacks && args.length >= 2) {
+          const firstArg = args[0]!;
+
           if (args.length === 2) {
-            path.node.arguments = [args[0]];
+            path.node.arguments = [firstArg];
           } else {
-            path.node.arguments = [args[0], t.identifier('undefined'), args[2]];
+            path.node.arguments = [firstArg, t.identifier('undefined'), args[2]!];
           }
         }
       },
