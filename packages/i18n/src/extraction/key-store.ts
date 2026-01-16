@@ -1,3 +1,4 @@
+import type { AstroIntegrationLogger } from 'astro';
 import type { ExtractedKey } from './types.js';
 
 /**
@@ -9,12 +10,33 @@ export class KeyStore {
   readonly fileToKeys = new Map<string, string[]>();
   readonly filesWithI18n = new Set<string>();
 
+  constructor(private readonly logger: AstroIntegrationLogger) {}
+
   /**
    * Add keys for a file, replacing any existing keys for that file.
    */
   addFileKeys(filename: string, keys: ExtractedKey[]): void {
+    const oldKeys = this.fileToKeys.get(filename);
+    const newKeyStrings = keys.map((k) => k.key);
+
+    // log key changes on HMR
+    if (oldKeys) {
+      const added = newKeyStrings.filter((k) => !oldKeys.includes(k));
+      const removed = oldKeys.filter((k) => !newKeyStrings.includes(k));
+      const file = filename.split('/').pop();
+
+      if (added.length > 0 || removed.length > 0) {
+        const parts: string[] = [];
+
+        if (added.length > 0) parts.push(`+${added.length}`);
+        if (removed.length > 0) parts.push(`-${removed.length}`);
+
+        this.logger.info(`hmr: ${parts.join(' ')} key(s) in ${file}`);
+      }
+    }
+
     // remove old keys for this file (if any)
-    if (this.fileToKeys.has(filename)) {
+    if (oldKeys) {
       for (let i = this.extractedKeys.length - 1; i >= 0; i--) {
         if (this.extractedKeys[i]?.file === filename) {
           this.extractedKeys.splice(i, 1);
@@ -28,10 +50,7 @@ export class KeyStore {
       this.extractedKeys.push(...keys);
     }
 
-    this.fileToKeys.set(
-      filename,
-      keys.map((k) => k.key),
-    );
+    this.fileToKeys.set(filename, newKeyStrings);
   }
 
   /**
@@ -39,13 +58,6 @@ export class KeyStore {
    */
   get uniqueKeyCount(): number {
     return new Set(this.extractedKeys.map((k) => k.key)).size;
-  }
-
-  /**
-   * Get count of duplicate keys.
-   */
-  get duplicateCount(): number {
-    return this.extractedKeys.length - this.uniqueKeyCount;
   }
 
   /**

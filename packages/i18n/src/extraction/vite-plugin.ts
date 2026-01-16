@@ -36,7 +36,7 @@ export type I18nVitePluginOptions = {
 export function i18nVitePlugin(options: I18nVitePluginOptions): Plugin {
   const { logger } = options;
 
-  const store = new KeyStore();
+  const store = new KeyStore(logger);
 
   let isBuild = false;
   let isSSR = false;
@@ -69,10 +69,6 @@ export function i18nVitePlugin(options: I18nVitePluginOptions): Plugin {
       const result = await scan(projectRoot, logger);
 
       store.merge(result);
-
-      if (store.duplicateCount) {
-        logger.warn(`duplicate keys detected: ${store.extractedKeys.length} total, ${store.uniqueKeyCount} unique`);
-      }
 
       logger.info(`dev mode: scanned ${result.fileToKeys.size} files, found ${result.uniqueKeyCount} keys`);
     },
@@ -260,10 +256,6 @@ export function getManifest() { return _getManifest(); }
         if (chunk.map) {
           chunk.map = s.generateMap({ hires: true }) as typeof chunk.map;
         }
-      }
-
-      if (store.duplicateCount) {
-        logger.warn(`duplicate keys detected: ${store.extractedKeys.length} total, ${store.uniqueKeyCount} unique`);
       }
 
       logger.info(`manifest: ${Object.keys(state.chunkManifest).length} chunks, ${store.uniqueKeyCount} keys`);
