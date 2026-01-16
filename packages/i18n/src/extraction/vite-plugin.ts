@@ -38,6 +38,12 @@ export function i18nVitePlugin(options: I18nVitePluginOptions): Plugin {
 
   const store = new KeyStore(logger);
 
+  // sync store's computed keys to global state (for dev mode live access)
+  const syncGlobalState = () => {
+    const state = getGlobalState();
+    state.extractedKeys = store.extractedKeys;
+  };
+
   let isBuild = false;
   let isSSR = false;
   let projectRoot = '';
@@ -49,7 +55,6 @@ export function i18nVitePlugin(options: I18nVitePluginOptions): Plugin {
     configResolved(config) {
       const state = getGlobalState();
       state.projectRoot = config.root;
-      state.extractedKeys = store.extractedKeys;
 
       isBuild = config.command === 'build';
       isSSR = !!config.build.ssr;
@@ -69,6 +74,8 @@ export function i18nVitePlugin(options: I18nVitePluginOptions): Plugin {
       const result = await scan(projectRoot, logger);
 
       store.merge(result);
+
+      syncGlobalState();
 
       logger.info(`dev mode: scanned ${result.fileToKeys.size} files, found ${result.uniqueKeyCount} keys`);
     },
@@ -130,6 +137,8 @@ export function getManifest() { return _getManifest(); }
       });
 
       store.addFileKeys(filename, result.keys);
+
+      syncGlobalState();
 
       // build mode: return transformed code with source map
       if (isBuild && result.code) {
