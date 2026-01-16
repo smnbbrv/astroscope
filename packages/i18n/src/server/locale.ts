@@ -18,11 +18,14 @@ export function detectLocale(request: Request): string | undefined {
     .split(',')
     .map((part) => {
       const [lang, q = 'q=1'] = part.trim().split(';');
+      const baseLang = lang?.split('-')[0]?.toLowerCase();
+
       return {
-        lang: lang.split('-')[0].toLowerCase(),
+        lang: baseLang,
         q: parseFloat(q.replace('q=', '')),
       };
     })
+    .filter((p): p is { lang: string; q: number } => !!p.lang)
     .sort((a, b) => b.q - a.q);
 
   for (const { lang } of preferred) {

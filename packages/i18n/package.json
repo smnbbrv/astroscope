@@ -86,6 +86,7 @@
     "lint:fix": "eslint 'src/**/*.ts' --fix"
   },
   "dependencies": {
+    "@astrojs/compiler": "^2.12.2",
     "@babel/core": "^7.28.6",
     "@babel/preset-typescript": "^7.28.5",
     "@messageformat/core": "^3.4.0",

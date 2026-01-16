@@ -11,7 +11,8 @@
     "preview": "astro preview",
     "typecheck": "astro check",
     "lint": "eslint 'src/**/*.{ts,tsx,astro}' astro.config.ts",
-    "lint:fix": "eslint 'src/**/*.{ts,tsx,astro}' astro.config.ts --fix"
+    "lint:fix": "eslint 'src/**/*.{ts,tsx,astro}' astro.config.ts --fix",
+    "test": "bun test"
   },
   "dependencies": {
     "@astrojs/node": "^9.5.1",
@@ -26,6 +27,7 @@
     "@astrojs/check": "^0.9.6",
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
+    "cheerio": "^1.0.0",
     "typescript": "^5.9.3"
   }
 }

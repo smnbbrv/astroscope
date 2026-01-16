@@ -16,9 +16,7 @@ const visibleDirective: ClientDirective = (load, options, el) => {
 
   const rawOptions = typeof options.value === 'object' ? (options.value as ClientVisibleOptions) : undefined;
 
-  const ioOptions: IntersectionObserverInit = {
-    rootMargin: rawOptions?.rootMargin,
-  };
+  const ioOptions: IntersectionObserverInit = rawOptions?.rootMargin ? { rootMargin: rawOptions.rootMargin } : {};
 
   const io = new IntersectionObserver((entries) => {
     for (const entry of entries) {

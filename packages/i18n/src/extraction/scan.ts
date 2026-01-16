@@ -1,10 +1,25 @@
 import fs from 'node:fs';
 import type { AstroIntegrationLogger } from 'astro';
 import { glob } from 'glob';
-import { BABEL_EXTENSIONS, extractKeysFromFile } from './extract.js';
+import { ALL_EXTENSIONS, extractKeysFromFile } from './extract.js';
 import { KeyStore } from './key-store.js';
 
-const GLOB_PATTERN = `src/**/*.{${BABEL_EXTENSIONS.map((e) => e.slice(1)).join(',')}}`;
+const GLOB_PATTERN = `src/**/*.{${ALL_EXTENSIONS.map((e) => e.slice(1)).join(',')}}`;
+
+/**
+ * Compile .astro file to JS using Astro's compiler.
+ * Returns the compiled code or null if compilation fails.
+ */
+async function compileAstro(code: string, filename: string): Promise<string | null> {
+  try {
+    const { transform } = await import('@astrojs/compiler');
+    const result = await transform(code, { filename });
+
+    return result.code;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Eagerly scan all source files for t() calls.
@@ -12,10 +27,8 @@ const GLOB_PATTERN = `src/**/*.{${BABEL_EXTENSIONS.map((e) => e.slice(1)).join('
  * Vite's lazy transform hook to process files on-demand.
  */
 export async function scan(projectRoot: string, logger: AstroIntegrationLogger): Promise<KeyStore> {
-  const store = new KeyStore();
+  const store = new KeyStore(logger);
 
-  // only scan files Babel can parse directly
-  // .astro files need Astro's compiler first and are handled by the transform hook
   const files = await glob(GLOB_PATTERN, {
     cwd: projectRoot,
     absolute: true,
@@ -24,13 +37,25 @@ export async function scan(projectRoot: string, logger: AstroIntegrationLogger):
 
   const results = await Promise.all(
     files.map(async (file) => {
-      const code = await fs.promises.readFile(file, 'utf-8');
+      let code = await fs.promises.readFile(file, 'utf-8');
 
       // quick check: skip files without i18n import
       if (!code.includes('@astroscope/i18n/t')) {
         return { file, keys: null };
       }
 
+      // compile .astro files first
+      if (file.endsWith('.astro')) {
+        const compiled = await compileAstro(code, file);
+
+        if (!compiled) {
+          return { file, keys: null };
+        }
+
+        code = compiled;
+      }
+
+      // extract keys
       const result = await extractKeysFromFile({
         filename: file,
         code,
