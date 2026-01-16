@@ -49,7 +49,15 @@ export function getManifest(): ExtractionManifest {
     ...key,
     // make file paths relative to project root for better readability
     // and avoiding leaking absolute paths from dev or ci environments
-    file: state.projectRoot ? path.relative(state.projectRoot, key.file) : key.file,
+    files: key.files.map((fileLocation) => {
+      const [filePath, line] = fileLocation.split(':');
+
+      if (!filePath) return fileLocation;
+
+      const relativePath = state.projectRoot ? path.relative(state.projectRoot, filePath) : filePath;
+
+      return line ? `${relativePath}:${line}` : relativePath;
+    }),
   }));
 
   return { keys, chunks: state.chunkManifest, imports: state.importsManifest };

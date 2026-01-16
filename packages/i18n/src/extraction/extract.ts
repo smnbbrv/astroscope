@@ -1,6 +1,6 @@
 import type { BabelFileResult } from '@babel/core';
 import type { AstroIntegrationLogger } from 'astro';
-import type { ExtractedKey } from './types.js';
+import type { ExtractedKeyOccurrence } from './types.js';
 
 /** TypeScript extensions (need 'typescript' babel plugin) */
 export const TS_EXTENSIONS = ['.ts', '.tsx'] as const;
@@ -28,11 +28,11 @@ export type ExtractOptions = {
   code: string;
   logger: AstroIntegrationLogger;
   stripFallbacks?: boolean | undefined;
-  onKeyExtracted?: ((key: ExtractedKey) => void) | undefined;
+  onKeyExtracted?: ((key: ExtractedKeyOccurrence) => void) | undefined;
 };
 
 export type ExtractResult = {
-  keys: ExtractedKey[];
+  keys: ExtractedKeyOccurrence[];
   code: string | null;
   map: BabelFileResult['map'];
 };
@@ -44,7 +44,7 @@ export type ExtractResult = {
 export async function extractKeysFromFile(options: ExtractOptions): Promise<ExtractResult> {
   const { filename, code, logger, stripFallbacks = false, onKeyExtracted } = options;
 
-  const keys: ExtractedKey[] = [];
+  const keys: ExtractedKeyOccurrence[] = [];
 
   // dynamic imports prevent Babel from being bundled into server runtime
   const [{ transformAsync }, { i18nExtractPlugin }] = await Promise.all([
@@ -69,7 +69,7 @@ export async function extractKeysFromFile(options: ExtractOptions): Promise<Extr
         i18nExtractPlugin,
         {
           stripFallbacks,
-          onKeyExtracted: (key: ExtractedKey) => {
+          onKeyExtracted: (key: ExtractedKeyOccurrence) => {
             keys.push(key);
             onKeyExtracted?.(key);
           },

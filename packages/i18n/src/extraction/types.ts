@@ -1,13 +1,23 @@
 import type { TranslationMeta } from '../shared/types.js';
 
 /**
- * Extracted metadata for a single translation key
+ * Single occurrence of a translation key (used during extraction)
  */
-export type ExtractedKey = {
+export type ExtractedKeyOccurrence = {
   key: string;
   meta: TranslationMeta;
   file: string;
   line: number;
+};
+
+/**
+ * Deduplicated translation key with all file locations (used in manifest)
+ */
+export type ExtractedKey = {
+  key: string;
+  meta: TranslationMeta;
+  /** All locations where this key is used (file:line format) */
+  files: string[];
 };
 
 /**

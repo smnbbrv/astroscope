@@ -3,10 +3,10 @@ import type * as BabelTypes from '@babel/types';
 import type { Expression, Node, ObjectExpression } from '@babel/types';
 import type { AstroIntegrationLogger } from 'astro';
 import type { TranslationMeta, VariableDef } from '../shared/types.js';
-import type { ExtractedKey } from './types.js';
+import type { ExtractedKeyOccurrence } from './types.js';
 
 export type I18nExtractPluginOpts = {
-  onKeyExtracted: (key: ExtractedKey) => void;
+  onKeyExtracted: (key: ExtractedKeyOccurrence) => void;
   logger: AstroIntegrationLogger;
   stripFallbacks: boolean;
 };
