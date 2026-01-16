@@ -1,5 +1,11 @@
 # @astroscope/i18n
 
+## 0.2.4
+
+### Patch Changes
+
+- 97a95ce: properly handle multiple occurences of the same translation key
+
 ## 0.2.3
 
 ### Patch Changes
