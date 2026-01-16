@@ -1,5 +1,12 @@
 # @astroscope/i18n
 
+## 0.2.2
+
+### Patch Changes
+
+- f48fb2f: fix dev mode extraction & deduplicate extracted tokens
+- d2bfb25: add translation chunks cache
+
 ## 0.2.1
 
 ### Patch Changes
