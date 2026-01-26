@@ -51,7 +51,7 @@ export default function StatsModal({ onClose }: StatsModalProps) {
         </div>
 
         <p style={{ color: '#666', fontSize: '0.9rem' }}>
-          {t('stats.member_since', 'Member since {date}', { date: 'January 2023' })}
+          {t('stats.member_since', 'Member since {$date}', { date: 'January 2023' })}
         </p>
 
         <button

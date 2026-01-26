@@ -1,7 +1,7 @@
 {
   "name": "@astroscope/i18n",
   "version": "0.2.3",
-  "description": "i18n for Astro + React islands — automatic tree-shaking, parallel loading, any translation source",
+  "description": "i18n for Astro + React islands — MessageFormat 2, automatic tree-shaking, parallel loading, any translation source",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -69,6 +69,8 @@
     "i18n",
     "internationalization",
     "translations",
+    "messageformat",
+    "mf2",
     "react",
     "islands",
     "ssr"
@@ -89,7 +91,7 @@
     "@astrojs/compiler": "^2.12.2",
     "@babel/core": "^7.28.6",
     "@babel/preset-typescript": "^7.28.5",
-    "@messageformat/core": "^3.4.0",
+    "messageformat": "^4.0.0",
     "glob": "^11.0.0",
     "magic-string": "^0.30.21"
   },

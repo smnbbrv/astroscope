@@ -21,11 +21,12 @@ i18n for Astro + React islands — automatic tree-shaking, parallel loading, any
 ## Features
 
 - **Per-chunk translation loading** — each island gets only its translations
-- **ICU MessageFormat** support via `@messageformat/core`
+- **Unicode MessageFormat 2** (MF2) support via `messageformat` v4
+- **Built-in formatters** — `:number`, `:integer`, `:percent`, `:currency`, `:date`, `:time`, `:datetime`, `:unit`
 - **Babel-based extraction** — robust AST parsing, source maps, production stripping
 - **Manifest fallbacks** — missing translations automatically use extracted fallbacks
 - **Full TypeScript support**
-- **Tiny client runtime** — no heavy i18n framework
+- **Tiny client runtime** — ~8KB gzipped for translations
 
 ## Installation
 
@@ -153,11 +154,13 @@ export function CheckoutSummary() {
   return (
     <div>
       <h1>{t('checkout.title', 'Order Summary')}</h1>
-      <p>{t('checkout.tax', 'Includes {tax} VAT', { tax: '19%' })}</p>
+      <p>{t('checkout.tax', 'Includes {$tax} VAT', { tax: '19%' })}</p>
     </div>
   );
 }
 ```
+
+> **Note:** Variables use `{$name}` syntax (with `$` prefix) per MessageFormat 2 specification.
 
 ### 6. Use i18n-aware client directives
 
@@ -179,24 +182,48 @@ import Cart from '../components/Cart';
 
 ### `t(key, fallback, values?)`
 
-Translate a key with optional interpolation values.
+Translate a key with optional interpolation values. The fallback is used when a translation is missing and also serves as an example for translators. Uses [MessageFormat 2](https://github.com/unicode-org/message-format-wg) syntax.
 
 ```ts
-// simple
+// simple text
 t('checkout.title', 'Order Summary')
 
-// with variables
-t('checkout.tax', 'Includes {tax} VAT', { tax: '19%' })
+// with variables (note the $ prefix)
+t('checkout.tax', 'Includes {$tax} VAT', { tax: '19%' })
 
-// with pluralization (ICU MessageFormat)
-t('cart.items', '{count, plural, one {# item} other {# items}}', { count: 5 })
+// with pluralization (MF2 syntax)
+t('cart.items', `.input {$count :number}
+.match $count
+one {{{$count} item}}
+* {{{$count} items}}`, { count: 5 })
+
+// with number formatting
+t('stats.value', '{$value :number minimumFractionDigits=2}', { value: 1234.5 })
+
+// with percentage
+t('stats.ratio', '{$value :percent}', { value: 0.856 })
+
+// with date/time formatting
+t('event.date', '{$date :date style=long}', { date: new Date() })
+t('event.time', '{$time :time style=short}', { time: new Date() })
+
+// with currency (translator controls currency)
+t('product.price', '{$price :currency currency=EUR}', { price: 99.99 })
+
+// with currency (code controls currency via wrapped value)
+t('product.price', '{$price :currency}', {
+  price: { valueOf: () => 99.99, options: { currency: 'EUR' } }
+})
+
+// with units
+t('distance', '{$value :unit unit=kilometer}', { value: 42 })
 
 // with metadata object (for extraction tooling)
 t('cart.total', {
-  fallback: 'Total: {amount}',
+  example: 'Total: {$amount}',
   description: 'Cart total price',
   variables: {
-    amount: { fallback: '$0.00', description: 'Formatted price' }
+    amount: { example: '$0.00', description: 'Formatted price' }
   }
 }, { amount: '$49.99' })
 ```
@@ -260,7 +287,70 @@ The same `import { t } from '@astroscope/i18n/t'` works everywhere — bundler p
 
 ### Client bundle
 
-Translation chunks are served as raw ICU MessageFormat strings and compiled on the browser on first use. This keeps chunk sizes minimal but includes `@messageformat/core` (~15KB gzipped) in your client bundle. Compiled messages are cached for subsequent renders.
+Translation chunks are served as raw MessageFormat 2 strings and compiled on the browser on first use. This keeps chunk sizes minimal — the `messageformat` runtime is ~8KB gzipped. Compiled messages are cached for subsequent renders.
+
+> **Future:** Once browsers ship native `Intl.MessageFormat`, this 8KB runtime will be replaced by the built-in API with zero bundle cost.
+
+## MessageFormat 2 Syntax
+
+This library uses [Unicode MessageFormat 2](https://github.com/unicode-org/message-format-wg) (MF2), the modern standard for internationalization.
+
+### Basic syntax
+
+```
+Simple text
+Hello {$name}
+```
+
+### Pluralization
+
+```
+.input {$count :number}
+.match $count
+one {{{$count} item}}
+* {{{$count} items}}
+```
+
+### Selection (gender, etc.)
+
+```
+.input {$gender :string}
+.match $gender
+male {{He liked it}}
+female {{She liked it}}
+* {{They liked it}}
+```
+
+### Built-in formatters
+
+| Formatter | Description | Example |
+|-----------|-------------|---------|
+| `:number` | Locale-aware number | `{$n :number}` → "1,234.56" |
+| `:integer` | Integer (no decimals) | `{$n :integer}` → "1,235" |
+| `:percent` | Percentage | `{$n :percent}` → "85.6%" |
+| `:currency` | Currency | `{$n :currency currency=EUR}` → "€99.99" |
+| `:date` | Date | `{$d :date style=long}` → "January 26, 2026" |
+| `:time` | Time | `{$d :time style=short}` → "3:45 PM" |
+| `:datetime` | Date + time | `{$d :datetime dateStyle=medium timeStyle=short}` |
+| `:unit` | Units | `{$n :unit unit=kilometer}` → "42 km" |
+
+### Currency and unit options
+
+For `:currency` and `:unit`, the required option (`currency` or `unit`) can be:
+
+1. **Hardcoded in translation** (translator controls):
+   ```
+   {$price :currency currency=EUR}
+   ```
+   Code passes plain number: `{ price: 99.99 }`
+
+2. **Provided by code** (for dynamic currency/unit):
+   ```
+   {$price :currency}
+   ```
+   Code passes wrapped value: `{ price: { valueOf: () => 99.99, options: { currency: 'EUR' } } }`
+
+> **Note:** If both translation and code specify the option, **translation wins**.
 
 ## Configuration
 

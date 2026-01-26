@@ -18,11 +18,11 @@ export default function FallbackTest() {
           <strong>fallback.missing:</strong> {t('fallback.missing', 'This is the fallback example text')}
         </li>
         <li>
-          <strong>fallback.withVar:</strong> {t('fallback.withVar', 'Hello, {name}!', { name: 'World' })}
+          <strong>fallback.withVar:</strong> {t('fallback.withVar', 'Hello, {$name}!', { name: 'World' })}
         </li>
         <li>
           <strong>fallback.plural:</strong>{' '}
-          {t('fallback.plural', '{n, plural, one {# message} other {# messages}}', { n: 5 })}
+          {t('fallback.plural', '.input {$n :number}\n.match $n\none {{{$n} message}}\n* {{{$n} messages}}', { n: 5 })}
         </li>
       </ul>
 

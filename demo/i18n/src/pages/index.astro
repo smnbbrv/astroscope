@@ -10,6 +10,7 @@ import CircularA from '../components/CircularA';
 import CircularB from '../components/CircularB';
 import CookieBanner from '../components/CookieBanner';
 import FallbackTest from '../components/FallbackTest';
+import FormattersDemo from '../components/FormattersDemo';
 import LazyLoadDemo from '../components/LazyLoadDemo';
 import Newsletter from '../components/Newsletter';
 import ProductCard from '../components/ProductCard';
@@ -78,6 +79,16 @@ const { keys, chunks, imports } = i18n.getManifest();
         <ProductCard client:visible-x name="Smart Watch" price="$199.99" image="#ec4899" />
         <ProductCard client:visible-x name="USB-C Hub" price="$49.99" image="#14b8a6" />
       </div>
+    </div>
+  </div>
+
+  <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+      <h2 class="card-title">MF2 Formatters</h2>
+      <p class="text-sm text-base-content/70 mb-4">
+        MessageFormat 2 built-in formatters
+      </p>
+      <FormattersDemo client:load-x />
     </div>
   </div>
 

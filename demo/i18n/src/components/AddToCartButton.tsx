@@ -15,7 +15,7 @@ export default function AddToCartButton({ productName }: AddToCartButtonProps) {
       ) : (
         <button
           onClick={() => setAdded(true)}
-          aria-label={t('addToCart.ariaLabel', { fallback: 'Add {product} to cart' }, { product: productName })}
+          aria-label={t('addToCart.ariaLabel', { fallback: 'Add {$product} to cart' }, { product: productName })}
           style={{
             padding: '0.5rem 1rem',
             background: '#333',

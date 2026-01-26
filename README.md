@@ -11,7 +11,7 @@ A collection of Astro integrations for common server-side needs — logging, tra
 | [@astroscope/boot](./packages/boot) | Startup and graceful shutdown lifecycle hooks |
 | [@astroscope/csrf](./packages/csrf) | CSRF protection with path exclusions for webhooks and OIDC callbacks |
 | [@astroscope/excludes](./packages/excludes) | Reusable exclude patterns and helpers for middleware |
-| [@astroscope/i18n](./packages/i18n) | i18n for Astro + React islands — automatic tree-shaking, parallel loading, any translation source |
+| [@astroscope/i18n](./packages/i18n) | i18n for Astro + React islands — dynamic translations from any source, auto-split per component, parallel loading |
 | [@astroscope/opentelemetry](./packages/opentelemetry) | OpenTelemetry tracing and metrics — works in dev mode, no monkey-patching |
 | [@astroscope/pino](./packages/pino) | Pino logging with request-scoped context |
 | [@astroscope/proxy](./packages/proxy) | HTTP proxy for strangler fig migrations and API gateways |

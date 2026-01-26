@@ -10,8 +10,8 @@ const mockTranslations: Record<string, RawTranslations> = {
     // cart
     'cart.title': 'Shopping Cart',
     'cart.empty': 'Your cart is empty',
-    'cart.items': '{count, plural, one {# item} other {# items}} in cart',
-    'cart.total': 'Total: {amount}',
+    'cart.items': '.input {$count :number}\n.match $count\none {{{$count} item in cart}}\n* {{{$count} items in cart}}',
+    'cart.total': 'Total: {$amount}',
     'checkout.button': 'Proceed to Checkout',
     // newsletter
     'newsletter.title': 'Stay Updated',
@@ -37,7 +37,7 @@ const mockTranslations: Record<string, RawTranslations> = {
     'stats.spent': 'Total Spent',
     'stats.rating': 'Avg Rating',
     'stats.reviews': 'Reviews Given',
-    'stats.member_since': 'Member since {date}',
+    'stats.member_since': 'Member since {$date}',
     'stats.close': 'Close',
   },
   de: {
@@ -47,8 +47,9 @@ const mockTranslations: Record<string, RawTranslations> = {
     // cart
     'cart.title': 'Warenkorb',
     'cart.empty': 'Ihr Warenkorb ist leer',
-    'cart.items': '{count, plural, one {# Artikel} other {# Artikel}} im Warenkorb',
-    'cart.total': 'Gesamt: {amount}',
+    'cart.items':
+      '.input {$count :number}\n.match $count\none {{{$count} Artikel im Warenkorb}}\n* {{{$count} Artikel im Warenkorb}}',
+    'cart.total': 'Gesamt: {$amount}',
     'checkout.button': 'Zur Kasse',
     // newsletter
     'newsletter.title': 'Bleiben Sie informiert',
@@ -74,7 +75,7 @@ const mockTranslations: Record<string, RawTranslations> = {
     'stats.spent': 'Ausgegeben',
     'stats.rating': 'Bewertung',
     'stats.reviews': 'Rezensionen',
-    'stats.member_since': 'Mitglied seit {date}',
+    'stats.member_since': 'Mitglied seit {$date}',
     'stats.close': 'Schließen',
   },
 };

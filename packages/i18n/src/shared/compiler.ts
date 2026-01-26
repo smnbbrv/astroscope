@@ -1,27 +1,29 @@
-import MessageFormat from '@messageformat/core';
+import { MessageFormat } from 'messageformat';
+import { DraftFunctions } from 'messageformat/functions';
+
 import type { CompiledTranslation, CompiledTranslations, RawTranslations } from './types.js';
 
-const cache = new Map<string, MessageFormat>();
+// enable draft functions for :currency, :date, :datetime, :time, :percent, :unit
+const mfOptions = { functions: DraftFunctions };
 
-function getMessageFormat(locale: string): MessageFormat {
-  let mf = cache.get(locale);
-
-  if (!mf) {
-    mf = new MessageFormat(locale);
-
-    cache.set(locale, mf);
-  }
-
-  return mf;
-}
+const cache = new Map<string, MessageFormat<string, string>>();
 
 export function compileMessage(locale: string, message: string): CompiledTranslation {
-  const mf = getMessageFormat(locale);
+  const cacheKey = `${locale}:${message}`;
+  const cached = cache.get(cacheKey);
+
+  if (cached) {
+    return (values) => cached.format(values);
+  }
 
   try {
-    return mf.compile(message);
+    const mf = new MessageFormat(locale, message, mfOptions);
+
+    cache.set(cacheKey, mf);
+
+    return (values) => mf.format(values);
   } catch {
-    // if ICU parsing fails, return raw message so the problem is visible to the user
+    // if MF2 parsing fails, return raw message so the problem is visible to the user
     return () => message;
   }
 }
