@@ -146,6 +146,7 @@ export function createI18nMiddleware(options: I18nMiddlewareOptions): Middleware
     const context: I18nContext = {
       locale,
       translations: i18n.getCompiledTranslations(locale),
+      rawTranslations: i18n.getTranslations(locale),
       fallback: i18n.getConfig().fallback,
     };
 

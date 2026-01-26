@@ -3,7 +3,7 @@
  * With hidden <CircularB client:visible /> in index.astro, Vite creates separate chunks
  * that statically import each other, testing circular detection in flattenImports
  */
-import { t } from '@astroscope/i18n/t';
+import { t } from '@astroscope/i18n/translate';
 import CircularB from './CircularB.js';
 
 export default function CircularA({ showB = true }: { showB?: boolean }) {

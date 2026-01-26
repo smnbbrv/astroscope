@@ -15,7 +15,7 @@ describe('extractKeysFromFile', () => {
   describe('TypeScript files', () => {
     test('extracts simple t() call with string fallback', async () => {
       const code = `
-        import { t } from '@astroscope/i18n/t';
+        import { t } from '@astroscope/i18n/translate';
         function render() {
           return t('hello', 'Hello World');
         }
@@ -34,7 +34,7 @@ describe('extractKeysFromFile', () => {
 
     test('extracts t() call with object meta', async () => {
       const code = `
-        import { t } from '@astroscope/i18n/t';
+        import { t } from '@astroscope/i18n/translate';
         function render() {
           return t('greeting', { fallback: 'Hello {name}', description: 'Greeting message' });
         }
@@ -54,7 +54,7 @@ describe('extractKeysFromFile', () => {
 
     test('extracts multiple t() calls', async () => {
       const code = `
-        import { t } from '@astroscope/i18n/t';
+        import { t } from '@astroscope/i18n/translate';
         function render() {
           const a = t('key1', 'Fallback 1');
           const b = t('key2', 'Fallback 2');
@@ -74,7 +74,7 @@ describe('extractKeysFromFile', () => {
 
     test('extracts t() with variables definition', async () => {
       const code = `
-        import { t } from '@astroscope/i18n/t';
+        import { t } from '@astroscope/i18n/translate';
         function render() {
           return t('cart.items', {
             fallback: '{count, plural, one {# item} other {# items}}',
@@ -118,7 +118,7 @@ describe('extractKeysFromFile', () => {
   describe('TSX files', () => {
     test('extracts t() from JSX', async () => {
       const code = `
-        import { t } from '@astroscope/i18n/t';
+        import { t } from '@astroscope/i18n/translate';
         export function Component() {
           return <div>{t('title', 'Page Title')}</div>;
         }
@@ -138,7 +138,7 @@ describe('extractKeysFromFile', () => {
   describe('stripFallbacks', () => {
     test('strips fallback when enabled', async () => {
       const code = `
-        import { t } from '@astroscope/i18n/t';
+        import { t } from '@astroscope/i18n/translate';
         function render() {
           return t('hello', 'Hello World');
         }
@@ -157,7 +157,7 @@ describe('extractKeysFromFile', () => {
 
     test('strips fallback but keeps values argument', async () => {
       const code = `
-        import { t } from '@astroscope/i18n/t';
+        import { t } from '@astroscope/i18n/translate';
         function render() {
           return t('hello', 'Hello {name}', { name: 'World' });
         }
@@ -176,7 +176,7 @@ describe('extractKeysFromFile', () => {
 
     test('does not strip fallback when disabled', async () => {
       const code = `
-        import { t } from '@astroscope/i18n/t';
+        import { t } from '@astroscope/i18n/translate';
         function render() {
           return t('hello', 'Hello World');
         }
@@ -198,7 +198,7 @@ describe('extractKeysFromFile', () => {
     test('extracts from code that looks like compiled Astro', async () => {
       // simulates what Astro compiler outputs - the render function
       const code = `
-        import { t } from '@astroscope/i18n/t';
+        import { t } from '@astroscope/i18n/translate';
         function $$render() {
           const $$result = t('page.title', 'Welcome');
           return '<h1>' + $$result + '</h1>';
@@ -218,7 +218,7 @@ describe('extractKeysFromFile', () => {
     test('extracts from Astro file with TypeScript type imports', async () => {
       // .astro files use TypeScript by default and can have type imports
       const code = `
-        import { t } from '@astroscope/i18n/t';
+        import { t } from '@astroscope/i18n/translate';
         import { type SomeType, someFunction } from './utils';
         function $$render() {
           const $$result = t('cart.title', 'Shopping Cart');

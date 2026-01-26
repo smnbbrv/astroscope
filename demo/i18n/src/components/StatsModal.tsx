@@ -1,4 +1,4 @@
-import { t } from '@astroscope/i18n/t';
+import { t } from '@astroscope/i18n/translate';
 
 export type StatsModalProps = {
   onClose: () => void;

@@ -1,5 +1,6 @@
-import { compileMessage } from '../shared/compiler.js';
+import { compileMessage, formatMessageToParts } from '../shared/compiler.js';
 import { normalizeMeta } from '../shared/meta.js';
+import { type RichComponents, partsToNodes } from '../shared/rich.js';
 import type { CompiledTranslation, TranslateFunction, TranslationMeta } from '../shared/types.js';
 import './types.js';
 
@@ -59,3 +60,38 @@ export const t: TranslateFunction = ((
 
   return compiled(values);
 }) as TranslateFunction;
+
+/**
+ * Client-side rich text translation function
+ *
+ * Parses MF2 markup syntax and applies component callbacks to wrap content.
+ * Works with any JSX runtime (React, Preact, etc.).
+ *
+ * @param key - Translation key
+ * @param meta - Fallback string or meta object with fallback (used as message template)
+ * @param components - Map of tag names to component callbacks
+ * @param values - Runtime interpolation values (ICU MessageFormat)
+ *
+ * @example
+ * ```tsx
+ * rich('tos', 'Read our {#link}Terms{/link}', {
+ *   link: (children) => <a href="/tos">{children}</a>
+ * })
+ * // Returns: ['Read our ', <a href="/tos">Terms</a>]
+ * ```
+ */
+export function rich<T = unknown>(
+  key: string,
+  meta?: TranslationMeta | string | undefined,
+  components?: RichComponents<T> | undefined,
+  values?: Record<string, unknown> | undefined,
+): (string | T)[] {
+  const normalizedMeta: TranslationMeta = meta ? normalizeMeta(meta) : { fallback: '' };
+
+  // look up raw translation, fall back to meta.fallback or key
+  const raw = window.__i18n__.translations[key] ?? normalizedMeta.fallback ?? key;
+
+  const parts = formatMessageToParts(window.__i18n__.locale, raw, values);
+
+  return partsToNodes(parts, components ?? {});
+}

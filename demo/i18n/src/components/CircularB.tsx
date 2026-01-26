@@ -1,7 +1,7 @@
 /**
  * Circular dependency test: B imports A, A imports B
  */
-import { t } from '@astroscope/i18n/t';
+import { t } from '@astroscope/i18n/translate';
 import CircularA from './CircularA.js';
 
 export default function CircularB({ showA = true }: { showA?: boolean }) {

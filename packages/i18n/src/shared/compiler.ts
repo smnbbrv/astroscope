@@ -1,4 +1,4 @@
-import { MessageFormat } from 'messageformat';
+import { MessageFormat, type MessagePart } from 'messageformat';
 import { DraftFunctions } from 'messageformat/functions';
 
 import type { CompiledTranslation, CompiledTranslations, RawTranslations } from './types.js';
@@ -8,23 +8,49 @@ const mfOptions = { functions: DraftFunctions };
 
 const cache = new Map<string, MessageFormat<string, string>>();
 
-export function compileMessage(locale: string, message: string): CompiledTranslation {
+function getOrCreateMessageFormat(locale: string, message: string): MessageFormat<string, string> {
   const cacheKey = `${locale}:${message}`;
   const cached = cache.get(cacheKey);
 
   if (cached) {
-    return (values) => cached.format(values);
+    return cached;
   }
 
-  try {
-    const mf = new MessageFormat(locale, message, mfOptions);
+  const mf = new MessageFormat(locale, message, mfOptions);
 
-    cache.set(cacheKey, mf);
+  cache.set(cacheKey, mf);
+
+  return mf;
+}
+
+export function compileMessage(locale: string, message: string): CompiledTranslation {
+  try {
+    const mf = getOrCreateMessageFormat(locale, message);
 
     return (values) => mf.format(values);
   } catch {
     // if MF2 parsing fails, return raw message so the problem is visible to the user
     return () => message;
+  }
+}
+
+/**
+ * Format a message to parts for rich text rendering.
+ * Returns an array of MessagePart objects that can be processed
+ * to build component trees with markup elements.
+ */
+export function formatMessageToParts(
+  locale: string,
+  message: string,
+  values?: Record<string, unknown> | undefined,
+): MessagePart<string>[] {
+  try {
+    const mf = getOrCreateMessageFormat(locale, message);
+
+    return mf.formatToParts(values);
+  } catch {
+    // if MF2 parsing fails, return a single literal part with the raw message
+    return [{ type: 'literal', value: message }];
   }
 }
 

@@ -1,8 +1,8 @@
 ---
 import '../styles/index.css';
 import { i18n } from '@astroscope/i18n';
-import { I18nScript } from '@astroscope/i18n/components';
-import { t } from '@astroscope/i18n/t';
+import { I18nScript } from '@astroscope/i18n/astro';
+import { rich, t } from '@astroscope/i18n/translate';
 import Layout from '../../../shared/Layout.astro';
 import AddToCartButton from '../components/AddToCartButton';
 import Cart from '../components/Cart';
@@ -16,6 +16,7 @@ import Newsletter from '../components/Newsletter';
 import ProductCard from '../components/ProductCard';
 import ProductCardNested from '../components/ProductCardNested';
 import ProductList from '../components/ProductList';
+import RichTextDemo from '../components/RichTextDemo';
 
 const { keys, chunks, imports } = i18n.getManifest();
 ---
@@ -89,6 +90,51 @@ const { keys, chunks, imports } = i18n.getManifest();
         MessageFormat 2 built-in formatters
       </p>
       <FormattersDemo client:load-x />
+    </div>
+  </div>
+
+  <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+      <h2 class="card-title">MF2 Rich Text (Astro SSR)</h2>
+      <p class="text-sm text-base-content/70 mb-4">
+        Rich text in Astro templates — server-rendered, no client JS
+      </p>
+      <div style="padding: 1rem; background: #ecfdf5; border-radius: 8px;">
+        <div style="display: grid; gap: 0.75rem; font-size: 0.9rem;">
+          <div>
+            <strong>Basic link</strong><br />
+            <code>{'Read our {#link}Terms{/link}'}</code><br />
+            → {rich('demo.astro.tos', 'Read our {#link}Terms of Service{/link}', {
+              link: (children) => <a href="/tos" style="color: #2563eb; text-decoration: underline;">{children}</a>,
+            })}
+          </div>
+          <div>
+            <strong>With variables</strong><br />
+            <code>{'Hello {$name}, check your {#inbox}messages{/inbox}'}</code><br />
+            → {rich('demo.astro.greeting', 'Hello {$name}, check your {#inbox}messages{/inbox}', {
+              inbox: (children) => <a href="/inbox" style="color: #2563eb; text-decoration: underline;">{children}</a>,
+            }, { name: 'Bob' })}
+          </div>
+          <div>
+            <strong>Nested tags</strong><br />
+            <code>{'This is {#bold}very {#em}important{/em}{/bold}'}</code><br />
+            → {rich('demo.astro.nested', 'This is {#bold}very {#em}important{/em}{/bold}', {
+              bold: (children) => <strong>{children}</strong>,
+              em: (children) => <em style="color: #dc2626;">{children}</em>,
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+      <h2 class="card-title">MF2 Rich Text (React Island)</h2>
+      <p class="text-sm text-base-content/70 mb-4">
+        Same <code>rich()</code> API in React components — hydrates on client
+      </p>
+      <RichTextDemo client:load-x />
     </div>
   </div>
 

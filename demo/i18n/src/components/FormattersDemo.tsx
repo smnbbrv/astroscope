@@ -1,4 +1,4 @@
-import { t } from '@astroscope/i18n/t';
+import { t } from '@astroscope/i18n/translate';
 
 /**
  * Demo component showcasing all MF2 formatters.
@@ -17,7 +17,8 @@ import { t } from '@astroscope/i18n/t';
  * - :unit - unit formatting (e.g., kilometers, kilograms)
  */
 export default function FormattersDemo() {
-  const now = new Date();
+  // use fixed date to avoid hydration mismatch between SSR and client
+  const now = new Date('2026-01-15T14:30:00Z');
   const amount = 1234.56;
   const count = 42;
   const ratio = 0.856;

@@ -10,10 +10,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./t": {
-      "types": "./dist/client/t.d.ts",
-      "browser": "./dist/client/t.js",
-      "default": "./dist/server/t.js"
+    "./translate": {
+      "types": "./dist/client/translate.d.ts",
+      "browser": "./dist/client/translate.js",
+      "default": "./dist/server/translate.js"
     },
     "./client-directives/load.js": {
       "types": "./dist/client/directives/load.d.ts",
@@ -35,8 +35,8 @@
       "types": "./dist/client/directives/only.d.ts",
       "import": "./dist/client/directives/only.js"
     },
-    "./components": {
-      "import": "./src/components/index.ts"
+    "./astro": {
+      "import": "./src/astro/index.ts"
     },
     "./internal": {
       "types": "./dist/internal.d.ts",
@@ -49,7 +49,7 @@
   },
   "files": [
     "dist",
-    "src/components"
+    "src/astro"
   ],
   "sideEffects": [
     "./dist/client/directives/*.js",
@@ -82,7 +82,7 @@
   },
   "homepage": "https://github.com/smnbbrv/astroscope/tree/main/packages/i18n#readme",
   "scripts": {
-    "build": "tsup src/index.ts src/internal.ts src/extraction/index.ts src/server/t.ts src/client/t.ts src/client/directives/load.ts src/client/directives/idle.ts src/client/directives/visible.ts src/client/directives/media.ts src/client/directives/only.ts src/client/directives/utils.ts --format esm --dts --external astro --external astro/client/load.js --external astro/client/idle.js --external astro/client/visible.js --external astro/client/media.js --external astro/client/only.js --external virtual:@astroscope/i18n/manifest --external @babel/core",
+    "build": "tsup src/index.ts src/internal.ts src/extraction/index.ts src/server/translate.ts src/client/translate.ts src/client/directives/load.ts src/client/directives/idle.ts src/client/directives/visible.ts src/client/directives/media.ts src/client/directives/only.ts src/client/directives/utils.ts --format esm --dts --external astro --external astro/client/load.js --external astro/client/idle.js --external astro/client/visible.js --external astro/client/media.js --external astro/client/only.js --external virtual:@astroscope/i18n/manifest --external @babel/core",
     "typecheck": "tsc --noEmit",
     "lint": "eslint 'src/**/*.ts'",
     "lint:fix": "eslint 'src/**/*.ts' --fix"

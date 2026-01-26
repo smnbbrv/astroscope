@@ -39,8 +39,8 @@ export async function scan(projectRoot: string, logger: AstroIntegrationLogger):
     files.map(async (file) => {
       let code = await fs.promises.readFile(file, 'utf-8');
 
-      // quick check: skip files without i18n import
-      if (!code.includes('@astroscope/i18n/t')) {
+      // quick check: skip files without i18n translate import
+      if (!code.includes('@astroscope/i18n/translate')) {
         return { file, keys: null };
       }
 

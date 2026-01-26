@@ -124,7 +124,7 @@ Inject translations into the page for hydrated components:
 
 ```astro
 ---
-import { I18nScript } from '@astroscope/i18n/components';
+import { I18nScript } from '@astroscope/i18n/astro';
 ---
 <html>
   <head>
@@ -141,14 +141,14 @@ import { I18nScript } from '@astroscope/i18n/components';
 ```astro
 ---
 // In .astro files
-import { t } from '@astroscope/i18n/t';
+import { t } from '@astroscope/i18n/translate';
 ---
 <h1>{t('checkout.title', 'Order Summary')}</h1>
 ```
 
 ```tsx
 // In React components
-import { t } from '@astroscope/i18n/t';
+import { t } from '@astroscope/i18n/translate';
 
 export function CheckoutSummary() {
   return (
@@ -228,6 +228,44 @@ t('cart.total', {
 }, { amount: '$49.99' })
 ```
 
+### `rich(key, fallback, components, values?)`
+
+Translate with embedded components using MF2 markup syntax. Returns an array of strings and JSX elements that can be rendered directly.
+
+```tsx
+import { rich } from '@astroscope/i18n/translate';
+
+// basic link
+rich('tos', 'Read our {#link}Terms of Service{/link}', {
+  link: (children) => <a href="/tos">{children}</a>
+})
+// Returns: ['Read our ', <a href="/tos">Terms of Service</a>]
+
+// multiple tags
+rich('legal', 'Read our {#tos}Terms{/tos} and {#privacy}Privacy Policy{/privacy}', {
+  tos: (children) => <a href="/tos">{children}</a>,
+  privacy: (children) => <a href="/privacy">{children}</a>,
+})
+
+// with variables
+rich('greeting', 'Hello {$name}, check your {#inbox}messages{/inbox}', {
+  inbox: (children) => <a href="/inbox">{children}</a>,
+}, { name: 'Alice' })
+
+// nested tags
+rich('highlight', 'This is {#bold}very {#em}important{/em}{/bold}', {
+  bold: (children) => <strong>{children}</strong>,
+  em: (children) => <em>{children}</em>,
+})
+
+// standalone (self-closing) tags
+rich('install', 'Click {#icon/} to install', {
+  icon: () => <DownloadIcon />,
+})
+```
+
+The same code works in both Astro templates and React islands — `rich()` is JSX-runtime agnostic.
+
 ### `i18n` singleton
 
 ```ts
@@ -283,7 +321,7 @@ export function App() {
 3. **SSR** — Middleware provides translations to `t()`, merging manifest fallbacks for missing keys
 4. **Client** — Custom directives load only the translations needed by each chunk
 
-The same `import { t } from '@astroscope/i18n/t'` works everywhere — bundler picks the correct implementation via conditional exports (`browser` vs `default`).
+The same `import { t } from '@astroscope/i18n/translate'` works everywhere — bundler picks the correct implementation via conditional exports (`browser` vs `default`).
 
 ### Client bundle
 

@@ -1,4 +1,4 @@
-import { t } from '@astroscope/i18n/t';
+import { t } from '@astroscope/i18n/translate';
 import { Suspense, lazy, useState } from 'react';
 
 const StatsModal = lazy(() => import('./StatsModal'));
