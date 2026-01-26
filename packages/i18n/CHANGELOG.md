@@ -1,5 +1,12 @@
 # @astroscope/i18n
 
+## 0.3.0
+
+### Minor Changes
+
+- f9b6b1b: upgrade to messageformat 2
+- cfe27ad: add rich() function, rename exports @astroscope/i18n/t -> translate and @astroscope/i18n/components -> astro
+
 ## 0.2.4
 
 ### Patch Changes
