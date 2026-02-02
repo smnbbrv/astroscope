@@ -31,6 +31,7 @@ const RESOLVED_VIRTUAL_MODULE_ID = `\0${VIRTUAL_MODULE_ID}`;
  */
 export default function pino(options: PinoIntegrationOptions = {}): AstroIntegration {
   const excludePatterns = options.exclude ?? RECOMMENDED_EXCLUDES;
+  const extended = options.extended ?? false;
 
   return {
     name: '@astroscope/pino',
@@ -53,7 +54,10 @@ export default function pino(options: PinoIntegrationOptions = {}): AstroIntegra
                 },
                 load(id) {
                   if (id === RESOLVED_VIRTUAL_MODULE_ID) {
-                    return `export const exclude = ${serializeExcludePatterns(excludePatterns)};`;
+                    return [
+                      `export const exclude = ${serializeExcludePatterns(excludePatterns)};`,
+                      `export const extended = ${JSON.stringify(extended)};`,
+                    ].join('\n');
                   }
                 },
               },

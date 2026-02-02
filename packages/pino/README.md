@@ -46,6 +46,16 @@ export default defineConfig({
 });
 ```
 
+### Extended Logging
+
+By default, only `method` and `url` are logged. To include query parameters, headers, and client IP address, enable extended logging:
+
+```ts
+pino({ extended: true })
+```
+
+> **Privacy note**: Extended logging may capture sensitive data (auth tokens, PII in query strings). Only enable in environments where this is acceptable and compliant with your privacy policies (e.g., GDPR).
+
 ### Custom Logger Configuration
 
 For custom configuration (e.g., reading from environment variables at runtime), use `initLogger` in boot.ts. This requires the [@astroscope/boot](https://github.com/smnbbrv/astroscope/tree/main/packages/boot) integration:

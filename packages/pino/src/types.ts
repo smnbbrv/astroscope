@@ -23,6 +23,17 @@ export interface PinoMiddlewareOptions {
    * ```
    */
   exclude?: ExcludePattern[] | ((ctx: APIContext) => boolean) | undefined;
+
+  /**
+   * Enable extended logging with additional request details.
+   * When enabled, logs include: query parameters, headers, and client IP address.
+   *
+   * **Privacy note**: Extended logging may capture sensitive data (auth tokens, PII in query strings).
+   * Only enable in environments where this is acceptable and compliant with your privacy policies.
+   *
+   * @default false
+   */
+  extended?: boolean | undefined;
 }
 
 export interface PinoIntegrationOptions {
@@ -42,4 +53,15 @@ export interface PinoIntegrationOptions {
    * ```
    */
   exclude?: ExcludePattern[] | undefined;
+
+  /**
+   * Enable extended logging with additional request details.
+   * When enabled, logs include: query parameters, headers, and client IP address.
+   *
+   * **Privacy note**: Extended logging may capture sensitive data (auth tokens, PII in query strings).
+   * Only enable in environments where this is acceptable and compliant with your privacy policies.
+   *
+   * @default false
+   */
+  extended?: boolean | undefined;
 }

@@ -21,6 +21,8 @@ import type { PinoMiddlewareOptions } from './types.js';
  * ```
  */
 export function createPinoMiddleware(options: PinoMiddlewareOptions = {}): MiddlewareHandler {
+  const { extended = false } = options;
+
   return async (ctx, next) => {
     if (shouldExclude(ctx, options.exclude)) {
       return next();
@@ -29,10 +31,19 @@ export function createPinoMiddleware(options: PinoMiddlewareOptions = {}): Middl
     const startTime = performance.now();
     const reqId = generateReqId();
 
-    const requestLogger = log.root.child({
-      reqId,
-      req: { method: ctx.request.method, url: ctx.url.pathname },
-    });
+    const req: Record<string, unknown> = {
+      method: ctx.request.method,
+      url: ctx.url.pathname,
+    };
+
+    // extended logging includes potentially sensitive data
+    if (extended) {
+      req.query = Object.fromEntries(ctx.url.searchParams);
+      req.headers = Object.fromEntries(ctx.request.headers);
+      req.remoteAddress = ctx.clientAddress;
+    }
+
+    const requestLogger = log.root.child({ reqId, req });
 
     const finalize = (status: number, error?: Error) => {
       const responseTime = performance.now() - startTime;
