@@ -1,28 +1,39 @@
 import type { AstroIntegrationLogger } from 'astro';
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, mock, test } from 'bun:test';
 import { KeyStore } from './key-store.js';
 import type { ExtractedKeyOccurrence } from './types.js';
 
-const mockLogger = {
-  info: () => {},
-  warn: () => {},
-  error: () => {},
-  debug: () => {},
-  label: 'test',
-  fork: () => mockLogger,
-} as unknown as AstroIntegrationLogger;
+const createMockLogger = () =>
+  ({
+    info: mock(() => {}),
+    warn: mock(() => {}),
+    error: mock(() => {}),
+    debug: () => {},
+    label: 'test',
+    fork() {
+      return this;
+    },
+  }) as unknown as AstroIntegrationLogger & {
+    warn: ReturnType<typeof mock>;
+    error: ReturnType<typeof mock>;
+  };
 
-const createOccurrence = (key: string, file: string, line = 1): ExtractedKeyOccurrence => ({
+const createOccurrence = (
+  key: string,
+  file: string,
+  line = 1,
+  meta: ExtractedKeyOccurrence['meta'] = { fallback: `fallback for ${key}` },
+): ExtractedKeyOccurrence => ({
   key,
   file,
   line,
-  meta: { fallback: `fallback for ${key}` },
+  meta,
 });
 
 describe('KeyStore', () => {
   describe('addFileKeys', () => {
     test('adds keys for a new file', () => {
-      const store = new KeyStore(mockLogger);
+      const store = new KeyStore(createMockLogger());
       const keys = [createOccurrence('hello', 'a.ts'), createOccurrence('world', 'a.ts')];
 
       store.addFileKeys('a.ts', keys);
@@ -34,7 +45,7 @@ describe('KeyStore', () => {
     });
 
     test('replaces keys for existing file', () => {
-      const store = new KeyStore(mockLogger);
+      const store = new KeyStore(createMockLogger());
       const oldKeys = [createOccurrence('old', 'a.ts')];
       const newKeys = [createOccurrence('new', 'a.ts')];
 
@@ -47,7 +58,7 @@ describe('KeyStore', () => {
     });
 
     test('handles empty keys array', () => {
-      const store = new KeyStore(mockLogger);
+      const store = new KeyStore(createMockLogger());
 
       store.addFileKeys('a.ts', []);
 
@@ -57,7 +68,7 @@ describe('KeyStore', () => {
     });
 
     test('deduplicates keys within same file and collects all locations', () => {
-      const store = new KeyStore(mockLogger);
+      const store = new KeyStore(createMockLogger());
       const keys = [
         createOccurrence('title', 'a.ts', 10),
         createOccurrence('description', 'a.ts', 20),
@@ -80,7 +91,7 @@ describe('KeyStore', () => {
     });
 
     test('keeps keys from other files when replacing', () => {
-      const store = new KeyStore(mockLogger);
+      const store = new KeyStore(createMockLogger());
       const keysA = [createOccurrence('a', 'a.ts')];
       const keysB = [createOccurrence('b', 'b.ts')];
       const newKeysA = [createOccurrence('a2', 'a.ts')];
@@ -96,7 +107,7 @@ describe('KeyStore', () => {
 
   describe('uniqueKeyCount', () => {
     test('counts unique keys', () => {
-      const store = new KeyStore(mockLogger);
+      const store = new KeyStore(createMockLogger());
 
       store.addFileKeys('a.ts', [createOccurrence('hello', 'a.ts')]);
       store.addFileKeys('b.ts', [createOccurrence('world', 'b.ts')]);
@@ -105,7 +116,7 @@ describe('KeyStore', () => {
     });
 
     test('counts same key in different files once', () => {
-      const store = new KeyStore(mockLogger);
+      const store = new KeyStore(createMockLogger());
 
       store.addFileKeys('a.ts', [createOccurrence('shared', 'a.ts')]);
       store.addFileKeys('b.ts', [createOccurrence('shared', 'b.ts')]);
@@ -116,8 +127,8 @@ describe('KeyStore', () => {
 
   describe('merge', () => {
     test('merges two stores', () => {
-      const store1 = new KeyStore(mockLogger);
-      const store2 = new KeyStore(mockLogger);
+      const store1 = new KeyStore(createMockLogger());
+      const store2 = new KeyStore(createMockLogger());
 
       store1.addFileKeys('a.ts', [createOccurrence('a', 'a.ts')]);
       store2.addFileKeys('b.ts', [createOccurrence('b', 'b.ts')]);
@@ -130,8 +141,8 @@ describe('KeyStore', () => {
     });
 
     test('overwrites fileToKeys on merge', () => {
-      const store1 = new KeyStore(mockLogger);
-      const store2 = new KeyStore(mockLogger);
+      const store1 = new KeyStore(createMockLogger());
+      const store2 = new KeyStore(createMockLogger());
 
       store1.addFileKeys('a.ts', [createOccurrence('old', 'a.ts')]);
       store2.addFileKeys('a.ts', [createOccurrence('new', 'a.ts')]);
@@ -142,8 +153,8 @@ describe('KeyStore', () => {
     });
 
     test('merges same key from different files into one with multiple locations', () => {
-      const store1 = new KeyStore(mockLogger);
-      const store2 = new KeyStore(mockLogger);
+      const store1 = new KeyStore(createMockLogger());
+      const store2 = new KeyStore(createMockLogger());
 
       store1.addFileKeys('a.ts', [createOccurrence('shared', 'a.ts', 10)]);
       store2.addFileKeys('b.ts', [createOccurrence('shared', 'b.ts', 20)]);
@@ -152,6 +163,117 @@ describe('KeyStore', () => {
 
       expect(store1.extractedKeys).toHaveLength(1);
       expect(store1.extractedKeys[0]?.files).toEqual(['a.ts:10', 'b.ts:20']);
+    });
+  });
+
+  describe('consistency check', () => {
+    test('warns on inconsistent fallback by default', () => {
+      const logger = createMockLogger();
+      const store = new KeyStore(logger);
+
+      store.addFileKeys('a.ts', [createOccurrence('greeting', 'a.ts', 10, { fallback: 'Hello' })]);
+      store.addFileKeys('b.ts', [createOccurrence('greeting', 'b.ts', 20, { fallback: 'Hi there' })]);
+
+      expect(logger.warn).toHaveBeenCalledTimes(1);
+      expect(logger.warn.mock.calls[0]?.[0]).toContain('inconsistent fallback');
+      expect(logger.warn.mock.calls[0]?.[0]).toContain('greeting');
+      expect(store.hasErrors).toBe(false);
+    });
+
+    test('warns on inconsistent description', () => {
+      const logger = createMockLogger();
+      const store = new KeyStore(logger, 'warn');
+
+      store.addFileKeys('a.ts', [
+        createOccurrence('greeting', 'a.ts', 10, { fallback: 'Hello', description: 'Greeting text' }),
+      ]);
+      store.addFileKeys('b.ts', [
+        createOccurrence('greeting', 'b.ts', 20, { fallback: 'Hello', description: 'Welcome message' }),
+      ]);
+
+      expect(logger.warn).toHaveBeenCalledTimes(1);
+      expect(logger.warn.mock.calls[0]?.[0]).toContain('inconsistent description');
+    });
+
+    test('warns on inconsistent variables', () => {
+      const logger = createMockLogger();
+      const store = new KeyStore(logger, 'warn');
+
+      store.addFileKeys('a.ts', [
+        createOccurrence('greeting', 'a.ts', 10, {
+          fallback: 'Hello {name}',
+          variables: { name: { fallback: 'World' } },
+        }),
+      ]);
+      store.addFileKeys('b.ts', [
+        createOccurrence('greeting', 'b.ts', 20, {
+          fallback: 'Hello {name}',
+          variables: { name: { fallback: 'User' } },
+        }),
+      ]);
+
+      expect(logger.warn).toHaveBeenCalledTimes(1);
+      expect(logger.warn.mock.calls[0]?.[0]).toContain('inconsistent variables');
+    });
+
+    test('errors on inconsistency when consistencyCheck is error', () => {
+      const logger = createMockLogger();
+      const store = new KeyStore(logger, 'error');
+
+      store.addFileKeys('a.ts', [createOccurrence('greeting', 'a.ts', 10, { fallback: 'Hello' })]);
+      store.addFileKeys('b.ts', [createOccurrence('greeting', 'b.ts', 20, { fallback: 'Hi there' })]);
+
+      expect(logger.error).toHaveBeenCalledTimes(1);
+      expect(logger.error.mock.calls[0]?.[0]).toContain('inconsistent fallback');
+      expect(store.hasErrors).toBe(true);
+    });
+
+    test('does not check when consistencyCheck is off', () => {
+      const logger = createMockLogger();
+      const store = new KeyStore(logger, 'off');
+
+      store.addFileKeys('a.ts', [createOccurrence('greeting', 'a.ts', 10, { fallback: 'Hello' })]);
+      store.addFileKeys('b.ts', [createOccurrence('greeting', 'b.ts', 20, { fallback: 'Hi there' })]);
+
+      expect(logger.warn).not.toHaveBeenCalled();
+      expect(logger.error).not.toHaveBeenCalled();
+      expect(store.hasErrors).toBe(false);
+    });
+
+    test('does not warn when fallbacks are consistent', () => {
+      const logger = createMockLogger();
+      const store = new KeyStore(logger, 'warn');
+
+      store.addFileKeys('a.ts', [createOccurrence('greeting', 'a.ts', 10, { fallback: 'Hello' })]);
+      store.addFileKeys('b.ts', [createOccurrence('greeting', 'b.ts', 20, { fallback: 'Hello' })]);
+
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    test('does not report same inconsistency twice', () => {
+      const logger = createMockLogger();
+      const store = new KeyStore(logger, 'warn');
+
+      store.addFileKeys('a.ts', [createOccurrence('greeting', 'a.ts', 10, { fallback: 'Hello' })]);
+      store.addFileKeys('b.ts', [createOccurrence('greeting', 'b.ts', 20, { fallback: 'Hi' })]);
+      store.addFileKeys('c.ts', [createOccurrence('greeting', 'c.ts', 30, { fallback: 'Hi' })]);
+
+      // should only report once (a vs b), not again for a vs c or b vs c
+      expect(logger.warn).toHaveBeenCalledTimes(1);
+    });
+
+    test('checks consistency during merge', () => {
+      const logger = createMockLogger();
+      const store1 = new KeyStore(logger, 'warn');
+      const store2 = new KeyStore(logger, 'warn');
+
+      store1.addFileKeys('a.ts', [createOccurrence('greeting', 'a.ts', 10, { fallback: 'Hello' })]);
+      store2.addFileKeys('b.ts', [createOccurrence('greeting', 'b.ts', 20, { fallback: 'Hi there' })]);
+
+      store1.merge(store2);
+
+      expect(logger.warn).toHaveBeenCalledTimes(1);
+      expect(logger.warn.mock.calls[0]?.[0]).toContain('inconsistent fallback');
     });
   });
 });

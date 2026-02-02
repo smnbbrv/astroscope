@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { AstroIntegrationLogger } from 'astro';
 import MagicString from 'magic-string';
 import type { Plugin } from 'vite';
+import type { ConsistencyCheckLevel } from '../integration/types.js';
 import { chunkIdToName } from '../shared/url.js';
 import { ALL_EXTENSIONS, extractKeysFromFile } from './extract.js';
 import { KeyStore } from './key-store.js';
@@ -21,6 +22,7 @@ const MANIFEST_FILE_NAME = 'i18n-manifest.json';
 
 export type I18nVitePluginOptions = {
   logger: AstroIntegrationLogger;
+  consistency: ConsistencyCheckLevel;
 };
 
 /**
@@ -34,9 +36,9 @@ export type I18nVitePluginOptions = {
  * 5. Injects translation loader into chunks that use t()
  */
 export function i18nVitePlugin(options: I18nVitePluginOptions): Plugin {
-  const { logger } = options;
+  const { logger, consistency } = options;
 
-  const store = new KeyStore(logger);
+  const store = new KeyStore(logger, consistency);
 
   // sync store's computed keys to global state (for dev mode live access)
   const syncGlobalState = () => {
@@ -71,7 +73,7 @@ export function i18nVitePlugin(options: I18nVitePluginOptions): Plugin {
       // in dev mode, eagerly scan all files upfront
       // this ensures all t() calls are found immediately
       // (otherwise vite loads lazily as files are requested)
-      const result = await scan(projectRoot, logger);
+      const result = await scan({ projectRoot, logger, consistency });
 
       store.merge(result);
 
@@ -268,6 +270,11 @@ export function getManifest() { return _getManifest(); }
       }
 
       logger.info(`manifest: ${Object.keys(state.chunkManifest).length} chunks, ${store.uniqueKeyCount} keys`);
+
+      // fail build if consistency check is set to 'error' and inconsistencies were found
+      if (consistency === 'error' && store.hasErrors) {
+        throw new Error('i18n: build failed due to translation key inconsistencies');
+      }
     },
 
     writeBundle(outputOptions) {

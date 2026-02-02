@@ -1,5 +1,17 @@
 import type { AstroIntegrationLogger } from 'astro';
+import type { ConsistencyCheckLevel } from '../integration/types.js';
+import type { TranslationMeta } from '../shared/types.js';
 import type { ExtractedKey, ExtractedKeyOccurrence } from './types.js';
+
+/**
+ * Inconsistency between two occurrences of the same translation key
+ */
+export type KeyInconsistency = {
+  key: string;
+  field: 'fallback' | 'description' | 'variables';
+  locations: [string, string];
+  values: [string, string];
+};
 
 /**
  * Store for extracted i18n keys.
@@ -9,10 +21,19 @@ export class KeyStore {
   /** All key occurrences (may have duplicates) */
   private readonly occurrences: ExtractedKeyOccurrence[] = [];
 
+  /** Tracks reported inconsistencies to avoid duplicate warnings */
+  private readonly reportedInconsistencies = new Set<string>();
+
+  /** Whether an error-level inconsistency was found (for build failure) */
+  private hasInconsistencyError = false;
+
   readonly fileToKeys = new Map<string, string[]>();
   readonly filesWithI18n = new Set<string>();
 
-  constructor(private readonly logger: AstroIntegrationLogger) {}
+  constructor(
+    private readonly logger: AstroIntegrationLogger,
+    private readonly consistency: ConsistencyCheckLevel = 'warn',
+  ) {}
 
   /**
    * Add key occurrences for a file, replacing any existing occurrences for that file.
@@ -50,11 +71,135 @@ export class KeyStore {
 
     this.filesWithI18n.add(filename);
 
+    // check for inconsistencies before adding new keys
+    if (this.consistency !== 'off') {
+      this.checkConsistency(keys);
+    }
+
     if (keys.length > 0) {
       this.occurrences.push(...keys);
     }
 
     this.fileToKeys.set(filename, newKeyStrings);
+  }
+
+  /**
+   * Check new keys for inconsistencies with existing occurrences.
+   */
+  private checkConsistency(newKeys: ExtractedKeyOccurrence[]): void {
+    // build a map of existing keys (first occurrence for each key)
+    const existingByKey = new Map<string, ExtractedKeyOccurrence>();
+
+    for (const occ of this.occurrences) {
+      if (!existingByKey.has(occ.key)) {
+        existingByKey.set(occ.key, occ);
+      }
+    }
+
+    for (const newKey of newKeys) {
+      const existing = existingByKey.get(newKey.key);
+
+      if (!existing) continue;
+
+      const inconsistencies = this.findInconsistencies(newKey, existing);
+
+      for (const inc of inconsistencies) {
+        this.reportInconsistency(inc);
+      }
+    }
+  }
+
+  /**
+   * Compare two occurrences and find any metadata inconsistencies.
+   */
+  private findInconsistencies(a: ExtractedKeyOccurrence, b: ExtractedKeyOccurrence): KeyInconsistency[] {
+    const result: KeyInconsistency[] = [];
+    const locA = `${a.file}:${a.line}`;
+    const locB = `${b.file}:${b.line}`;
+
+    // check fallback
+    if (a.meta.fallback !== b.meta.fallback) {
+      result.push({
+        key: a.key,
+        field: 'fallback',
+        locations: [locA, locB],
+        values: [a.meta.fallback, b.meta.fallback],
+      });
+    }
+
+    // check description
+    if (a.meta.description !== b.meta.description) {
+      result.push({
+        key: a.key,
+        field: 'description',
+        locations: [locA, locB],
+        values: [a.meta.description ?? '(none)', b.meta.description ?? '(none)'],
+      });
+    }
+
+    // check variables
+    const varsA = this.serializeVariables(a.meta);
+    const varsB = this.serializeVariables(b.meta);
+
+    if (varsA !== varsB) {
+      result.push({
+        key: a.key,
+        field: 'variables',
+        locations: [locA, locB],
+        values: [varsA || '(none)', varsB || '(none)'],
+      });
+    }
+
+    return result;
+  }
+
+  /**
+   * Serialize variables for comparison.
+   */
+  private serializeVariables(meta: TranslationMeta): string {
+    if (!meta.variables) return '';
+
+    // sort keys for consistent comparison
+    const sorted: Record<string, unknown> = {};
+
+    for (const key of Object.keys(meta.variables).sort()) {
+      sorted[key] = meta.variables[key];
+    }
+
+    return JSON.stringify(sorted);
+  }
+
+  /**
+   * Report an inconsistency via logger.
+   */
+  private reportInconsistency(inc: KeyInconsistency): void {
+    // create a unique key for this inconsistency to avoid duplicate reports
+    // use key+field only (not locations) to report once per inconsistent key
+    const incKey = `${inc.key}:${inc.field}`;
+
+    if (this.reportedInconsistencies.has(incKey)) return;
+
+    this.reportedInconsistencies.add(incKey);
+
+    const message =
+      `inconsistent ${inc.field} for key "${inc.key}"\n` +
+      `  ${inc.locations[0]}: ${JSON.stringify(inc.values[0])}\n` +
+      `  ${inc.locations[1]}: ${JSON.stringify(inc.values[1])}`;
+
+    if (this.consistency === 'error') {
+      this.logger.error(message);
+      this.hasInconsistencyError = true;
+    } else {
+      this.logger.warn(message);
+    }
+  }
+
+  /**
+   * Check if any error-level inconsistencies were found.
+   * Call this at the end of build to determine if it should fail.
+   */
+  get hasErrors(): boolean {
+    return this.hasInconsistencyError;
   }
 
   /**
@@ -105,6 +250,11 @@ export class KeyStore {
 
     for (const file of other.filesWithI18n) {
       this.filesWithI18n.add(file);
+    }
+
+    // check for inconsistencies when merging
+    if (this.consistency !== 'off') {
+      this.checkConsistency(other.occurrences);
     }
 
     this.occurrences.push(...other.occurrences);

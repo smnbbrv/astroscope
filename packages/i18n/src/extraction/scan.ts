@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import type { AstroIntegrationLogger } from 'astro';
 import { glob } from 'glob';
+import type { ConsistencyCheckLevel } from '../integration/types.js';
 import { ALL_EXTENSIONS, extractKeysFromFile } from './extract.js';
 import { KeyStore } from './key-store.js';
 
@@ -21,13 +22,20 @@ async function compileAstro(code: string, filename: string): Promise<string | nu
   }
 }
 
+export type ScanOptions = {
+  projectRoot: string;
+  logger: AstroIntegrationLogger;
+  consistency: ConsistencyCheckLevel;
+};
+
 /**
  * Eagerly scan all source files for t() calls.
  * Used in dev mode to extract all keys upfront, instead of waiting for
  * Vite's lazy transform hook to process files on-demand.
  */
-export async function scan(projectRoot: string, logger: AstroIntegrationLogger): Promise<KeyStore> {
-  const store = new KeyStore(logger);
+export async function scan(options: ScanOptions): Promise<KeyStore> {
+  const { projectRoot, logger, consistency } = options;
+  const store = new KeyStore(logger, consistency);
 
   const files = await glob(GLOB_PATTERN, {
     cwd: projectRoot,

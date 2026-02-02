@@ -11,7 +11,9 @@ const CLIENT_DIRECTIVES = ['load-x', 'idle-x', 'visible-x', 'media-x', 'only-x']
  * - Client directives (`client:load-x`, `client:idle-x`, `client:visible-x`, `client:media-x`, `client:only-x`)
  * - Vite plugin for translation key extraction
  */
-export default function i18nIntegration(_options: I18nOptions = {}): AstroIntegration {
+export default function i18nIntegration(options: I18nOptions = {}): AstroIntegration {
+  const { consistency = 'warn' } = options;
+
   return {
     name: '@astroscope/i18n',
     hooks: {
@@ -26,7 +28,7 @@ export default function i18nIntegration(_options: I18nOptions = {}): AstroIntegr
 
         updateConfig({
           vite: {
-            plugins: [i18nVitePlugin({ logger })],
+            plugins: [i18nVitePlugin({ logger, consistency })],
           },
         });
       },
