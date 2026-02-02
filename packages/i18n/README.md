@@ -52,6 +52,20 @@ export default defineConfig({
 });
 ```
 
+#### Consistency checking
+
+The integration checks for translation key consistency — when the same key is used in multiple files with different fallbacks, variables, or descriptions.
+
+```ts
+i18n({
+  consistency: 'warn',  // 'warn' (default) | 'error' | 'off'
+})
+```
+
+- **`'warn'`** — Log a warning but continue (default)
+- **`'error'`** — Fail the build
+- **`'off'`** — Disable consistency checking
+
 ### 2. Configure i18n in your boot file
 
 **VERY IMPORTANT:** `i18n.configure` must be awaited during boot before handling any requests!
