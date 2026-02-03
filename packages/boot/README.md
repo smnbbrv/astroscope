@@ -20,15 +20,17 @@ npm install @astroscope/boot
 
 ```ts
 // src/boot.ts
-export async function onStartup() {
+import type { BootContext } from "@astroscope/boot";
+
+export async function onStartup({ dev, host, port }: BootContext) {
   console.log("Starting up...");
 
   await someAsyncInitialization();
 
-  console.log("Ready!");
+  console.log(`Ready at ${host}:${port} (dev: ${dev})`);
 }
 
-export async function onShutdown() {
+export async function onShutdown({ dev }: BootContext) {
   console.log("Shutting down...");
 
   await closeConnections();
@@ -50,6 +52,23 @@ export default defineConfig({
 });
 ```
 
+## Boot Context
+
+Both `onStartup` and `onShutdown` receive a `BootContext` object:
+
+```ts
+interface BootContext {
+  /** Whether running in development mode */
+  dev: boolean;
+  /** Server host (from Astro config or HOST env var) */
+  host: string;
+  /** Server port (from Astro config or PORT env var) */
+  port: number;
+}
+```
+
+In development, `host` and `port` are read from the actual server address. In production, they default to Astro config values but can be overridden via `HOST` and `PORT` environment variables at runtime.
+
 ## Lifecycle Hooks
 
 ### `onStartup`
@@ -69,6 +88,45 @@ Called when the server is shutting down (SIGTERM in production, server close in 
 - Flushing buffers
 - Cleaning up resources
 - Graceful shutdown of external services
+
+## V8 Warmup
+
+The package includes a warmup utility that pre-imports all page modules and middleware to warm up the V8 JIT compiler, reducing cold start latency for the first requests.
+
+```ts
+// src/boot.ts
+import type { BootContext } from "@astroscope/boot";
+import { warmup } from "@astroscope/boot/warmup";
+
+export async function onStartup({ host, port }: BootContext) {
+  const result = await warmup();
+
+  if (result.success.length > 0) {
+    console.log(`Warmed up ${result.success.length} modules in ${result.duration}ms`);
+  }
+
+  if (result.failed.length > 0) {
+    console.warn(`Failed to warm up: ${result.failed.join(", ")}`);
+  }
+
+  console.log(`Server ready at ${host}:${port}`);
+}
+```
+
+### `WarmupResult`
+
+```ts
+interface WarmupResult {
+  /** Modules that were successfully loaded */
+  success: string[];
+  /** Modules that failed to load */
+  failed: string[];
+  /** Time taken in milliseconds */
+  duration: number;
+}
+```
+
+In development mode, `warmup()` is a no-op that returns empty results. In production, it reads a manifest generated during the build and imports all discovered page modules and middleware in parallel.
 
 ## Options
 
