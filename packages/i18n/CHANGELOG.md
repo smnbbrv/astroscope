@@ -1,5 +1,11 @@
 # @astroscope/i18n
 
+## 0.3.1
+
+### Patch Changes
+
+- 185e849: add inconsistency check
+
 ## 0.3.0
 
 ### Minor Changes
