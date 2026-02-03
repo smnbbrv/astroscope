@@ -51,7 +51,7 @@ export default defineConfig({
 By default, only `method` and `url` are logged. To include query parameters, headers, and client IP address, enable extended logging:
 
 ```ts
-pino({ extended: true })
+pino({ extended: true });
 ```
 
 > **Privacy note**: Extended logging may capture sensitive data (auth tokens, PII in query strings). Only enable in environments where this is acceptable and compliant with your privacy policies (e.g., GDPR).
@@ -154,6 +154,14 @@ initLogger(pino({ level: 'debug' }));
 
 // or pass options
 initLogger({ level: 'debug' });
+```
+
+## Disabling Astro's Node Adapter Logging
+
+When using `@astrojs/node`, the adapter adds its logs by default. To prevent duplicate logging, you can disable the adapter's built-in logging with `ASTRO_NODE_LOGGING` environment variable:
+
+```bash
+ASTRO_NODE_LOGGING=disabled
 ```
 
 ## License
