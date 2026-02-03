@@ -1,5 +1,11 @@
 # @astroscope/pino
 
+## 0.2.0
+
+### Minor Changes
+
+- 59a2a76: add extended request logging
+
 ## 0.1.4
 
 ### Patch Changes

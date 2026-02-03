@@ -1,5 +1,11 @@
 # @astroscope/boot
 
+## 0.2.0
+
+### Minor Changes
+
+- 0e17f69: add warmup and boot context
+
 ## 0.1.3
 
 ### Patch Changes
