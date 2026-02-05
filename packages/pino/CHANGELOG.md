@@ -1,5 +1,12 @@
 # @astroscope/pino
 
+## 0.2.1
+
+### Patch Changes
+
+- 558ce83: add params to extended req
+- 9959835: use TransformStream to calculate response size and timings
+
 ## 0.2.0
 
 ### Minor Changes

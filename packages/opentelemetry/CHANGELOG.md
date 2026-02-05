@@ -1,5 +1,11 @@
 # @astroscope/opentelemetry
 
+## 0.2.4
+
+### Patch Changes
+
+- 9959835: use TransformStream to calculate response size and timings
+
 ## 0.2.3
 
 ### Patch Changes

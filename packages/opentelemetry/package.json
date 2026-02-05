@@ -1,6 +1,6 @@
 {
   "name": "@astroscope/opentelemetry",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "OpenTelemetry for Astro — tracing, metrics, and component instrumentation that works in dev mode",
   "type": "module",
   "main": "./dist/index.js",
