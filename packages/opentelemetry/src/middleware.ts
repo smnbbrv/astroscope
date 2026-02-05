@@ -108,27 +108,23 @@ export function createOpenTelemetryMiddleware(options: OpenTelemetryMiddlewareOp
 
         if (!response.body) {
           finalize(response.status, 0);
+
           return response;
         }
 
-        const [measureStream, clientStream] = response.body.tee();
-
         let responseSize = 0;
 
-        (async () => {
-          const reader = measureStream.getReader();
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              responseSize += value.length;
-            }
-          } finally {
+        const transform = new TransformStream<Uint8Array, Uint8Array>({
+          transform(chunk, controller) {
+            responseSize += chunk.length;
+            controller.enqueue(chunk);
+          },
+          flush() {
             finalize(response.status, responseSize);
-          }
-        })();
+          },
+        });
 
-        return new Response(clientStream, {
+        return new Response(response.body.pipeThrough(transform), {
           status: response.status,
           headers: response.headers,
         });

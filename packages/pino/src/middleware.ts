@@ -3,6 +3,8 @@ import type { MiddlewareHandler } from 'astro';
 import { generateReqId, log, runWithLogger } from './logger.js';
 import type { PinoMiddlewareOptions } from './types.js';
 
+const roundTime = (n: number) => Math.round(n * 100) / 100;
+
 /**
  * Creates a pino-http-alike logging middleware for Astro.
  *
@@ -45,7 +47,7 @@ export function createPinoMiddleware(options: PinoMiddlewareOptions = {}): Middl
 
     const requestLogger = log.root.child({ reqId, req });
 
-    const finalize = (status: number, error?: Error) => {
+    const finalize = (status: number, ttfb: number, responseSize: number, error?: Error | undefined) => {
       const responseTime = performance.now() - startTime;
 
       let level: 'info' | 'warn' | 'error' = 'info';
@@ -58,7 +60,9 @@ export function createPinoMiddleware(options: PinoMiddlewareOptions = {}): Middl
 
       const data = {
         res: { statusCode: status },
-        responseTime: Math.round(responseTime * 100) / 100,
+        responseTime: roundTime(responseTime),
+        ttfb: roundTime(ttfb),
+        responseSize,
         ...(error && { err: error }),
       };
 
@@ -68,12 +72,34 @@ export function createPinoMiddleware(options: PinoMiddlewareOptions = {}): Middl
     return runWithLogger(requestLogger, async () => {
       try {
         const response = await next();
+        const ttfb = performance.now() - startTime;
 
-        finalize(response.status);
+        if (!response.body) {
+          finalize(response.status, ttfb, 0);
 
-        return response;
+          return response;
+        }
+
+        let responseSize = 0;
+
+        const transform = new TransformStream<Uint8Array, Uint8Array>({
+          transform(chunk, controller) {
+            responseSize += chunk.length;
+            controller.enqueue(chunk);
+          },
+          flush() {
+            finalize(response.status, ttfb, responseSize);
+          },
+        });
+
+        return new Response(response.body.pipeThrough(transform), {
+          status: response.status,
+          headers: response.headers,
+        });
       } catch (error) {
-        finalize(500, error instanceof Error ? error : new Error(String(error)));
+        const ttfb = performance.now() - startTime;
+
+        finalize(500, ttfb, 0, error instanceof Error ? error : new Error(String(error)));
 
         throw error;
       }
