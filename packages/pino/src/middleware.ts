@@ -41,6 +41,7 @@ export function createPinoMiddleware(options: PinoMiddlewareOptions = {}): Middl
     // extended logging includes potentially sensitive data
     if (extended) {
       req.query = Object.fromEntries(ctx.url.searchParams);
+      req.params = ctx.params;
       req.headers = Object.fromEntries(ctx.request.headers);
       req.remoteAddress = ctx.clientAddress;
     }
