@@ -88,17 +88,17 @@
     "lint:fix": "eslint 'src/**/*.ts' --fix"
   },
   "dependencies": {
-    "@astrojs/compiler": "^2.12.2",
-    "@babel/core": "^7.28.6",
+    "@astrojs/compiler": "^2.13.0",
+    "@babel/core": "^7.29.0",
     "@babel/preset-typescript": "^7.28.5",
     "messageformat": "^4.0.0",
-    "glob": "^11.0.0",
+    "glob": "^13.0.1",
     "magic-string": "^0.30.21"
   },
   "devDependencies": {
-    "@babel/types": "^7.28.6",
+    "@babel/types": "^7.29.0",
     "@types/babel__core": "^7.20.5",
-    "astro": "^5.16.9",
+    "astro": "^5.17.1",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vite": "^6.4.1"

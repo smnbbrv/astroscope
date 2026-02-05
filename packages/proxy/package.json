@@ -46,10 +46,10 @@
     "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix"
   },
   "dependencies": {
-    "undici": "^7.18.2"
+    "undici": "^7.20.0"
   },
   "devDependencies": {
-    "astro": "^5.16.9",
+    "astro": "^5.17.1",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },

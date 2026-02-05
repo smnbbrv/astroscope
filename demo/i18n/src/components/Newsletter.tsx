@@ -1,11 +1,11 @@
 import { t } from '@astroscope/i18n/translate';
-import { useState } from 'react';
+import { type SubmitEvent, useState } from 'react';
 
 export default function Newsletter() {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
     setSubscribed(true);
   };

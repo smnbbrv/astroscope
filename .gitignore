@@ -15,5 +15,6 @@ tmp/
 node_modules/
 dist/
 .astro/
+.turbo/
 
 IDEAS.md

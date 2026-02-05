@@ -5,7 +5,6 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { WarmupResult } from './types.js';
 
 declare global {
-  // eslint-disable-next-line no-var
   var __astroscope_server_url: string | undefined;
 }
 
