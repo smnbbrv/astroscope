@@ -1,5 +1,11 @@
 # @astroscope/boot
 
+## 0.2.1
+
+### Patch Changes
+
+- 1d8f64f: fix warmup paths
+
 ## 0.2.0
 
 ### Minor Changes

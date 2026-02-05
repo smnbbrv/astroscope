@@ -1,5 +1,11 @@
 # @astroscope/proxy
 
+## 0.2.5
+
+### Patch Changes
+
+- 377fe18: update dependencies
+
 ## 0.2.4
 
 ### Patch Changes

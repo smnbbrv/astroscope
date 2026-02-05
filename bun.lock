@@ -155,7 +155,7 @@
     },
     "packages/boot": {
       "name": "@astroscope/boot",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "dependencies": {
         "magic-string": "^0.30.21",
       },
@@ -195,7 +195,7 @@
     },
     "packages/i18n": {
       "name": "@astroscope/i18n",
-      "version": "0.3.1",
+      "version": "0.3.2",
       "dependencies": {
         "@astrojs/compiler": "^2.13.0",
         "@babel/core": "^7.29.0",
@@ -251,7 +251,7 @@
     },
     "packages/proxy": {
       "name": "@astroscope/proxy",
-      "version": "0.2.4",
+      "version": "0.2.5",
       "dependencies": {
         "undici": "^7.20.0",
       },
