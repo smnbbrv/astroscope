@@ -1,6 +1,6 @@
 {
   "name": "@astroscope/proxy",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "HTTP proxy for Astro — strangler fig migrations and API gateway",
   "type": "module",
   "main": "./dist/index.js",

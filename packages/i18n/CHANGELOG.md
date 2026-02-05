@@ -1,5 +1,11 @@
 # @astroscope/i18n
 
+## 0.3.2
+
+### Patch Changes
+
+- 377fe18: update dependencies
+
 ## 0.3.1
 
 ### Patch Changes
