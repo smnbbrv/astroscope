@@ -11,9 +11,9 @@ export async function onStartup({ dev, host, port }: BootContext) {
 
   const result = await warmup();
 
-  if (result.success.length > 0) {
-    console.log(`[boot] V8 warmup: ${result.success.length} modules in ${result.duration}ms`);
-  }
+  console.log(
+    `[boot] V8 warmup: ${result.success.length} modules, failed: ${result.failed.length} in ${result.duration}ms`,
+  );
 
   console.log(`[boot] server ready at ${host}:${port} (dev: ${dev})`);
 }

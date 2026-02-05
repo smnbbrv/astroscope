@@ -247,7 +247,9 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                   const { host, port } = getServerDefaults(astroConfig);
 
                   // inject boot with inline context creation (env vars take precedence at runtime)
+                  // also set server URL for warmup module to use
                   const bootImport =
+                    `globalThis.__astroscope_server_url = import.meta.url;\n` +
                     `import * as __boot from './${bootChunkName}';\n` +
                     `const __bootContext = { dev: false, host: process.env.HOST ?? '${host}', port: process.env.PORT ? Number(process.env.PORT) : ${port} };\n` +
                     `await __boot.onStartup?.(__bootContext);\n` +
