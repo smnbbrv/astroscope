@@ -78,7 +78,7 @@ export async function warmup(): Promise<WarmupResult> {
     return pathToFileURL(absolutePath).href;
   });
 
-  const results = await Promise.allSettled(resolvedModules.map((mod) => import(mod)));
+  const results = await Promise.allSettled(resolvedModules.map((mod) => import(/* @vite-ignore */ mod)));
 
   const success: string[] = [];
   const failed: string[] = [];
