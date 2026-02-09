@@ -6,32 +6,8 @@ const als = new AsyncLocalStorage<Logger>();
 
 let rootLogger: Logger = pino({ level: 'info' });
 
-/**
- * Override the root logger with a custom configuration.
- *
- * Call this in your boot.ts to configure logging before the server starts.
- *
- * @example
- * ```ts
- * // src/boot.ts
- * import pino from 'pino';
- * import { initLogger } from '@astroscope/pino';
- *
- * export function onStartup() {
- *   initLogger(pino({
- *     level: process.env.LOG_LEVEL ?? 'info',
- *   }));
- * }
- * ```
- */
-export function initLogger(logger: Logger): void;
-export function initLogger(options: LoggerOptions): void;
-export function initLogger(loggerOrOptions: Logger | LoggerOptions): void {
-  if ('info' in loggerOrOptions && typeof loggerOrOptions.info === 'function') {
-    rootLogger = loggerOrOptions as Logger;
-  } else {
-    rootLogger = pino(loggerOrOptions as LoggerOptions);
-  }
+function isLogger(value: Logger | LoggerOptions): value is Logger {
+  return 'info' in value && typeof value.info === 'function';
 }
 
 /**
@@ -82,6 +58,24 @@ export interface LogProxy {
   readonly raw: Logger;
   /** Access the root logger (no request context) */
   readonly root: Logger;
+  /**
+   * Configure the root logger with custom options or a pino instance.
+   * Call this in boot.ts for custom configuration.
+   *
+   * @example
+   * ```ts
+   * import { log } from '@astroscope/pino';
+   *
+   * // pass options
+   * log.configure({ level: 'debug' });
+   *
+   * // or pass a pino instance
+   * import pino from 'pino';
+   * log.configure(pino({ level: 'debug' }));
+   * ```
+   */
+  configure(logger: Logger): void;
+  configure(options: LoggerOptions): void;
 }
 
 /**
@@ -118,6 +112,9 @@ function createLogProxy(logger: Logger): LogProxy {
     },
     get root() {
       return rootLogger;
+    },
+    configure(): void {
+      throw new Error('configure() can only be called on the root log object, not on child loggers');
     },
   };
 }
@@ -176,5 +173,12 @@ export const log: LogProxy = {
   },
   get root() {
     return rootLogger;
+  },
+  configure(loggerOrOptions: Logger | LoggerOptions): void {
+    if (isLogger(loggerOrOptions)) {
+      rootLogger = loggerOrOptions;
+    } else {
+      rootLogger = pino(loggerOrOptions);
+    }
   },
 };

@@ -58,15 +58,14 @@ pino({ extended: true });
 
 ### Custom Logger Configuration
 
-For custom configuration (e.g., reading from environment variables at runtime), use `initLogger` in boot.ts. This requires the [@astroscope/boot](https://github.com/smnbbrv/astroscope/tree/main/packages/boot) integration:
+For custom configuration (e.g., reading from environment variables at runtime), use `log.configure()` in boot.ts. This requires the [@astroscope/boot](https://github.com/smnbbrv/astroscope/tree/main/packages/boot) integration:
 
 ```ts
 // src/boot.ts
-import pino from 'pino';
-import { initLogger } from '@astroscope/pino';
+import { log } from '@astroscope/pino';
 
 export function onStartup() {
-  initLogger({
+  log.configure({
     level: process.env.LOG_LEVEL ?? 'info',
   });
 }
@@ -141,19 +140,19 @@ import { log } from '@astroscope/pino';
 log.root.info('server starting');
 ```
 
-### `initLogger(logger | options)`
+### `log.configure(logger | options)`
 
-Override the root logger. Call this in boot.ts for custom configuration.
+Configure the root logger. Call this in boot.ts for custom configuration.
 
 ```ts
+import { log } from '@astroscope/pino';
+
+// pass options
+log.configure({ level: 'debug' });
+
+// or pass a pino instance
 import pino from 'pino';
-import { initLogger } from '@astroscope/pino';
-
-// pass a pino instance
-initLogger(pino({ level: 'debug' }));
-
-// or pass options
-initLogger({ level: 'debug' });
+log.configure(pino({ level: 'debug' }));
 ```
 
 ## Disabling Astro's Node Adapter Logging
