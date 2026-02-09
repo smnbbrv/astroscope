@@ -252,8 +252,24 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                     `globalThis.__astroscope_server_url = import.meta.url;\n` +
                     `import * as __boot from './${bootChunkName}';\n` +
                     `const __bootContext = { dev: false, host: process.env.HOST ?? '${host}', port: process.env.PORT ? Number(process.env.PORT) : ${port} };\n` +
-                    `await __boot.onStartup?.(__bootContext);\n` +
-                    `if (__boot.onShutdown) process.on('SIGTERM', async () => { await __boot.onShutdown(__bootContext); process.exit(0); });\n`;
+                    `try {\n` +
+                    `  await __boot.onStartup?.(__bootContext);\n` +
+                    `} catch (err) {\n` +
+                    `  console.error('[boot] startup failed:', err);\n` +
+                    `  try { await __boot.onShutdown?.(__bootContext); } catch {}\n` +
+                    `  process.exit(1);\n` +
+                    `}\n` +
+                    `if (__boot.onShutdown) {\n` +
+                    `  process.on('SIGTERM', async () => {\n` +
+                    `    try {\n` +
+                    `      await __boot.onShutdown(__bootContext);\n` +
+                    `      process.exit(0);\n` +
+                    `    } catch (err) {\n` +
+                    `      console.error('[boot] shutdown failed:', err);\n` +
+                    `      process.exit(1);\n` +
+                    `    }\n` +
+                    `  });\n` +
+                    `}\n`;
 
                   // inject boot import at start of entry.mjs preserving source maps
                   const s = new MagicString(entryChunk.code);
