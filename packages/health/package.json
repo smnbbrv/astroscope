@@ -1,0 +1,53 @@
+{
+  "name": "@astroscope/health",
+  "version": "0.0.0",
+  "description": "Health check endpoints for Astro — livez, readyz, startupz probes",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smnbbrv/astroscope.git",
+    "directory": "packages/health"
+  },
+  "keywords": [
+    "astro",
+    "astro-integration",
+    "health",
+    "healthcheck",
+    "probes",
+    "readiness",
+    "liveness",
+    "kubernetes",
+    "k8s"
+  ],
+  "author": "smnbbrv",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/smnbbrv/astroscope/issues"
+  },
+  "homepage": "https://github.com/smnbbrv/astroscope/tree/main/packages/health#readme",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint 'src/**/*.ts'",
+    "lint:fix": "eslint 'src/**/*.ts' --fix"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  }
+}

@@ -52,6 +52,20 @@
         "typescript": "^5.9.3",
       },
     },
+    "demo/health": {
+      "name": "demo-health",
+      "version": "0.0.0",
+      "dependencies": {
+        "@astrojs/node": "^9.5.2",
+        "@astroscope/boot": "workspace:*",
+        "@astroscope/health": "workspace:*",
+        "astro": "^5.17.1",
+      },
+      "devDependencies": {
+        "@astrojs/check": "^0.9.6",
+        "typescript": "^5.9.3",
+      },
+    },
     "demo/i18n": {
       "name": "demo-i18n",
       "version": "0.0.0",
@@ -193,6 +207,19 @@
         "astro": "^5.0.0",
       },
     },
+    "packages/health": {
+      "name": "@astroscope/health",
+      "version": "0.1.0",
+      "devDependencies": {
+        "astro": "^5.17.1",
+        "tsup": "^8.5.1",
+        "typescript": "^5.9.3",
+      },
+      "peerDependencies": {
+        "@astroscope/boot": "^0.2.0",
+        "astro": "^5.0.0",
+      },
+    },
     "packages/i18n": {
       "name": "@astroscope/i18n",
       "version": "0.3.2",
@@ -294,6 +321,8 @@
     "@astroscope/csrf": ["@astroscope/csrf@workspace:packages/csrf"],
 
     "@astroscope/excludes": ["@astroscope/excludes@workspace:packages/excludes"],
+
+    "@astroscope/health": ["@astroscope/health@workspace:packages/health"],
 
     "@astroscope/i18n": ["@astroscope/i18n@workspace:packages/i18n"],
 
@@ -1140,6 +1169,8 @@
     "demo-boot": ["demo-boot@workspace:demo/boot"],
 
     "demo-csrf": ["demo-csrf@workspace:demo/csrf"],
+
+    "demo-health": ["demo-health@workspace:demo/health"],
 
     "demo-i18n": ["demo-i18n@workspace:demo/i18n"],
 

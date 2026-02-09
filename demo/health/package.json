@@ -1,0 +1,25 @@
+{
+  "name": "demo-health",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "astro dev",
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "typecheck": "astro check",
+    "lint": "eslint 'src/**/*.{ts,tsx,astro}' astro.config.ts",
+    "lint:fix": "eslint 'src/**/*.{ts,tsx,astro}' astro.config.ts --fix"
+  },
+  "dependencies": {
+    "@astrojs/node": "^9.5.2",
+    "@astroscope/boot": "workspace:*",
+    "@astroscope/health": "workspace:*",
+    "astro": "^5.17.1"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.6",
+    "typescript": "^5.9.3"
+  }
+}

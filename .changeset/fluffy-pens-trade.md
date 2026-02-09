@@ -1,0 +1,5 @@
+---
+'@astroscope/health': minor
+---
+
+init
