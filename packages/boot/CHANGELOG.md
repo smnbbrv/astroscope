@@ -1,5 +1,11 @@
 # @astroscope/boot
 
+## 0.2.2
+
+### Patch Changes
+
+- 6b80b5b: implement proper exit codes on errors during startup and shutdown
+
 ## 0.2.1
 
 ### Patch Changes
