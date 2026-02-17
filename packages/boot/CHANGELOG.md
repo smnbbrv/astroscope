@@ -1,5 +1,11 @@
 # @astroscope/boot
 
+## 0.2.3
+
+### Patch Changes
+
+- 40146f7: fix vite warning
+
 ## 0.2.2
 
 ### Patch Changes

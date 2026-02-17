@@ -1,5 +1,11 @@
 # @astroscope/pino
 
+## 0.3.0
+
+### Minor Changes
+
+- 936be99: initLogger => log.configure
+
 ## 0.2.1
 
 ### Patch Changes
