@@ -44,3 +44,6 @@ jobs:
         run: bun run ci:publish
         env:
           NPM_CONFIG_PROVENANCE: true
+
+      - name: Push tags
+        run: git push --tags
