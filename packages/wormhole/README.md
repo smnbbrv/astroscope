@@ -218,21 +218,6 @@ import {WormholeScript} from '@astroscope/wormhole/astro';
 3. **Client** calls `wh.get()` — reads from `globalThis[key]()` (the serialized getter)
 4. **`set()`** updates a local store and notifies all subscribers — `useWormhole()` hooks and `subscribe()` callbacks re-render/fire
 
-## Monorepo note
-
-When using this package from a workspace in a monorepo, add `resolve.dedupe` to your Vite config to prevent duplicate React instances:
-
-```ts
-// astro.config.ts
-export default defineConfig({
-  vite: {
-    resolve: {
-      dedupe: ['react', 'react-dom'],
-    },
-  },
-});
-```
-
 ## License
 
 MIT
