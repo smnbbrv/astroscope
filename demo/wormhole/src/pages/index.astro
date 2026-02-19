@@ -1,0 +1,92 @@
+---
+import '../styles/index.css';
+import { WormholeScript } from '@astroscope/wormhole/astro';
+import Layout from '../../../shared/Layout.astro';
+import ConfigDisplay from '../components/ConfigDisplay';
+import Counter from '../components/Counter';
+import { configWormhole, counterWormhole } from '../wormholes';
+
+const config = configWormhole.get();
+const counter = counterWormhole.get();
+---
+
+<Layout title="Wormhole Demo" package="@astroscope/wormhole">
+  <WormholeScript wormhole={configWormhole} slot="head" />
+  <WormholeScript wormhole={counterWormhole} slot="head" />
+
+  <p class="text-lg mb-6">
+    Server-to-client state bridge for Astro SSR — typed, reactive, multi-instance.
+  </p>
+
+  <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+      <h2 class="card-title">Server-Side Read (Astro)</h2>
+      <p class="text-sm text-base-content/70 mb-4">
+        Data read with <code class="badge badge-ghost">wormhole.get()</code> in Astro frontmatter — server-rendered, no client JS.
+      </p>
+      <p><strong>Site name:</strong> {config.siteName}</p>
+      <div class="flex gap-2 mt-2">
+        {config.features.map((feature) => (
+          <span class="badge badge-primary">{feature}</span>
+        ))}
+      </div>
+      <p class="mt-4"><strong>Initial counter:</strong> {counter.count}</p>
+    </div>
+  </div>
+
+  <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+      <h2 class="card-title">
+        React Island — Read Only
+        <code class="badge badge-ghost">client:visible</code>
+      </h2>
+      <p class="text-sm text-base-content/70 mb-4">
+        Config wormhole read with <code class="badge badge-ghost">useWormhole()</code> in a React component.
+      </p>
+      <ConfigDisplay client:visible />
+    </div>
+  </div>
+
+  <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+      <h2 class="card-title">
+        React Island — Reactive Updates
+        <code class="badge badge-ghost">client:load</code>
+      </h2>
+      <p class="text-sm text-base-content/70 mb-4">
+        Counter wormhole with client-side <code class="badge badge-ghost">set()</code> — updates reactively.
+      </p>
+      <Counter client:load />
+    </div>
+  </div>
+
+  <div class="card bg-base-100 shadow-xl mb-6">
+    <div class="card-body">
+      <h2 class="card-title">
+        Astro Script Block
+        <code class="badge badge-ghost">{"<script>"}</code>
+      </h2>
+      <p class="text-sm text-base-content/70 mb-4">
+        Wormhole accessed in a client-side <code class="badge badge-ghost">{"<script>"}</code> tag — shares the same instance as React islands.
+      </p>
+      <p>Counter value from script: <strong id="script-counter">-</strong></p>
+      <p class="text-sm text-base-content/70 mt-2">
+        Try clicking +/- above — this value updates too via <code class="badge badge-ghost">subscribe()</code>.
+      </p>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  /* eslint-disable prettier/prettier */
+  import { counterWormhole } from '../wormholes';
+
+  const el = document.getElementById('script-counter')!;
+
+  el.textContent = String(counterWormhole.get().count);
+
+  counterWormhole.subscribe((data) => {
+    el.textContent = String(data.count);
+  });
+  /* eslint-enable prettier/prettier */
+</script>

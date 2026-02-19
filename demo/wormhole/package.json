@@ -1,0 +1,29 @@
+{
+  "name": "demo-wormhole",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "astro dev",
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "typecheck": "astro check",
+    "lint": "eslint 'src/**/*.{ts,tsx,astro}' astro.config.ts",
+    "lint:fix": "eslint 'src/**/*.{ts,tsx,astro}' astro.config.ts --fix"
+  },
+  "dependencies": {
+    "@astrojs/node": "^9.5.2",
+    "@astrojs/react": "^4.4.2",
+    "@astroscope/wormhole": "workspace:*",
+    "astro": "^5.17.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.6",
+    "@types/react": "^19.2.13",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3"
+  }
+}

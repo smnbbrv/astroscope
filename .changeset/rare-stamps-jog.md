@@ -1,0 +1,5 @@
+---
+'@astroscope/wormhole': minor
+---
+
+init

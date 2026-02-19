@@ -1,0 +1,21 @@
+---
+interface Props {
+  wormhole: { readonly name: string; readonly key: string; get(): unknown };
+}
+
+const { wormhole } = Astro.props;
+const data = wormhole.get();
+const key = wormhole.key;
+---
+
+{
+  data ? (
+    <script is:inline define:vars={{ data, key }}>
+      globalThis[key] = function(){return data;}
+    </script>
+  ) : (
+    <script is:inline define:vars={{ wormholeName: wormhole.name }}>
+      console.error(`[wormhole] "${wormholeName}" has no data — is the middleware configured?`);
+    </script>
+  )
+}
