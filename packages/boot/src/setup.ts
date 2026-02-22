@@ -1,7 +1,6 @@
-import { config } from 'virtual:@astroscope/boot/config';
 import { type BootModule, runShutdown, runStartup } from './lifecycle.js';
 
-export async function setup(boot: BootModule): Promise<void> {
+export async function setup(boot: BootModule, config: { host: string; port: number }): Promise<void> {
   const context = {
     dev: false,
     host: process.env['HOST'] ?? config.host,

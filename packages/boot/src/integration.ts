@@ -27,9 +27,6 @@ function resolveEntry(entry: string | undefined): string {
   return 'src/boot.ts';
 }
 
-const VIRTUAL_MODULE_ID = 'virtual:@astroscope/boot/config';
-const RESOLVED_VIRTUAL_MODULE_ID = `\0${VIRTUAL_MODULE_ID}`;
-
 export function getServerDefaults(config: AstroConfig | null): { host: string; port: number } {
   return {
     host:
@@ -72,18 +69,6 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
               {
                 name: '@astroscope/boot',
                 enforce: 'pre',
-
-                resolveId(id) {
-                  if (id === VIRTUAL_MODULE_ID) return RESOLVED_VIRTUAL_MODULE_ID;
-                },
-
-                load(id) {
-                  if (id === RESOLVED_VIRTUAL_MODULE_ID) {
-                    const { host, port } = getServerDefaults(astroConfig);
-
-                    return `export const config = ${JSON.stringify({ host, port })};`;
-                  }
-                },
 
                 async configureServer(server) {
                   if (isBuild) return;
@@ -164,11 +149,13 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
 
                   warmupModules = collectWarmupModules(bundle);
 
+                  const { host, port } = getServerDefaults(astroConfig);
+
                   const bootImport =
                     `globalThis.__astroscope_server_url = import.meta.url;\n` +
                     `import * as __astroscope_boot from './${bootChunkName}';\n` +
                     `import { setup as __astroscope_bootSetup } from '@astroscope/boot/setup';\n` +
-                    `await __astroscope_bootSetup(__astroscope_boot);\n`;
+                    `await __astroscope_bootSetup(__astroscope_boot, ${JSON.stringify({ host, port })});\n`;
 
                   // inject boot import at start of entry.mjs preserving source maps
                   const s = new MagicString(entryChunk.code);
