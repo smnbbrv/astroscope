@@ -14,6 +14,14 @@
     "./warmup": {
       "types": "./dist/warmup.d.ts",
       "import": "./dist/warmup.js"
+    },
+    "./events": {
+      "types": "./dist/events.d.ts",
+      "import": "./dist/events.js"
+    },
+    "./setup": {
+      "types": "./dist/setup.d.ts",
+      "import": "./dist/setup.js"
     }
   },
   "files": [
@@ -41,7 +49,7 @@
   },
   "homepage": "https://github.com/smnbbrv/astroscope/tree/main/packages/boot#readme",
   "scripts": {
-    "build": "tsup src/index.ts src/warmup.ts --format esm,cjs --dts",
+    "build": "tsup src/index.ts src/warmup.ts src/events.ts src/lifecycle.ts src/setup.ts --format esm,cjs --dts --external virtual:@astroscope/boot/config",
     "typecheck": "tsc --noEmit",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix"
@@ -49,7 +57,8 @@
   "devDependencies": {
     "astro": "^5.17.1",
     "tsup": "^8.5.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vite": "^6.4.1"
   },
   "peerDependencies": {
     "astro": "^5.0.0"

@@ -2,7 +2,9 @@
 
 > **Note:** This package is in active development. APIs may change between versions.
 
-Kubernetes-style health check endpoints for Astro SSR. Provides `/livez`, `/readyz`, `/startupz`, and `/healthz` probes on a separate HTTP server.
+Kubernetes-style health check endpoints for Astro SSR. Provides `/livez`, `/readyz`, `/startupz`, and `/healthz` probes on a separate HTTP server. Automatically manages probe lifecycle via [@astroscope/boot](../boot).
+
+[health-probes](https://github.com/smnbbrv/health-probes) is used under the hood. If you need more control, you can use it directly in your boot file instead of this integration.
 
 ## Examples
 
@@ -16,78 +18,132 @@ npm install @astroscope/health
 
 ## Usage
 
-This package is designed to work with [@astroscope/boot](../boot) for lifecycle management.
+### 1. Add both integrations to your Astro config
+
+**Important:** `health()` must come **after** `boot()` in the integrations array.
+
+```ts
+// astro.config.ts
+import { defineConfig } from 'astro/config';
+import node from '@astrojs/node';
+import boot from '@astroscope/boot';
+import health from '@astroscope/health';
+
+export default defineConfig({
+  adapter: node({ mode: 'standalone' }),
+  integrations: [
+    boot(),
+    // in k8s use '0.0.0.0' to allow kubelet to access probes
+    // do not expose the health server publicly unless necessary
+    // by default is 127.0.0.1 for security reasons
+    health({ host: '0.0.0.0' }),
+  ],
+});
+```
+
+This would set up the health server in production mode, disabled in dev mode by default.
+
+### 2. Register health checks in your boot file
+
+The health server and probe lifecycle are managed automatically — you only need to register your health checks:
 
 ```ts
 // src/boot.ts
-import type { BootContext } from "@astroscope/boot";
-import { checks, probes, server } from "@astroscope/health";
+import type { BootContext } from '@astroscope/boot';
+import { checks } from '@astroscope/health';
 
 export async function onStartup({ dev, host, port }: BootContext) {
-  // start health server on a separate port
-  server.start({ port: 9090 });
-
-  // enable liveness immediately
-  probes.livez.enable();
-
-  // initialize your app...
   await connectToDatabase();
 
   // register health checks
-  checks.register("database", () => db.ping());
+  checks.register('database', () => ({
+    status: db.isConnected() ? 'healthy' : 'unhealthy',
+    error: db.isConnected() ? undefined : 'connection lost',
+  }));
 
-  // enable startup probe (initialization complete)
-  probes.startupz.enable();
-
-  // enable readiness probe (ready for traffic)
-  probes.readyz.enable();
+  console.log(`Server ready at ${host}:${port}`);
 }
 
 export async function onShutdown() {
-  // disable readiness first (stop receiving traffic)
-  probes.readyz.disable();
-
   await disconnectFromDatabase();
-
-  // stop health server
-  await server.stop();
 }
 ```
+
+### What happens automatically
+
+The integration hooks into boot lifecycle events to manage probes:
+
+1. **Before `onStartup`**: health server starts, liveness probe enabled
+2. **After `onStartup`**: startup and readiness probes enabled
+3. **Before `onShutdown`**: readiness probe disabled (stops receiving traffic)
+4. **After `onShutdown`**: health server stopped
+
+This ensures Kubernetes sees the correct state at each phase — liveness is available immediately, readiness only after your app has fully initialized, and traffic stops before shutdown begins.
+
+## Options
+
+```ts
+health({
+  host: '0.0.0.0', // default: "127.0.0.1"
+  port: 9090, // default: 9090
+  paths: SimplePaths, // default: K8sPaths
+  dev: true, // default: false
+});
+```
+
+### `host`
+
+Host to bind the health server to. Defaults to `127.0.0.1` (localhost only). Set to `0.0.0.0` when probes need to be reachable from outside the host, e.g. in Kubernetes where the kubelet sends requests to the pod IP.
+
+- **Type**: `string`
+- **Default**: `"127.0.0.1"`
+
+### `port`
+
+Port for the health server.
+
+- **Type**: `number`
+- **Default**: `9090`
+
+### `paths`
+
+Probe endpoint paths. Two presets are available:
+
+- `K8sPaths` (default): `/livez`, `/readyz`, `/startupz`, `/healthz`
+- `SimplePaths`: `/live`, `/ready`, `/startup`, `/health`
+
+```ts
+import health, { SimplePaths } from '@astroscope/health';
+
+health({ paths: SimplePaths });
+```
+
+### `dev`
+
+Enable the health server in development mode. By default, health probes only run in production builds.
+
+- **Type**: `boolean`
+- **Default**: `false`
 
 ## Probes
 
 ### `/livez` — Liveness Probe
 
-Indicates if the process is running. If this fails, Kubernetes will restart the container.
-
-```ts
-probes.livez.enable(); // returns 200 OK
-probes.livez.disable(); // returns 503 Service Unavailable
-```
+Indicates if the process is running. If this fails, Kubernetes restarts the container.
 
 ### `/startupz` — Startup Probe
 
 Indicates if the application has finished initializing. Kubernetes waits for this before sending traffic or checking liveness.
 
-```ts
-probes.startupz.enable();
-probes.startupz.disable();
-```
-
 ### `/readyz` — Readiness Probe
 
 Indicates if the application is ready to receive traffic. When disabled or when required health checks fail, Kubernetes removes the pod from load balancer rotation.
-
-```ts
-probes.readyz.enable();
-probes.readyz.disable();
-```
 
 The readiness probe automatically runs all non-optional health checks and returns 503 if any fail.
 
 ### `/healthz` — Health Status
 
-Returns detailed JSON status of all probes and health checks. Useful for debugging and dashboards.
+Returns detailed JSON status of all probes and health checks:
 
 ```json
 {
@@ -112,6 +168,7 @@ Returns detailed JSON status of all probes and health checks. Useful for debuggi
 ```
 
 Status values:
+
 - `healthy` — all checks pass
 - `degraded` — optional checks failing, required checks pass
 - `unhealthy` — required checks failing
@@ -121,29 +178,30 @@ Status values:
 Register health checks to verify dependencies are working:
 
 ```ts
-import { checks } from "@astroscope/health";
+import { checks } from '@astroscope/health';
 
 // return result (recommended for boolean checks)
-checks.register("database", () => ({
-  status: db.isConnected() ? "healthy" : "unhealthy",
-  error: db.isConnected() ? undefined : "connection lost",
+checks.register('database', () => ({
+  status: db.isConnected() ? 'healthy' : 'unhealthy',
+  error: db.isConnected() ? undefined : 'connection lost',
 }));
 
 // throw-based (classic pattern)
-checks.register("cache", async () => {
+checks.register('cache', async () => {
   await redis.ping(); // throws if fails
 });
 
 // with options
 checks.register({
-  name: "external-api",
-  check: () => fetch("https://api.example.com/health").then(() => {}),
+  name: 'external-api',
+  check: () => fetch('https://api.example.com/health').then(() => {}),
   optional: true, // doesn't affect /readyz, only /healthz status
   timeout: 10000, // custom timeout (default: 5000ms)
 });
 ```
 
 The check function can either:
+
 - Return `HealthCheckResult` with status and optional error
 - Return `void` (completing without error = healthy)
 - Throw an error (= unhealthy with error message)
@@ -153,22 +211,10 @@ The check function can either:
 `register()` returns an unregister function:
 
 ```ts
-const unregister = checks.register({
-  name: "database",
-  check: () => db.ping(),
-});
+const unregister = checks.register('database', () => db.ping());
 
 // later...
 unregister();
-```
-
-## Server Options
-
-```ts
-server.start({
-  host: "0.0.0.0", // default: "localhost"
-  port: 9090, // default: 9090
-});
 ```
 
 ## Kubernetes Configuration
@@ -199,83 +245,6 @@ spec:
           path: /readyz
           port: 9090
         periodSeconds: 5
-```
-
-## API Reference
-
-### Server
-
-```ts
-import { server } from "@astroscope/health";
-
-server.start(options?: HealthServerOptions): void;
-server.stop(): Promise<void>;
-```
-
-### Probes
-
-```ts
-import { probes } from "@astroscope/health";
-
-probes.livez.enable(): void;
-probes.livez.disable(): void;
-probes.livez.get(): Promise<HealthProbeResult>;
-probes.livez.response(): Promise<Response>;
-
-// same for startupz, readyz
-
-probes.healthz.get(): Promise<HealthzResult>;
-probes.healthz.response(): Promise<Response>;
-```
-
-### Checks
-
-```ts
-import { checks } from "@astroscope/health";
-
-checks.register(name: string, check: CheckFn): () => void;
-checks.register(check: HealthCheck): () => void;
-
-// CheckFn = () => Promise<HealthCheckResult | void> | HealthCheckResult | void
-checks.getChecks(): HealthCheck[];
-checks.runAll(): Promise<Record<string, HealthCheckResult>>;
-checks.runRequired(): Promise<boolean>;
-```
-
-## Types
-
-```ts
-interface HealthCheck {
-  name: string;
-  check: () => Promise<HealthCheckResult | void> | HealthCheckResult | void;
-  optional?: boolean; // default: false
-  timeout?: number; // default: 5000
-}
-
-interface HealthCheckResult {
-  status: "healthy" | "unhealthy";
-  latency?: number;
-  error?: string;
-}
-
-interface HealthProbeResult {
-  passing: boolean;
-}
-
-interface HealthzResult {
-  status: "healthy" | "degraded" | "unhealthy";
-  probes: {
-    livez: boolean;
-    startupz: boolean;
-    readyz: boolean;
-  };
-  checks: Record<string, HealthCheckResult>;
-}
-
-interface HealthServerOptions {
-  host?: string; // default: "localhost"
-  port?: number; // default: 9090
-}
 ```
 
 ## License

@@ -21,6 +21,10 @@
       "dependsOn": ["@astroscope/excludes#build"],
       "outputs": ["dist/**"]
     },
+    "@astroscope/health#build": {
+      "dependsOn": ["@astroscope/boot#build"],
+      "outputs": ["dist/**"]
+    },
     "typecheck": {
       "dependsOn": ["^build"]
     },

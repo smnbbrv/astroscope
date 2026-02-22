@@ -1,6 +1,6 @@
 import type { BootContext } from '@astroscope/boot';
 import { warmup } from '@astroscope/boot/warmup';
-import { checks, probes, server } from '@astroscope/health';
+import { checks } from '@astroscope/health';
 
 // simulate a database connection
 let dbConnected = false;
@@ -23,15 +23,6 @@ export async function onStartup({ dev, host, port }: BootContext) {
   console.log('==============================');
   console.log('[boot] onStartup called');
   console.log('==============================');
-
-  // start health server
-  server.start({
-    host: process.env['HEALTH_HOST'] ?? 'localhost',
-    port: Number(process.env['HEALTH_PORT']) || 9090,
-  });
-
-  // enable liveness probe immediately
-  probes.livez.enable();
 
   await connectToDatabase();
 
@@ -58,19 +49,12 @@ export async function onStartup({ dev, host, port }: BootContext) {
     timeout: 3000,
   });
 
-  // enable startup probe (app is initialized)
-  probes.startupz.enable();
-
   // warmup V8 by importing all page modules before accepting traffic
   const result = await warmup();
 
   console.log(`[boot] warmup complete: ${result.success.length} modules in ${result.duration}ms`);
-
-  // enable readiness probe (ready to receive traffic)
-  probes.readyz.enable();
-
   console.log(`[boot] server ready at ${host}:${port} (dev: ${dev})`);
-  console.log('[boot] health endpoints available at http://localhost:9090');
+  // health server starts automatically after onStartup via @astroscope/health integration
 }
 
 export async function onShutdown({ dev }: BootContext) {
@@ -78,13 +62,8 @@ export async function onShutdown({ dev }: BootContext) {
   console.log('[boot] onShutdown called');
   console.log('==============================');
 
-  // disable readiness first (stop receiving traffic)
-  probes.readyz.disable();
-
   await disconnectFromDatabase();
 
-  // stop health server
-  await server.stop();
-
+  // health server stops automatically before onShutdown via @astroscope/health integration
   console.log(`[boot] shutdown complete (dev: ${dev})`);
 }
