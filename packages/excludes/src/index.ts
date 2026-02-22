@@ -1,4 +1,4 @@
-import type { APIContext } from 'astro';
+import type { APIContext, MiddlewareHandler } from 'astro';
 
 export type ExcludePattern = { pattern: RegExp } | { prefix: string } | { exact: string };
 
@@ -83,4 +83,34 @@ export function shouldExclude(
  */
 export function serializeExcludePatterns(patterns: ExcludePattern[]): string {
   return `[${patterns.map((p) => ('pattern' in p ? `{ pattern: ${p.pattern.toString()} }` : JSON.stringify(p))).join(', ')}]`;
+}
+
+/**
+ * Wraps a middleware to skip execution for excluded paths.
+ * Useful for third-party middlewares that don't have built-in exclude support.
+ *
+ * @example
+ * ```ts
+ * import { withExcluded, RECOMMENDED_EXCLUDES } from '@astroscope/excludes';
+ * import { someExternalMiddleware } from 'some-package';
+ *
+ * export const onRequest = sequence(
+ *   withExcluded(someExternalMiddleware(), [
+ *     ...RECOMMENDED_EXCLUDES,
+ *     { prefix: '/api/webhooks/' },
+ *   ]),
+ * );
+ * ```
+ */
+export function withExcluded(
+  middleware: MiddlewareHandler,
+  exclude: ExcludePattern[] | ((context: APIContext) => boolean),
+): MiddlewareHandler {
+  return (ctx, next) => {
+    if (shouldExclude(ctx, exclude)) {
+      return next();
+    }
+
+    return middleware(ctx, next);
+  };
 }

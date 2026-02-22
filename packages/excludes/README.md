@@ -25,12 +25,7 @@ if (shouldExclude(ctx, RECOMMENDED_EXCLUDES)) {
   return next();
 }
 
-const excludes = [
-  ...RECOMMENDED_EXCLUDES,
-  { exact: '/health' },
-  { prefix: '/api/internal/' },
-  { pattern: /\.map$/ },
-];
+const excludes = [...RECOMMENDED_EXCLUDES, { exact: '/health' }, { prefix: '/api/internal/' }, { pattern: /\.map$/ }];
 
 if (shouldExclude(ctx, (ctx) => ctx.url.pathname.startsWith('/admin'))) {
   return next();
@@ -48,6 +43,7 @@ Note: `STATIC_EXCLUDES` is **not** included by default, as these paths (like `/r
 ### `DEV_EXCLUDES`
 
 Vite/Astro dev server paths (only relevant in development):
+
 - `/@id/*`
 - `/@fs/*`
 - `/@vite/*`
@@ -57,12 +53,14 @@ Vite/Astro dev server paths (only relevant in development):
 ### `ASTRO_STATIC_EXCLUDES`
 
 Astro internal paths:
+
 - `/_astro/*` - bundled assets
 - `/_image*` - image optimization
 
 ### `STATIC_EXCLUDES`
 
 Common static files:
+
 - `/favicon.ico`
 - `/robots.txt`
 - `/sitemap.xml`
@@ -74,10 +72,26 @@ Common static files:
 
 ```ts
 type ExcludePattern =
-  | { exact: string }   // Exact match
-  | { prefix: string }  // Starts with
-  | { pattern: RegExp } // Regex match
+  | { exact: string } // Exact match
+  | { prefix: string } // Starts with
+  | { pattern: RegExp }; // Regex match
 ```
+
+## Wrapping External Middlewares
+
+Use `withExcluded` to add exclude support to third-party middlewares that don't have it built-in:
+
+```ts
+import { withExcluded, RECOMMENDED_EXCLUDES } from '@astroscope/excludes';
+import { someExternalMiddleware } from 'some-package';
+import { sequence } from 'astro:middleware';
+
+export const onRequest = sequence(
+  withExcluded(someExternalMiddleware(), [...RECOMMENDED_EXCLUDES, { prefix: '/api/webhooks/' }]),
+);
+```
+
+This is useful for any middleware that should skip paths but doesn't support excludes natively.
 
 ## License
 
