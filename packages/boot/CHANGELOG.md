@@ -1,5 +1,11 @@
 # @astroscope/boot
 
+## 0.3.1
+
+### Patch Changes
+
+- b722dbe: pass parameters directly into setup script, omitting the config virtual module
+
 ## 0.3.0
 
 ### Minor Changes
