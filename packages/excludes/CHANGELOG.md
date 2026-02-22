@@ -1,5 +1,11 @@
 # @astroscope/excludes
 
+## 0.2.0
+
+### Minor Changes
+
+- af97c46: add withExcluded helper method
+
 ## 0.1.3
 
 ### Patch Changes
