@@ -1,5 +1,11 @@
 # @astroscope/boot
 
+## 0.3.0
+
+### Minor Changes
+
+- 0bd9206: add events for lifecycle hooks
+
 ## 0.2.3
 
 ### Patch Changes
