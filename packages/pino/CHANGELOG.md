@@ -1,5 +1,11 @@
 # @astroscope/pino
 
+## 0.3.1
+
+### Patch Changes
+
+- 873b3ac: update excludes version
+
 ## 0.3.0
 
 ### Minor Changes

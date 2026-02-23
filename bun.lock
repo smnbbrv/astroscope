@@ -6,12 +6,12 @@
       "name": "astroscope",
       "devDependencies": {
         "@changesets/cli": "^2.29.8",
-        "@eslint/js": "^9.39.2",
+        "@eslint/js": "^9.39.3",
         "@tailwindcss/vite": "^4.2.0",
         "@types/bun": "^1.3.9",
         "@typescript-eslint/parser": "^8.56.0",
-        "daisyui": "^5.5.18",
-        "eslint": "^9.39.2",
+        "daisyui": "^5.5.19",
+        "eslint": "^9.39.3",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-astro": "^1.6.0",
         "eslint-plugin-import": "^2.32.0",
@@ -203,14 +203,14 @@
     },
     "packages/csrf": {
       "name": "@astroscope/csrf",
-      "version": "0.2.3",
+      "version": "0.2.4",
       "devDependencies": {
         "astro": "^5.17.1",
         "tsup": "^8.5.1",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@astroscope/excludes": "^0.1.3",
+        "@astroscope/excludes": "^0.2.0",
         "astro": "^5.0.0",
       },
     },
@@ -246,7 +246,7 @@
     },
     "packages/i18n": {
       "name": "@astroscope/i18n",
-      "version": "0.3.2",
+      "version": "0.3.3",
       "dependencies": {
         "@astrojs/compiler": "^2.13.0",
         "@babel/core": "^7.29.0",
@@ -264,13 +264,13 @@
         "vite": "^6.4.1",
       },
       "peerDependencies": {
-        "@astroscope/excludes": "^0.1.3",
+        "@astroscope/excludes": "^0.2.0",
         "astro": "^5.0.0",
       },
     },
     "packages/opentelemetry": {
       "name": "@astroscope/opentelemetry",
-      "version": "0.2.4",
+      "version": "0.2.5",
       "devDependencies": {
         "@opentelemetry/api": "^1.9.0",
         "@opentelemetry/core": "^2.5.0",
@@ -279,7 +279,7 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@astroscope/excludes": "^0.1.3",
+        "@astroscope/excludes": "^0.2.0",
         "@opentelemetry/api": "^1.0.0",
         "@opentelemetry/core": "^2.0.0",
         "astro": "^5.0.0",
@@ -287,7 +287,7 @@
     },
     "packages/pino": {
       "name": "@astroscope/pino",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "devDependencies": {
         "astro": "^5.17.1",
         "pino": "^10.3.0",
@@ -295,7 +295,7 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@astroscope/excludes": "^0.1.3",
+        "@astroscope/excludes": "^0.2.0",
         "astro": "^5.0.0",
         "pino": "^10.0.0",
       },
