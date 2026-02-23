@@ -1,5 +1,11 @@
 # @astroscope/i18n
 
+## 0.3.3
+
+### Patch Changes
+
+- 873b3ac: update excludes version
+
 ## 0.3.2
 
 ### Patch Changes

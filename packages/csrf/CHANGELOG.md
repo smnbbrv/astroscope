@@ -1,5 +1,11 @@
 # @astroscope/csrf
 
+## 0.2.4
+
+### Patch Changes
+
+- 873b3ac: update excludes version
+
 ## 0.2.3
 
 ### Patch Changes
