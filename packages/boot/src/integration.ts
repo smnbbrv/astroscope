@@ -4,6 +4,7 @@ import MagicString from 'magic-string';
 import { setupBootHmr } from './hmr.js';
 import { type BootModule, runShutdown, runStartup } from './lifecycle.js';
 import type { BootContext } from './types.js';
+import { serializeError } from './utils.js';
 import { type WarmupModules, collectWarmupModules, writeWarmupManifest } from './warmup-manifest.js';
 
 export interface BootOptions {
@@ -94,9 +95,7 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
 
                     await runStartup(module, bootContext);
                   } catch (error) {
-                    logger.error(
-                      `Error running startup script: ${error instanceof Error ? (error.stack ?? error.message) : JSON.stringify(error)}`,
-                    );
+                    logger.error(`Error running startup script: ${serializeError(error)}`);
                   }
 
                   server.httpServer?.once('close', async () => {
@@ -106,9 +105,7 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
 
                       await runShutdown(module, bootContext);
                     } catch (error) {
-                      logger.error(
-                        `Error running shutdown script: ${error instanceof Error ? (error.stack ?? error.message) : JSON.stringify(error)}`,
-                      );
+                      logger.error(`Error running shutdown script: ${serializeError(error)}`);
                     }
                   });
 

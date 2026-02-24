@@ -3,6 +3,7 @@ import type { ViteDevServer } from 'vite';
 import { ignoredSuffixes } from './ignored.js';
 import { type BootModule, runShutdown, runStartup } from './lifecycle.js';
 import type { BootContext } from './types.js';
+import { serializeError } from './utils.js';
 
 export function setupBootHmr(
   server: ViteDevServer,
@@ -60,7 +61,7 @@ export function setupBootHmr(
 
         await runShutdown(oldModule, bootContext);
       } catch (error) {
-        logger.error(`Error during boot HMR shutdown: ${error}`);
+        logger.error(`Error during boot HMR shutdown: ${serializeError(error)}`);
       }
 
       // invalidate the module graph to reload fresh code
@@ -71,7 +72,7 @@ export function setupBootHmr(
 
         await runStartup(newModule, bootContext);
       } catch (error) {
-        logger.error(`Error during boot HMR startup: ${error instanceof Error ? error.stack ?? error.message : JSON.stringify(error)}`);
+        logger.error(`Error during boot HMR startup: ${serializeError(error)}`);
       }
     }
   });
