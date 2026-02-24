@@ -97,6 +97,7 @@ Host to bind the health server to. Defaults to `127.0.0.1` (localhost only). Set
 
 - **Type**: `string`
 - **Default**: `"127.0.0.1"`
+- **Env**: `HEALTH_HOST`
 
 ### `port`
 
@@ -104,6 +105,7 @@ Port for the health server.
 
 - **Type**: `number`
 - **Default**: `9090`
+- **Env**: `HEALTH_PORT`
 
 ### `paths`
 
