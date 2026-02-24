@@ -94,7 +94,9 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
 
                     await runStartup(module, bootContext);
                   } catch (error) {
-                    logger.error(`Error running startup script: ${error}`);
+                    logger.error(
+                      `Error running startup script: ${error instanceof Error ? (error.stack ?? error.message) : JSON.stringify(error)}`,
+                    );
                   }
 
                   server.httpServer?.once('close', async () => {
@@ -104,7 +106,9 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
 
                       await runShutdown(module, bootContext);
                     } catch (error) {
-                      logger.error(`Error running shutdown script: ${error}`);
+                      logger.error(
+                        `Error running shutdown script: ${error instanceof Error ? (error.stack ?? error.message) : JSON.stringify(error)}`,
+                      );
                     }
                   });
 

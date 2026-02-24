@@ -3,9 +3,6 @@ import type { ProbePaths } from 'health-probes';
 import MagicString from 'magic-string';
 import { registerHealth } from './register.js';
 
-const VIRTUAL_MODULE_ID = 'virtual:@astroscope/health/config';
-const RESOLVED_VIRTUAL_MODULE_ID = `\0${VIRTUAL_MODULE_ID}`;
-
 export interface HealthOptions {
   /**
    * Host to bind the health server to.
@@ -77,16 +74,6 @@ export default function health(options: HealthOptions = {}): AstroIntegration {
               {
                 name: '@astroscope/health',
 
-                resolveId(id) {
-                  if (id === VIRTUAL_MODULE_ID) return RESOLVED_VIRTUAL_MODULE_ID;
-                },
-
-                load(id) {
-                  if (id === RESOLVED_VIRTUAL_MODULE_ID) {
-                    return `export const config = ${JSON.stringify(serverOptions)};`;
-                  }
-                },
-
                 configureServer() {
                   if (!enableDev) return;
 
@@ -102,7 +89,10 @@ export default function health(options: HealthOptions = {}): AstroIntegration {
 
                   const s = new MagicString(entryChunk.code);
 
-                  s.prepend(`import '@astroscope/health/setup';\n`);
+                  s.prepend(
+                    `import { registerHealth as __astroscope_registerHealth } from '@astroscope/health/setup';\n` +
+                      `__astroscope_registerHealth(${JSON.stringify(serverOptions)});\n`,
+                  );
 
                   entryChunk.code = s.toString();
 

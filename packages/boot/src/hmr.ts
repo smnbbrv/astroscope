@@ -71,7 +71,7 @@ export function setupBootHmr(
 
         await runStartup(newModule, bootContext);
       } catch (error) {
-        logger.error(`Error during boot HMR startup: ${error}`);
+        logger.error(`Error during boot HMR startup: ${error instanceof Error ? error.stack ?? error.message : JSON.stringify(error)}`);
       }
     }
   });

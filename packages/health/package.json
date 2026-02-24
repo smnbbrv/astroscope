@@ -11,8 +11,8 @@
       "import": "./dist/index.js"
     },
     "./setup": {
-      "types": "./dist/setup.d.ts",
-      "import": "./dist/setup.js"
+      "types": "./dist/register.d.ts",
+      "import": "./dist/register.js"
     }
   },
   "files": [
@@ -45,7 +45,7 @@
   },
   "homepage": "https://github.com/smnbbrv/astroscope/tree/main/packages/health#readme",
   "scripts": {
-    "build": "tsup src/index.ts src/setup.ts --format esm --dts --external virtual:@astroscope/health/config",
+    "build": "tsup src/index.ts src/register.ts --format esm --dts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint 'src/**/*.ts'",
     "lint:fix": "eslint 'src/**/*.ts' --fix"
