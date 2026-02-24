@@ -3,6 +3,7 @@ import type { AstroConfig, AstroIntegration } from 'astro';
 import MagicString from 'magic-string';
 import { setupBootHmr } from './hmr.js';
 import { type BootModule, runShutdown, runStartup } from './lifecycle.js';
+import { getPrependCode } from './prepend.js';
 import type { BootContext } from './types.js';
 import { serializeError } from './utils.js';
 import { type WarmupModules, collectWarmupModules, writeWarmupManifest } from './warmup-manifest.js';
@@ -28,6 +29,10 @@ function resolveEntry(entry: string | undefined): string {
   return 'src/boot.ts';
 }
 
+/**
+ * Resolve the default host and port from the Astro server config.
+ * Falls back to `localhost:4321` when no config is provided.
+ */
 export function getServerDefaults(config: AstroConfig | null): { host: string; port: number } {
   return {
     host:
@@ -38,6 +43,30 @@ export function getServerDefaults(config: AstroConfig | null): { host: string; p
           : 'localhost',
     port: config?.server?.port ?? 4321,
   };
+}
+
+/**
+ * Build a dev-mode boot context from the running server's address,
+ * falling back to Astro config defaults if the server isn't listening yet.
+ */
+function getBootContext(
+  server: { httpServer?: { address(): unknown } | null | undefined },
+  config: AstroConfig | null,
+): BootContext {
+  const addr = server.httpServer?.address();
+
+  if (addr && typeof addr === 'object' && 'address' in addr && 'port' in addr) {
+    const host =
+      (addr as { address: string }).address === '::' || (addr as { address: string }).address === '0.0.0.0'
+        ? 'localhost'
+        : (addr as { address: string }).address;
+
+    return { dev: true, host, port: (addr as { port: number }).port };
+  }
+
+  const { host, port } = getServerDefaults(config);
+
+  return { dev: true, host, port };
 }
 
 /**
@@ -67,52 +96,9 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
         updateConfig({
           vite: {
             plugins: [
+              // build plugin: handles entry.mjs injection, warmup manifest
               {
                 name: '@astroscope/boot',
-                enforce: 'pre',
-
-                async configureServer(server) {
-                  if (isBuild) return;
-
-                  const getBootContext = (): BootContext => {
-                    const addr = server.httpServer?.address();
-
-                    if (addr && typeof addr === 'object') {
-                      const host = addr.address === '::' || addr.address === '0.0.0.0' ? 'localhost' : addr.address;
-
-                      return { dev: true, host, port: addr.port };
-                    }
-
-                    const { host, port } = getServerDefaults(astroConfig);
-
-                    return { dev: true, host, port };
-                  };
-
-                  // run startup immediately before the server starts listening
-                  try {
-                    const bootContext = getBootContext();
-                    const module = (await server.ssrLoadModule(`/${entry}`)) as BootModule;
-
-                    await runStartup(module, bootContext);
-                  } catch (error) {
-                    logger.error(`Error running startup script: ${serializeError(error)}`);
-                  }
-
-                  server.httpServer?.once('close', async () => {
-                    try {
-                      const bootContext = getBootContext();
-                      const module = (await server.ssrLoadModule(`/${entry}`)) as BootModule;
-
-                      await runShutdown(module, bootContext);
-                    } catch (error) {
-                      logger.error(`Error running shutdown script: ${serializeError(error)}`);
-                    }
-                  });
-
-                  if (hmr) {
-                    setupBootHmr(server, entry, logger, getBootContext);
-                  }
-                },
 
                 configResolved(config) {
                   isSSR = !!config.build?.ssr;
@@ -152,16 +138,19 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
 
                   const { host, port } = getServerDefaults(astroConfig);
 
-                  const bootImport =
-                    `globalThis.__astroscope_server_url = import.meta.url;\n` +
+                  const prependCode = getPrependCode();
+                  const prefix = prependCode.length ? `${prependCode.join('\n')}\n` : '';
+
+                  const injection =
+                    `${prefix}globalThis.__astroscope_server_url = import.meta.url;\n` +
                     `import * as __astroscope_boot from './${bootChunkName}';\n` +
                     `import { setup as __astroscope_bootSetup } from '@astroscope/boot/setup';\n` +
                     `await __astroscope_bootSetup(__astroscope_boot, ${JSON.stringify({ host, port })});\n`;
 
-                  // inject boot import at start of entry.mjs preserving source maps
+                  // inject at start of entry.mjs preserving source maps
                   const s = new MagicString(entryChunk.code);
 
-                  s.prepend(bootImport);
+                  s.prepend(injection);
 
                   entryChunk.code = s.toString();
 
@@ -180,6 +169,40 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                   if (!outDir) return;
 
                   writeWarmupManifest(outDir, warmupModules, logger);
+                },
+              },
+
+              // startup plugin: runs after all other configureServer hooks
+              {
+                name: '@astroscope/boot/startup',
+                enforce: 'post',
+
+                async configureServer(server) {
+                  if (isBuild) return;
+
+                  try {
+                    const bootContext = getBootContext(server, astroConfig);
+                    const module = (await server.ssrLoadModule(`/${entry}`)) as BootModule;
+
+                    await runStartup(module, bootContext);
+                  } catch (error) {
+                    logger.error(`Error running startup script: ${serializeError(error)}`);
+                  }
+
+                  server.httpServer?.once('close', async () => {
+                    try {
+                      const bootContext = getBootContext(server, astroConfig);
+                      const module = (await server.ssrLoadModule(`/${entry}`)) as BootModule;
+
+                      await runShutdown(module, bootContext);
+                    } catch (error) {
+                      logger.error(`Error running shutdown script: ${serializeError(error)}`);
+                    }
+                  });
+
+                  if (hmr) {
+                    setupBootHmr(server, entry, logger, () => getBootContext(server, astroConfig));
+                  }
                 },
               },
             ],

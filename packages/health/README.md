@@ -20,8 +20,6 @@ npm install @astroscope/health
 
 ### 1. Add both integrations to your Astro config
 
-**Important:** `health()` must come **after** `boot()` in the integrations array.
-
 ```ts
 // astro.config.ts
 import { defineConfig } from 'astro/config';

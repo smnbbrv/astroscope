@@ -1,6 +1,6 @@
+import { prepend } from '@astroscope/boot/prepend';
 import type { AstroIntegration } from 'astro';
 import type { ProbePaths } from 'health-probes';
-import MagicString from 'magic-string';
 import { registerHealth } from './register.js';
 
 export interface HealthOptions {
@@ -50,23 +50,16 @@ export default function health(options: HealthOptions = {}): AstroIntegration {
   return {
     name: '@astroscope/health',
     hooks: {
-      'astro:config:setup': ({ config, command, updateConfig }) => {
-        const bootIndex = config.integrations.findIndex((i) => i.name === '@astroscope/boot');
-        const healthIndex = config.integrations.findIndex((i) => i.name === '@astroscope/health');
-
-        if (bootIndex === -1) {
-          throw new Error(
-            '@astroscope/health requires @astroscope/boot. Add boot() before health() in your integrations array.',
-          );
+      'astro:config:setup': ({ config, updateConfig }) => {
+        if (!config.integrations.some((i) => i.name === '@astroscope/boot')) {
+          throw new Error('@astroscope/health requires @astroscope/boot. Add boot() to your integrations array.');
         }
 
-        if (healthIndex !== -1 && bootIndex > healthIndex) {
-          throw new Error(
-            '@astroscope/health must come after @astroscope/boot. Swap the order in your integrations array.',
-          );
-        }
-
-        const isBuild = command === 'build';
+        // register health setup code to run before boot's startup in production builds
+        prepend(
+          `import { registerHealth as __astroscope_registerHealth } from '@astroscope/health/setup';\n` +
+            `__astroscope_registerHealth(${JSON.stringify(serverOptions)});`,
+        );
 
         updateConfig({
           vite: {
@@ -78,27 +71,6 @@ export default function health(options: HealthOptions = {}): AstroIntegration {
                   if (!enableDev) return;
 
                   registerHealth(serverOptions);
-                },
-
-                generateBundle(_, bundle) {
-                  if (!isBuild) return;
-
-                  const entryChunk = bundle['entry.mjs'];
-
-                  if (!entryChunk || entryChunk.type !== 'chunk') return;
-
-                  const s = new MagicString(entryChunk.code);
-
-                  s.prepend(
-                    `import { registerHealth as __astroscope_registerHealth } from '@astroscope/health/setup';\n` +
-                      `__astroscope_registerHealth(${JSON.stringify(serverOptions)});\n`,
-                  );
-
-                  entryChunk.code = s.toString();
-
-                  if (entryChunk.map) {
-                    entryChunk.map = s.generateMap({ hires: true }) as typeof entryChunk.map;
-                  }
                 },
               },
             ],
