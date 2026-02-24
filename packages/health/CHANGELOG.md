@@ -1,5 +1,13 @@
 # @astroscope/health
 
+## 0.2.1
+
+### Patch Changes
+
+- b76f267: remove virtual module
+- Updated dependencies [b76f267]
+  - @astroscope/boot@0.3.2
+
 ## 0.2.0
 
 ### Minor Changes

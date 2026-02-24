@@ -1,5 +1,11 @@
 # @astroscope/boot
 
+## 0.3.2
+
+### Patch Changes
+
+- b76f267: better error messages
+
 ## 0.3.1
 
 ### Patch Changes
