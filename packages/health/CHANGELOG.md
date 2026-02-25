@@ -1,5 +1,14 @@
 # @astroscope/health
 
+## 0.2.2
+
+### Patch Changes
+
+- 10aaf61: remove integration ordering requirements
+- 51fb715: support HEALTH_HOST and HEALTH_PORT env variables
+- Updated dependencies [10aaf61]
+  - @astroscope/boot@0.3.3
+
 ## 0.2.1
 
 ### Patch Changes
