@@ -19,7 +19,7 @@
     "@astrojs/react": "^4.4.2",
     "@astroscope/boot": "workspace:*",
     "@astroscope/i18n": "workspace:*",
-    "astro": "^5.17.1",
+    "astro": "^5.17.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },

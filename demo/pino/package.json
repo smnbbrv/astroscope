@@ -17,7 +17,7 @@
     "@astrojs/node": "^9.5.2",
     "@astroscope/excludes": "workspace:*",
     "@astroscope/pino": "workspace:*",
-    "astro": "^5.17.1",
+    "astro": "^5.17.3",
     "pino": "^10.3.0"
   },
   "devDependencies": {
