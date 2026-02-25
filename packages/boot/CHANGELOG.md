@@ -1,5 +1,11 @@
 # @astroscope/boot
 
+## 0.3.3
+
+### Patch Changes
+
+- 10aaf61: remove integration ordering requirements
+
 ## 0.3.2
 
 ### Patch Changes
