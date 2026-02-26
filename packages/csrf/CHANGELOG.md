@@ -1,5 +1,11 @@
 # @astroscope/csrf
 
+## 0.3.0
+
+### Minor Changes
+
+- 3da8670: remove trustProxy and allowedOrigins since it possible using Astro security.allowedDomains
+
 ## 0.2.4
 
 ### Patch Changes
