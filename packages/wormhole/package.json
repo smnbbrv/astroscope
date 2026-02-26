@@ -52,8 +52,8 @@
   "scripts": {
     "build": "tsup src/index.ts src/server.ts src/react/index.ts --format esm --dts",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint 'src/**/*.{ts,tsx}'",
-    "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix"
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix"
   },
   "devDependencies": {
     "@types/react": "^19.2.13",

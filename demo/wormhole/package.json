@@ -9,8 +9,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "typecheck": "astro check",
-    "lint": "eslint 'src/**/*.{ts,tsx,astro}' astro.config.ts",
-    "lint:fix": "eslint 'src/**/*.{ts,tsx,astro}' astro.config.ts --fix"
+    "lint": "eslint src astro.config.ts",
+    "lint:fix": "eslint src astro.config.ts --fix"
   },
   "dependencies": {
     "@astrojs/node": "^9.5.2",

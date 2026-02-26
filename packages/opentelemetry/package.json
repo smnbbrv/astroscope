@@ -50,8 +50,8 @@
   "scripts": {
     "build": "tsup src/index.ts src/middleware-entrypoint.ts --format esm --dts --external virtual:@astroscope/opentelemetry/config",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint 'src/**/*.{ts,tsx,astro}'",
-    "lint:fix": "eslint 'src/**/*.{ts,tsx,astro}' --fix"
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix"
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.9.0",
