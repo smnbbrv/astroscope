@@ -203,7 +203,7 @@
     },
     "packages/csrf": {
       "name": "@astroscope/csrf",
-      "version": "0.2.4",
+      "version": "0.3.0",
       "devDependencies": {
         "astro": "^5.17.1",
         "tsup": "^8.5.1",
