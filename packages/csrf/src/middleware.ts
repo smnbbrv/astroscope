@@ -1,16 +1,14 @@
 import { shouldExclude } from '@astroscope/excludes';
 import type { MiddlewareHandler } from 'astro';
-import type { CsrfMiddlewareOptions } from './types.js';
+import type { CsrfOptions } from './types.js';
 
 const FORBIDDEN_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
-function normalizeOrigins(input: string | string[]): Set<string> {
-  const origins = Array.isArray(input) ? input : [input];
-  return new Set(origins.map((o) => new URL(o).origin));
-}
-
 /**
  * Creates a CSRF protection middleware with the given options.
+ *
+ * Compares the request's Origin header against context.url.origin.
+ * Configure `security.allowedDomains` in your Astro config to ensure context.url is correct.
  *
  * @example
  * ```ts
@@ -20,25 +18,12 @@ function normalizeOrigins(input: string | string[]): Set<string> {
  *
  * export const onRequest = sequence(
  *   createCsrfMiddleware({
- *     origin: 'https://example.com',
  *     exclude: [{ prefix: '/auth/' }],
  *   }),
  * );
  * ```
- *
- * @example
- * ```ts
- * // Trust proxy mode (when behind a load balancer)
- * createCsrfMiddleware({
- *   trustProxy: true,
- *   exclude: [{ prefix: '/webhook/' }],
- * })
- * ```
  */
-export function createCsrfMiddleware(options: CsrfMiddlewareOptions): MiddlewareHandler {
-  const staticAllowedOrigins =
-    'origin' in options && typeof options.origin !== 'function' ? normalizeOrigins(options.origin) : null;
-
+export function createCsrfMiddleware(options: CsrfOptions = {}): MiddlewareHandler {
   return (context, next) => {
     if (options.enabled === false) {
       return next();
@@ -54,17 +39,7 @@ export function createCsrfMiddleware(options: CsrfMiddlewareOptions): Middleware
 
     const origin = context.request.headers.get('origin');
 
-    if ('trustProxy' in options) {
-      if (!origin || origin !== context.url.origin) {
-        return new Response(`Cross-site ${context.request.method} request forbidden`, { status: 403 });
-      }
-
-      return next();
-    }
-
-    const allowedOrigins = staticAllowedOrigins ?? normalizeOrigins((options.origin as () => string | string[])());
-
-    if (!origin || !allowedOrigins.has(origin)) {
+    if (!origin || origin !== context.url.origin) {
       return new Response(`Cross-site ${context.request.method} request forbidden`, { status: 403 });
     }
 

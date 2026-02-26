@@ -1,7 +1,5 @@
 # @astroscope/csrf
 
-> **Note:** This package is in active development. APIs may change between versions.
-
 CSRF protection with path exclusions — for webhooks, OIDC callbacks, and third-party integrations.
 
 ## Why?
@@ -24,43 +22,26 @@ The recommended approach - automatically configures middleware and disables Astr
 
 ```ts
 // astro.config.ts
-import { defineConfig } from "astro/config";
-import csrf from "@astroscope/csrf";
+import { defineConfig } from 'astro/config';
+import csrf from '@astroscope/csrf';
 
 export default defineConfig({
+  security: {
+    allowedDomains: [
+      /* your configuration here */
+    ],
+  },
   integrations: [
     csrf({
-      trustProxy: true,
-      exclude: [
-        { prefix: "/auth/" },
-        { exact: "/webhook" },
-      ],
+      exclude: [{ prefix: '/auth/' }, { exact: '/webhook' }],
     }),
   ],
 });
 ```
 
+Origin validation compares the request's `Origin` header against `context.url.origin`. Configure [`security.allowedDomains`](https://docs.astro.build/en/reference/configuration-reference/#securityalloweddomains) in your Astro config to ensure `context.url` reflects the actual request host.
+
 ## Options
-
-### Origin validation
-
-Choose one of two modes:
-
-**Trust proxy** (recommended when behind a load balancer):
-
-```ts
-csrf({ trustProxy: true })
-```
-
-**Explicit origins:**
-
-```ts
-csrf({
-  origin: "https://example.com",
-  // or multiple:
-  origin: ["https://example.com", "https://app.example.com"],
-})
-```
 
 ### `exclude` (optional)
 
@@ -68,16 +49,16 @@ Paths to exclude from CSRF protection:
 
 ```ts
 exclude: [
-  { prefix: "/auth/" },           // path.startsWith("/auth/")
-  { exact: "/webhook" },          // path === "/webhook"
-  { pattern: /^\/api\/public\// } // regex.test(path)
-]
+  { prefix: '/auth/' }, // path.startsWith("/auth/")
+  { exact: '/webhook' }, // path === "/webhook"
+  { pattern: /^\/api\/public\// }, // regex.test(path)
+];
 ```
 
 Or a function for complex logic:
 
 ```ts
-exclude: (context) => context.url.pathname.startsWith("/public/")
+exclude: (context) => context.url.pathname.startsWith('/public/');
 ```
 
 ### `enabled` (optional)
@@ -85,26 +66,22 @@ exclude: (context) => context.url.pathname.startsWith("/public/")
 Disable CSRF protection (e.g., in development):
 
 ```ts
-csrf({
-  enabled: import.meta.env.PROD,
-  trustProxy: true,
-})
+csrf({ enabled: import.meta.env.PROD });
 ```
 
 ## Manual middleware setup
 
-For dynamic configuration or custom middleware chains, use `createCsrfMiddleware` directly:
+For custom middleware chains, use `createCsrfMiddleware` directly:
 
 ```ts
 // src/middleware.ts
-import { sequence } from "astro:middleware";
-import { createCsrfMiddleware } from "@astroscope/csrf";
+import { sequence } from 'astro:middleware';
+import { createCsrfMiddleware } from '@astroscope/csrf';
 
 export const onRequest = sequence(
   createCsrfMiddleware({
-    origin: () => process.env.ALLOWED_ORIGINS?.split(",") ?? [],
-    exclude: [{ prefix: "/auth/" }],
-  })
+    exclude: [{ prefix: '/auth/' }],
+  }),
 );
 ```
 
@@ -115,6 +92,7 @@ When using manual setup, disable Astro's built-in check:
 export default defineConfig({
   security: {
     checkOrigin: false,
+    allowedDomains: [{}],
   },
 });
 ```
@@ -123,7 +101,7 @@ export default defineConfig({
 
 1. Skips non-mutating methods (GET, HEAD, OPTIONS)
 2. Skips excluded paths
-3. Compares request `Origin` header against allowed origin(s)
+3. Compares request `Origin` header against `context.url.origin`
 4. Returns 403 if origins don't match or Origin header is missing
 
 ## License

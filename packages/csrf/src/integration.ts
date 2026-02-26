@@ -1,6 +1,6 @@
 import { serializeExcludePatterns } from '@astroscope/excludes';
 import type { AstroIntegration } from 'astro';
-import type { CsrfIntegrationOptions } from './types.js';
+import type { CsrfOptions } from './types.js';
 
 const VIRTUAL_MODULE_ID = 'virtual:@astroscope/csrf/config';
 const RESOLVED_VIRTUAL_MODULE_ID = `\0${VIRTUAL_MODULE_ID}`;
@@ -12,6 +12,9 @@ const RESOLVED_VIRTUAL_MODULE_ID = `\0${VIRTUAL_MODULE_ID}`;
  * - Adds CSRF protection middleware
  * - Disables Astro's built-in `security.checkOrigin`
  *
+ * Origin validation compares the request's Origin header against context.url.origin.
+ * Configure `security.allowedDomains` in your Astro config to ensure context.url is correct.
+ *
  * @example
  * ```ts
  * // astro.config.ts
@@ -19,35 +22,32 @@ const RESOLVED_VIRTUAL_MODULE_ID = `\0${VIRTUAL_MODULE_ID}`;
  * import csrf from "@astroscope/csrf";
  *
  * export default defineConfig({
+ *   security: {
+ *     allowedDomains: [{}], // trust all domains (e.g. behind a proxy)
+ *   },
  *   integrations: [
- *     csrf({ trustProxy: true }),
+ *     csrf(),
  *   ],
  * });
  * ```
  *
  * @example
  * ```ts
- * // With explicit origins and exclusions
+ * // with exclusions
  * csrf({
- *   origin: ['https://example.com', 'https://staging.example.com'],
  *   exclude: [{ prefix: '/webhook/' }, { exact: '/api/health' }],
  * })
  * ```
  *
  * @example
  * ```ts
- * // Disable in development
- * csrf({
- *   enabled: import.meta.env.PROD,
- *   trustProxy: true,
- * })
+ * // disable in development
+ * csrf({ enabled: import.meta.env.PROD })
  * ```
  */
-export default function csrf(options: CsrfIntegrationOptions): AstroIntegration {
+export default function csrf(options: CsrfOptions = {}): AstroIntegration {
   const enabled = options.enabled ?? true;
   const excludePatterns = Array.isArray(options.exclude) ? options.exclude : [];
-  const trustProxy = 'trustProxy' in options;
-  const origins = 'origin' in options ? options.origin : null;
 
   return {
     name: '@astroscope/csrf',
@@ -82,8 +82,6 @@ export default function csrf(options: CsrfIntegrationOptions): AstroIntegration 
                     return [
                       `export const enabled = ${enabled};`,
                       `export const excludePatterns = ${serializeExcludePatterns(excludePatterns)};`,
-                      `export const trustProxy = ${trustProxy};`,
-                      `export const origins = ${origins ? JSON.stringify(Array.isArray(origins) ? origins : [origins]) : 'null'};`,
                     ].join('\n');
                   }
                 },

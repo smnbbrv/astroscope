@@ -6,9 +6,17 @@ import { defineConfig } from 'astro/config';
 export default defineConfig({
   output: 'server',
   adapter: node({ mode: 'standalone' }),
+  security: {
+    allowedDomains: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '4321',
+      },
+    ],
+  },
   integrations: [
     csrf({
-      trustProxy: true,
       exclude: [
         { prefix: '/auth/' }, // OIDC callbacks
         { exact: '/webhook' }, // Payment webhooks
