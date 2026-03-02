@@ -18,6 +18,11 @@ Astro recommends [nanostores](https://docs.astro.build/en/recipes/sharing-state/
 - Server-loaded configuration (theme, locale, permissions) bridged to the UI
 - Any request-scoped data that multiple disconnected islands need to read
 
+## Important notes
+
+- **No secrets in wormholes.** All wormhole data is serialized into an inline `<script>` tag and sent to the browser. Never store tokens, API keys, credentials, or any sensitive data in a wormhole.
+- **`set()` is client-only.** Calling `set()` does not work on the server. Use `open(wormhole, data, fn)` from `@astroscope/wormhole/server` to populate data in middleware.
+
 ## Examples
 
 See the [demo/wormhole](../../demo/wormhole) directory for a working example.

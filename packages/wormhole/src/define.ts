@@ -1,5 +1,11 @@
 import type { Wormhole } from './types.js';
 
+/**
+ * Define a wormhole that transfers state from server middleware to client components.
+ *
+ * **Security:** wormhole data is serialized into the HTML and sent to the browser.
+ * Never store secrets (tokens, API keys, credentials) in a wormhole.
+ */
 export function defineWormhole<T>(name: string): Wormhole<T> {
   const listeners = new Set<(data: T) => void>();
   const key = `__wormhole_${name}__`;
@@ -20,6 +26,12 @@ export function defineWormhole<T>(name: string): Wormhole<T> {
     },
 
     set(data: T): void {
+      if (typeof (globalThis as any).window === 'undefined') {
+        throw new Error(
+          `wormhole "${name}" set() cannot be called on the server as it is not request-scoped; use open(wormhole, data, fn) from "@astroscope/wormhole/server" instead`,
+        );
+      }
+
       store = data;
 
       for (const fn of listeners) fn(data);
