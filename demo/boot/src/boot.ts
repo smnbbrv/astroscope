@@ -2,6 +2,10 @@ import type { BootContext } from '@astroscope/boot';
 import { warmup } from '@astroscope/boot/warmup';
 import { cleanupSomeModule, initSomeModule } from './server/some-module';
 
+console.log('==============================');
+console.log('[boot] module level code executed');
+console.log('==============================');
+
 export async function onStartup({ dev, host, port }: BootContext) {
   console.log('==============================');
   console.log('[boot] onStartup called');

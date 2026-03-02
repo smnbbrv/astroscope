@@ -79,7 +79,6 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
   const entry = resolveEntry(options.entry);
   const hmr = options.hmr ?? false;
 
-  let isBuild = false;
   let isSSR = false;
   let bootChunkRef: string | null = null;
   let astroConfig: AstroConfig | null = null;
@@ -90,7 +89,6 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
     name: '@astroscope/boot',
     hooks: {
       'astro:config:setup': ({ command, updateConfig, logger, config }) => {
-        isBuild = command === 'build';
         astroConfig = config;
 
         updateConfig({
@@ -178,7 +176,7 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                 enforce: 'post',
 
                 async configureServer(server) {
-                  if (isBuild) return;
+                  if (command !== 'dev') return; // skip in build / sync modes (Astro uses 'sync' for 'astro check' command)
 
                   try {
                     const bootContext = getBootContext(server, astroConfig);
