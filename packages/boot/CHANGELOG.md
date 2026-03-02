@@ -1,5 +1,11 @@
 # @astroscope/boot
 
+## 0.3.4
+
+### Patch Changes
+
+- 78112ef: astro check does not trigger boot anymore, #29
+
 ## 0.3.3
 
 ### Patch Changes
