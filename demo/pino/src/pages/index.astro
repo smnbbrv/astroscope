@@ -5,9 +5,12 @@ import Layout from '../../../shared/Layout.astro';
 
 log.info('rendering index page');
 
+log.info({ price: 12, currency: '€'}, 'Printing some charachters like € and 𐍈 to test UTF-8 encoding');
+
 const dbLog = log.child({ component: 'db' });
 
 dbLog.debug('simulating database query');
+
 
 await new Promise((resolve) => setTimeout(resolve, 50));
 
