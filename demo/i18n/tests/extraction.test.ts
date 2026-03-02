@@ -2,8 +2,8 @@ import { type Subprocess, spawn } from 'bun';
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { type CheerioAPI, load } from 'cheerio';
 
-const DEV_PORT = 4321;
-const PROD_PORT = 4322;
+const DEV_PORT = 14321;
+const PROD_PORT = 14322;
 
 let devServer: Subprocess | null = null;
 let prodServer: Subprocess | null = null;
