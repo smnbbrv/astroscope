@@ -1,5 +1,11 @@
 # @astroscope/wormhole
 
+## 0.1.2
+
+### Patch Changes
+
+- 9934628: prevent using set() on server
+
 ## 0.1.1
 
 ### Patch Changes

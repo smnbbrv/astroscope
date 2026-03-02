@@ -60,7 +60,7 @@
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "@astroscope/boot": ">=0.3.3",
+    "@astroscope/boot": ">=0.3.4",
     "astro": "^5.0.0"
   }
 }
