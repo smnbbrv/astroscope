@@ -20,6 +20,9 @@ export type GlobalI18nState = {
 
   // project root for relative paths
   projectRoot: string;
+
+  // incremented on each sync to signal cache invalidation
+  version: number;
 };
 
 export function getGlobalState(): GlobalI18nState {
@@ -32,6 +35,7 @@ export function getGlobalState(): GlobalI18nState {
       chunkManifest: {},
       importsManifest: {},
       projectRoot: '',
+      version: 0,
     };
   }
 

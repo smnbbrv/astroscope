@@ -1,4 +1,5 @@
 import { computeAllChunkHashes } from '../extraction/hash.js';
+import { getGlobalState } from '../extraction/manifest.js';
 import type { ExtractionManifest } from '../extraction/types.js';
 import { compileTranslations } from '../shared/compiler.js';
 import type { CompiledTranslations, RawTranslations } from '../shared/types.js';
@@ -41,6 +42,9 @@ class I18nSingleton {
 
   // manifest getter (set by init module, provides live data in dev mode)
   private manifestGetter: (() => ExtractionManifest) | null = null;
+
+  // tracks the manifest version to detect when derived caches need invalidation
+  private manifestVersion = 0;
 
   async configure(config: I18nConfig): Promise<void> {
     if (!config.locales?.length) {
@@ -117,6 +121,8 @@ class I18nSingleton {
   }
 
   getTranslations(locale: string): RawTranslations {
+    this.invalidateIfManifestChanged();
+
     const cached = this.mergedCache.get(locale);
 
     if (cached) {
@@ -310,6 +316,23 @@ class I18nSingleton {
         }
       }
     }
+  }
+
+  /**
+   * invalidate derived caches when the extraction manifest has changed (dev mode HMR)
+   */
+  private invalidateIfManifestChanged(): void {
+    const { version } = getGlobalState();
+
+    if (version === this.manifestVersion) {
+      return;
+    }
+
+    this.manifestVersion = version;
+    this.mergedCache.clear();
+    this.compiledCache.clear();
+    this.scriptCache.clear();
+    this.chunkCache.clear();
   }
 
   private resolveLocales(locales?: string | string[] | undefined): string[] {

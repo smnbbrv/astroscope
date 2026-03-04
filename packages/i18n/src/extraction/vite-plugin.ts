@@ -44,6 +44,7 @@ export function i18nVitePlugin(options: I18nVitePluginOptions): Plugin {
   const syncGlobalState = () => {
     const state = getGlobalState();
     state.extractedKeys = store.extractedKeys;
+    state.version++;
   };
 
   let isBuild = false;
