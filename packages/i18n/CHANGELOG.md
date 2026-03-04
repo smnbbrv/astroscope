@@ -1,5 +1,11 @@
 # @astroscope/i18n
 
+## 0.3.4
+
+### Patch Changes
+
+- df664a1: fix dev mode not being reloading fallbacks for translation tokens
+
 ## 0.3.3
 
 ### Patch Changes
