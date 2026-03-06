@@ -1,7 +1,7 @@
 import pluginJs from '@eslint/js';
 import tsParser from '@typescript-eslint/parser';
 import eslintPluginAstro from 'eslint-plugin-astro';
-import importPlugin from 'eslint-plugin-import';
+import importPlugin from 'eslint-plugin-import-x';
 import prettierRecommended from 'eslint-plugin-prettier/recommended';
 import tseslint from 'typescript-eslint';
 
@@ -107,8 +107,8 @@ export default [
   {
     ...importPlugin.flatConfigs.recommended,
     rules: {
-      'import/no-duplicates': ['error', { 'prefer-inline': true }],
-      'import/order': [
+      'import-x/no-duplicates': ['error', { 'prefer-inline': true }],
+      'import-x/order': [
         'error',
         {
           groups: ['builtin', 'external', 'parent', 'sibling', 'index'],
