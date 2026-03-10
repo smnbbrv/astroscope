@@ -421,6 +421,23 @@ For `:currency` and `:unit`, the required option (`currency` or `unit`) can be:
 - `'throw'` — Throw an error
 - `(key, meta) => string` — Custom function
 
+## ESLint Plugin
+
+Use [`@astroscope/eslint-plugin-i18n`](../eslint-plugin-i18n) to enforce correct `t()` usage, catch build-time extraction issues, and ensure i18n-aware hydration directives.
+
+```bash
+npm install -D @astroscope/eslint-plugin-i18n
+```
+
+```js
+// eslint.config.js
+import i18n from '@astroscope/eslint-plugin-i18n';
+
+export default [
+  i18n.configs.recommended,
+];
+```
+
 ## License
 
 MIT

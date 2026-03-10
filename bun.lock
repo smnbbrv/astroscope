@@ -214,6 +214,18 @@
         "astro": "^5.0.0",
       },
     },
+    "packages/eslint-plugin-i18n": {
+      "name": "@astroscope/eslint-plugin-i18n",
+      "version": "0.0.0",
+      "devDependencies": {
+        "eslint": "^9.39.3",
+        "tsup": "^8.5.1",
+        "typescript": "^5.9.3",
+      },
+      "peerDependencies": {
+        "eslint": "^9.0.0 || ^10.0.0",
+      },
+    },
     "packages/excludes": {
       "name": "@astroscope/excludes",
       "version": "0.2.0",
@@ -360,6 +372,8 @@
     "@astroscope/boot": ["@astroscope/boot@workspace:packages/boot"],
 
     "@astroscope/csrf": ["@astroscope/csrf@workspace:packages/csrf"],
+
+    "@astroscope/eslint-plugin-i18n": ["@astroscope/eslint-plugin-i18n@workspace:packages/eslint-plugin-i18n"],
 
     "@astroscope/excludes": ["@astroscope/excludes@workspace:packages/excludes"],
 
