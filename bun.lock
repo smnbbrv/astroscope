@@ -188,7 +188,7 @@
     },
     "packages/boot": {
       "name": "@astroscope/boot",
-      "version": "0.3.4",
+      "version": "0.4.0",
       "dependencies": {
         "magic-string": "^0.30.21",
       },
@@ -204,14 +204,14 @@
     },
     "packages/csrf": {
       "name": "@astroscope/csrf",
-      "version": "0.3.0",
+      "version": "1.0.0",
       "devDependencies": {
         "astro": "^6.0.2",
         "tsup": "^8.5.1",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@astroscope/excludes": "^0.2.0",
+        "@astroscope/excludes": "^0.3.0",
         "astro": "^6.0.0",
       },
     },
@@ -229,7 +229,7 @@
     },
     "packages/excludes": {
       "name": "@astroscope/excludes",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "devDependencies": {
         "astro": "^6.0.2",
         "tsup": "^8.5.1",
@@ -241,7 +241,7 @@
     },
     "packages/health": {
       "name": "@astroscope/health",
-      "version": "0.2.2",
+      "version": "1.0.0",
       "dependencies": {
         "health-probes": "^1.1.0",
       },
@@ -252,13 +252,13 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@astroscope/boot": ">=0.3.4",
+        "@astroscope/boot": ">=0.4.0",
         "astro": "^6.0.0",
       },
     },
     "packages/i18n": {
       "name": "@astroscope/i18n",
-      "version": "0.3.4",
+      "version": "1.0.0",
       "dependencies": {
         "@astrojs/compiler": "^3.0.0",
         "@babel/core": "^7.29.0",
@@ -276,13 +276,13 @@
         "vite": "^7.3.1",
       },
       "peerDependencies": {
-        "@astroscope/excludes": "^0.2.0",
+        "@astroscope/excludes": "^0.3.0",
         "astro": "^6.0.0",
       },
     },
     "packages/opentelemetry": {
       "name": "@astroscope/opentelemetry",
-      "version": "0.2.5",
+      "version": "1.0.0",
       "devDependencies": {
         "@opentelemetry/api": "^1.9.0",
         "@opentelemetry/core": "^2.6.0",
@@ -291,7 +291,7 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@astroscope/excludes": "^0.2.0",
+        "@astroscope/excludes": "^0.3.0",
         "@opentelemetry/api": "^1.0.0",
         "@opentelemetry/core": "^2.0.0",
         "astro": "^6.0.0",
@@ -299,7 +299,7 @@
     },
     "packages/pino": {
       "name": "@astroscope/pino",
-      "version": "0.3.1",
+      "version": "1.0.0",
       "devDependencies": {
         "astro": "^6.0.2",
         "pino": "^10.3.1",
@@ -307,14 +307,14 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@astroscope/excludes": "^0.2.0",
+        "@astroscope/excludes": "^0.3.0",
         "astro": "^6.0.0",
         "pino": "^10.0.0",
       },
     },
     "packages/proxy": {
       "name": "@astroscope/proxy",
-      "version": "0.2.5",
+      "version": "0.3.0",
       "dependencies": {
         "undici": "^7.22.0",
       },
@@ -329,7 +329,7 @@
     },
     "packages/wormhole": {
       "name": "@astroscope/wormhole",
-      "version": "0.1.2",
+      "version": "0.2.0",
       "devDependencies": {
         "@types/react": "^19.2.14",
         "astro": "^6.0.2",

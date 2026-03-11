@@ -1,5 +1,11 @@
 # @astroscope/boot
 
+## 0.4.0
+
+### Minor Changes
+
+- ad74a23: add astro@6 support
+
 ## 0.3.4
 
 ### Patch Changes

@@ -1,5 +1,17 @@
 # @astroscope/i18n
 
+## 1.0.0
+
+### Minor Changes
+
+- ad74a23: add astro@6 support
+
+### Patch Changes
+
+- 591021f: properly invalidate the chunks cache
+- Updated dependencies [ad74a23]
+  - @astroscope/excludes@0.3.0
+
 ## 0.3.4
 
 ### Patch Changes

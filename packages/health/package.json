@@ -1,6 +1,6 @@
 {
   "name": "@astroscope/health",
-  "version": "0.2.2",
+  "version": "1.0.0",
   "description": "Kubernetes-style health probes integration for Astro",
   "type": "module",
   "main": "./dist/index.js",
@@ -60,7 +60,7 @@
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "@astroscope/boot": ">=0.3.4",
+    "@astroscope/boot": ">=0.4.0",
     "astro": "^6.0.0"
   }
 }
