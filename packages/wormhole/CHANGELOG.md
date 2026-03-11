@@ -1,5 +1,11 @@
 # @astroscope/wormhole
 
+## 0.2.0
+
+### Minor Changes
+
+- ad74a23: add astro@6 support
+
 ## 0.1.2
 
 ### Patch Changes

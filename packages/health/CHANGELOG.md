@@ -1,5 +1,16 @@
 # @astroscope/health
 
+## 0.3.0
+
+### Minor Changes
+
+- ad74a23: add astro@6 support
+
+### Patch Changes
+
+- Updated dependencies [ad74a23]
+  - @astroscope/boot@0.4.0
+
 ## 0.2.2
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @astroscope/proxy
 
+## 0.3.0
+
+### Minor Changes
+
+- ad74a23: add astro@6 support
+
 ## 0.2.5
 
 ### Patch Changes
