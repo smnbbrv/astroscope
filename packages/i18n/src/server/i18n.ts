@@ -112,6 +112,13 @@ class I18nSingleton {
     this.hashCache.delete(locale); // invalidate hash cache
     this.scriptCache.delete(locale); // invalidate script cache
 
+    // invalidate chunk cache entries for this locale
+    for (const key of this.chunkCache.keys()) {
+      if (key.startsWith(`${locale}:`)) {
+        this.chunkCache.delete(key);
+      }
+    }
+
     // recompute hashes if chunk manifest exists (production only)
     const { chunks } = this.getManifest();
 
