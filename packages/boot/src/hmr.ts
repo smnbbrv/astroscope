@@ -4,6 +4,7 @@ import { ignoredSuffixes } from './ignored.js';
 import { type BootModule, runShutdown, runStartup } from './lifecycle.js';
 import type { BootContext } from './types.js';
 import { serializeError } from './utils.js';
+import { ssrImport } from './vite-env.js';
 
 export function setupBootHmr(
   server: ViteDevServer,
@@ -57,7 +58,7 @@ export function setupBootHmr(
       const bootContext = getBootContext();
 
       try {
-        const oldModule = (await server.ssrLoadModule(bootModuleId)) as BootModule;
+        const oldModule = await ssrImport<BootModule>(server, bootModuleId);
 
         await runShutdown(oldModule, bootContext);
       } catch (error) {
@@ -68,7 +69,7 @@ export function setupBootHmr(
       server.moduleGraph.invalidateAll();
 
       try {
-        const newModule = (await server.ssrLoadModule(bootModuleId)) as BootModule;
+        const newModule = await ssrImport<BootModule>(server, bootModuleId);
 
         await runStartup(newModule, bootContext);
       } catch (error) {

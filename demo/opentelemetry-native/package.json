@@ -14,18 +14,18 @@
     "lint:fix": "eslint src astro.config.ts --fix"
   },
   "dependencies": {
-    "@astrojs/node": "^9.5.2",
+    "@astrojs/node": "^10.0.0",
     "@astroscope/opentelemetry": "workspace:*",
     "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/auto-instrumentations-node": "^0.69.0",
-    "@opentelemetry/core": "^2.5.0",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.211.0",
-    "@opentelemetry/instrumentation": "^0.211.0",
-    "@opentelemetry/sdk-node": "^0.211.0",
-    "astro": "^5.17.3"
+    "@opentelemetry/auto-instrumentations-node": "^0.71.0",
+    "@opentelemetry/core": "^2.6.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.213.0",
+    "@opentelemetry/instrumentation": "^0.213.0",
+    "@opentelemetry/sdk-node": "^0.213.0",
+    "astro": "^6.0.2"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.6",
+    "@astrojs/check": "^0.9.7",
     "typescript": "^5.9.3"
   }
 }

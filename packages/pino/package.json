@@ -49,14 +49,14 @@
     "lint:fix": "eslint src --fix"
   },
   "devDependencies": {
-    "astro": "^5.17.1",
-    "pino": "^10.3.0",
+    "astro": "^6.0.2",
+    "pino": "^10.3.1",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "@astroscope/excludes": "^0.2.0",
-    "astro": "^5.0.0",
+    "astro": "^6.0.0",
     "pino": "^10.0.0"
   }
 }

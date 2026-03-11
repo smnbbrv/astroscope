@@ -88,7 +88,6 @@ export default function opentelemetry(options: OpenTelemetryIntegrationOptions =
   const httpExclude = httpConfig.exclude ?? (httpConfig.enabled ? RECOMMENDED_EXCLUDES : []);
 
   let isBuild = false;
-  let isSSR = false;
 
   return {
     name: '@astroscope/opentelemetry',
@@ -136,11 +135,8 @@ export default function opentelemetry(options: OpenTelemetryIntegrationOptions =
                           }
                         });
                       },
-                      configResolved(config: any) {
-                        isSSR = !!config.build?.ssr;
-                      },
-                      writeBundle(outputOptions: any) {
-                        if (!isSSR) return;
+                      writeBundle(this: any, outputOptions: any) {
+                        if (this.environment.name !== 'ssr') return;
 
                         const outDir = outputOptions.dir;
 

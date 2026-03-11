@@ -1,11 +1,13 @@
 import fs from 'node:fs';
 import type { AstroConfig, AstroIntegration } from 'astro';
 import MagicString from 'magic-string';
+import { perEnvironmentState } from 'vite';
 import { setupBootHmr } from './hmr.js';
 import { type BootModule, runShutdown, runStartup } from './lifecycle.js';
 import { getPrependCode } from './prepend.js';
 import type { BootContext } from './types.js';
 import { serializeError } from './utils.js';
+import { ssrImport } from './vite-env.js';
 import { type WarmupModules, collectWarmupModules, writeWarmupManifest } from './warmup-manifest.js';
 
 export interface BootOptions {
@@ -69,6 +71,13 @@ function getBootContext(
   return { dev: true, host, port };
 }
 
+interface BuildState {
+  bootChunkRef: string | null;
+  warmupModules: WarmupModules | null;
+}
+
+const getState = perEnvironmentState<BuildState>(() => ({ bootChunkRef: null, warmupModules: null }));
+
 /**
  * Astro integration for application lifecycle hooks.
  *
@@ -79,11 +88,7 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
   const entry = resolveEntry(options.entry);
   const hmr = options.hmr ?? false;
 
-  let isSSR = false;
-  let bootChunkRef: string | null = null;
   let astroConfig: AstroConfig | null = null;
-
-  let warmupModules: WarmupModules | null = null;
 
   return {
     name: '@astroscope/boot',
@@ -98,24 +103,24 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
               {
                 name: '@astroscope/boot',
 
-                configResolved(config) {
-                  isSSR = !!config.build?.ssr;
-                },
-
                 buildStart() {
-                  if (!isSSR) return;
+                  if (this.environment.name !== 'ssr') return;
+
+                  const state = getState(this);
 
                   try {
-                    bootChunkRef = this.emitFile({ type: 'chunk', id: entry, name: 'boot' });
+                    state.bootChunkRef = this.emitFile({ type: 'chunk', id: entry, name: 'boot' });
                   } catch {
                     // not available in serve mode
                   }
                 },
 
                 generateBundle(_, bundle) {
-                  if (!isSSR || !bootChunkRef) return;
+                  const state = getState(this);
 
-                  const bootChunkName = this.getFileName(bootChunkRef);
+                  if (!state.bootChunkRef) return;
+
+                  const bootChunkName = this.getFileName(state.bootChunkRef);
 
                   if (!bootChunkName) {
                     logger.warn('boot chunk not found');
@@ -132,7 +137,7 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                     return;
                   }
 
-                  warmupModules = collectWarmupModules(bundle);
+                  state.warmupModules = collectWarmupModules(bundle);
 
                   const { host, port } = getServerDefaults(astroConfig);
 
@@ -160,13 +165,15 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                 },
 
                 writeBundle(outputOptions) {
-                  if (!isSSR || !warmupModules) return;
+                  const state = getState(this);
+
+                  if (!state.warmupModules) return;
 
                   const outDir = outputOptions.dir;
 
                   if (!outDir) return;
 
-                  writeWarmupManifest(outDir, warmupModules, logger);
+                  writeWarmupManifest(outDir, state.warmupModules, logger);
                 },
               },
 
@@ -180,7 +187,7 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
 
                   try {
                     const bootContext = getBootContext(server, astroConfig);
-                    const module = (await server.ssrLoadModule(`/${entry}`)) as BootModule;
+                    const module = await ssrImport<BootModule>(server, `/${entry}`);
 
                     await runStartup(module, bootContext);
                   } catch (error) {
@@ -190,7 +197,7 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                   server.httpServer?.once('close', async () => {
                     try {
                       const bootContext = getBootContext(server, astroConfig);
-                      const module = (await server.ssrLoadModule(`/${entry}`)) as BootModule;
+                      const module = await ssrImport<BootModule>(server, `/${entry}`);
 
                       await runShutdown(module, bootContext);
                     } catch (error) {

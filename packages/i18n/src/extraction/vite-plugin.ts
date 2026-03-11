@@ -48,7 +48,6 @@ export function i18nVitePlugin(options: I18nVitePluginOptions): Plugin {
   };
 
   let isBuild = false;
-  let isSSR = false;
   let projectRoot = '';
 
   return {
@@ -60,7 +59,6 @@ export function i18nVitePlugin(options: I18nVitePluginOptions): Plugin {
       state.projectRoot = config.root;
 
       isBuild = config.command === 'build';
-      isSSR = !!config.build.ssr;
       projectRoot = config.root;
     },
 
@@ -282,7 +280,7 @@ export function getManifest() { return _getManifest(); }
       // write the manifest JSON file after bundle is written
       // only emit from client build (has full chunk mapping, runs after server build)
       // write to server directory so it's not publicly accessible (same location as the virtual module)
-      if (!isSSR && outputOptions.dir) {
+      if (this.environment.name === 'client' && outputOptions.dir) {
         const chunksDir = path.resolve(outputOptions.dir, '..', 'server', 'chunks');
         const manifestPath = path.join(chunksDir, MANIFEST_FILE_NAME);
 

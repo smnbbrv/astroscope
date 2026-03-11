@@ -88,23 +88,23 @@
     "lint:fix": "eslint src --fix"
   },
   "dependencies": {
-    "@astrojs/compiler": "^2.13.0",
+    "@astrojs/compiler": "^3.0.0",
     "@babel/core": "^7.29.0",
     "@babel/preset-typescript": "^7.28.5",
     "messageformat": "^4.0.0",
-    "glob": "^13.0.1",
+    "glob": "^13.0.6",
     "magic-string": "^0.30.21"
   },
   "devDependencies": {
     "@babel/types": "^7.29.0",
     "@types/babel__core": "^7.20.5",
-    "astro": "^5.17.1",
+    "astro": "^6.0.2",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
-    "vite": "^6.4.1"
+    "vite": "^7.3.1"
   },
   "peerDependencies": {
     "@astroscope/excludes": "^0.2.0",
-    "astro": "^5.0.0"
+    "astro": "^6.0.0"
   }
 }
