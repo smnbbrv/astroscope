@@ -31,6 +31,7 @@ export const DEFAULT_IGNORE_ATTRIBUTES = [
   'loading',
   'decoding',
   'autoComplete',
+  'inputMode',
   'allow',
   'as',
   'sizes',
@@ -48,7 +49,25 @@ export const DEFAULT_IGNORE_ATTRIBUTES = [
   'key',
   'slot',
 
+  // inline style props
+  'fontSize',
+  'fontWeight',
+  'fontFamily',
+  'lineHeight',
+  'textAlign',
+  'textDecoration',
+  'textTransform',
+  'whiteSpace',
+  'overflow',
+  'display',
+  'position',
+  'cursor',
+  'pointerEvents',
+  'objectFit',
+  'objectPosition',
+
   // common component props
+  'appearance',
   'variant',
   'size',
   'mode',
@@ -120,6 +139,7 @@ export const DEFAULT_IGNORE_ATTRIBUTES = [
 const DEFAULT_IGNORE_ATTRIBUTE_PATTERNS = [
   /classNames?$/i, // *ClassName, *classNames, *classname (e.g. labelClassName, classNames)
   /^data-/, // data-* attributes
+  /^on[a-zA-Z]/, // event handlers (onclick, onClick, onChange, etc.)
 ];
 
 type Options = {

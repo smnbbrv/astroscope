@@ -75,6 +75,9 @@ tester.run('no-raw-strings-in-jsx', noRawStringsInJsx, {
     { code: `<Comp classNames={{ root: 'flex p-3', label: 'text-sm' }} />;` },
     // data-* pattern
     { code: '<div data-value="something" />;' },
+    // event handlers
+    { code: `<button onclick="window.history.back()" />;` },
+    { code: `<button onClick="handleClick()" />;` },
     // `in` operator
     { code: `<div>{'href' in obj && <span />}</div>;` },
     // ternary inside ignored attribute
