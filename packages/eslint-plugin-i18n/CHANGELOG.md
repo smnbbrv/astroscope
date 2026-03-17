@@ -1,5 +1,11 @@
 # @astroscope/eslint-plugin-i18n
 
+## 0.1.3
+
+### Patch Changes
+
+- f926457: more expressions and ignores
+
 ## 0.1.2
 
 ### Patch Changes
