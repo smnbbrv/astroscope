@@ -22,6 +22,30 @@ tester.run('no-raw-strings-in-jsx', noRawStringsInJsx, {
     { code: '<div id="main" />;' },
     // numbers
     { code: '<div>123</div>;' },
+    // punctuation only
+    { code: '<div>(</div>;' },
+    { code: '<div>)</div>;' },
+    { code: '<div>,</div>;' },
+    { code: '<div>.</div>;' },
+    { code: '<div>-</div>;' },
+    { code: '<div>/</div>;' },
+    { code: '<div>:</div>;' },
+    { code: '<div>;</div>;' },
+    // punctuation with whitespace
+    { code: '<div> ( </div>;' },
+    { code: '<div> , </div>;' },
+    { code: '<div> — </div>;' },
+    // mixed punctuation / symbols
+    { code: '<div>/ —</div>;' },
+    { code: '<div>&amp;</div>;' },
+    // hex colors
+    { code: '<meta content="#003366" />;' },
+    { code: '<meta content="#fff" />;' },
+    // dimensions
+    { code: '<link sizes="180x180" />;' },
+    // string literals inside function calls in JSX expressions
+    { code: `<div>{fn('some string')}</div>;` },
+    { code: `<div title={fn('some string')} />;` },
   ],
   invalid: [
     {
@@ -34,6 +58,15 @@ tester.run('no-raw-strings-in-jsx', noRawStringsInJsx, {
     },
     {
       code: '<div title="Welcome" />;',
+      errors: [{ messageId: 'rawString' }],
+    },
+    // string literals in JSX expressions (fallbacks, inline text)
+    {
+      code: `<div title={value ?? 'Fallback text'} />;`,
+      errors: [{ messageId: 'rawString' }],
+    },
+    {
+      code: `<div>{'Hello World'}</div>;`,
       errors: [{ messageId: 'rawString' }],
     },
   ],
