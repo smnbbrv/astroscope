@@ -1,8 +1,18 @@
+import tsParser from '@typescript-eslint/parser';
 import { RuleTester } from 'eslint';
 import { noRawStringsInJsx } from './no-raw-strings-in-jsx.js';
 
 const tester = new RuleTester({
   languageOptions: {
+    parserOptions: {
+      ecmaFeatures: { jsx: true },
+    },
+  },
+});
+
+const tsTester = new RuleTester({
+  languageOptions: {
+    parser: tsParser,
     parserOptions: {
       ecmaFeatures: { jsx: true },
     },
@@ -46,6 +56,29 @@ tester.run('no-raw-strings-in-jsx', noRawStringsInJsx, {
     // string literals inside function calls in JSX expressions
     { code: `<div>{fn('some string')}</div>;` },
     { code: `<div title={fn('some string')} />;` },
+    // string literals in comparisons
+    { code: `<div>{value === 'youtube' && <span />}</div>;` },
+    // string literals in ternaries inside ignored attributes
+    { code: `<img loading={preload ? 'eager' : 'lazy'} />;` },
+    { code: `<img fetchPriority={preload ? 'high' : 'low'} />;` },
+    // meta tag attributes
+    { code: '<meta property="og:type" />;' },
+    { code: '<meta property="og:title" />;' },
+    { code: '<meta itemprop="image" />;' },
+    // svg attributes
+    { code: '<path d="M0 0L10 10" />;' },
+    { code: '<svg viewBox="0 0 24 24" />;' },
+    // *ClassName / *classNames pattern
+    { code: '<div labelClassName="text-sm" />;' },
+    { code: '<div pictureClassName="w-full" />;' },
+    // classNames object prop with string values
+    { code: `<Comp classNames={{ root: 'flex p-3', label: 'text-sm' }} />;` },
+    // data-* pattern
+    { code: '<div data-value="something" />;' },
+    // `in` operator
+    { code: `<div>{'href' in obj && <span />}</div>;` },
+    // ternary inside ignored attribute
+    { code: `<a target={openInNewTab ? '_blank' : undefined} />;` },
   ],
   invalid: [
     {
@@ -70,4 +103,13 @@ tester.run('no-raw-strings-in-jsx', noRawStringsInJsx, {
       errors: [{ messageId: 'rawString' }],
     },
   ],
+});
+
+// typescript-specific tests
+tsTester.run('no-raw-strings-in-jsx (ts)', noRawStringsInJsx, {
+  valid: [
+    // type assertions
+    { code: `<Comp filter={{ variants: ['training' as const] }} />;` },
+  ],
+  invalid: [],
 });

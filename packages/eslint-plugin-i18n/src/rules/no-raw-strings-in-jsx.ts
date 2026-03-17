@@ -36,9 +36,14 @@ export const DEFAULT_IGNORE_ATTRIBUTES = [
   'sizes',
   'color',
   'crossorigin',
+  'fetchPriority',
+  'fetchpriority',
   'referrerpolicy',
   'charset',
   'lang',
+  'property',
+  'itemprop',
+  'itemtype',
   'form',
   'key',
   'slot',
@@ -91,11 +96,29 @@ export const DEFAULT_IGNORE_ATTRIBUTES = [
   'fill-rule',
   'path',
   'values',
+  'operator',
+  'mode',
+  'stdDeviation',
+  'dy',
+  'dx',
+  'x',
+  'y',
+  'x1',
+  'x2',
+  'y1',
+  'y2',
+  'cx',
+  'cy',
+  'r',
+  'rx',
+  'ry',
+  'width',
+  'height',
 ];
 
 // attribute name patterns — any attribute matching these is ignored
 const DEFAULT_IGNORE_ATTRIBUTE_PATTERNS = [
-  /className$/i, // *ClassName, *classname (e.g. labelClassName, pictureClassName)
+  /classNames?$/i, // *ClassName, *classNames, *classname (e.g. labelClassName, classNames)
   /^data-/, // data-* attributes
 ];
 
@@ -149,25 +172,27 @@ export const noRawStringsInJsx: Rule.RuleModule = {
       return DEFAULT_IGNORE_ATTRIBUTE_PATTERNS.some((p) => p.test(name));
     }
 
-    function isInsideIgnoredAttribute(node: any): boolean {
-      const parent = node.parent;
+    function getAttributeName(node: any): string | null {
+      if (node.name?.type === 'JSXIdentifier') return node.name.name;
 
-      if (parent?.type === 'JSXAttribute') {
-        const attrName =
-          parent.name?.type === 'JSXIdentifier'
-            ? parent.name.name
-            : parent.name?.type === 'JSXNamespacedName'
-              ? `${parent.name.namespace.name}:${parent.name.name.name}`
-              : null;
-
-        if (attrName && shouldIgnoreAttribute(attrName)) return true;
+      if (node.name?.type === 'JSXNamespacedName') {
+        return `${node.name.namespace.name}:${node.name.name.name}`;
       }
 
-      // string inside expression container inside attribute
-      if (parent?.type === 'JSXExpressionContainer' && parent.parent?.type === 'JSXAttribute') {
-        const attrName = parent.parent.name?.type === 'JSXIdentifier' ? parent.parent.name.name : null;
+      return null;
+    }
 
-        if (attrName && shouldIgnoreAttribute(attrName)) return true;
+    function isInsideIgnoredAttribute(node: any): boolean {
+      let current = node.parent;
+
+      while (current) {
+        if (current.type === 'JSXAttribute') {
+          const attrName = getAttributeName(current);
+
+          return attrName ? shouldIgnoreAttribute(attrName) : false;
+        }
+
+        current = current.parent;
       }
 
       return false;
@@ -229,6 +254,12 @@ export const noRawStringsInJsx: Rule.RuleModule = {
 
         // skip strings inside function calls (e.g. t('key', 'fallback'))
         if (ancestors.some((a: any) => a.type === 'CallExpression')) return;
+
+        // skip strings in comparisons (e.g. value === 'some-string')
+        if (node.parent?.type === 'BinaryExpression') return;
+
+        // skip strings in type assertions (e.g. 'some-string' as const)
+        if (node.parent?.type === 'TSAsExpression') return;
 
         const text: string = node.value;
 
