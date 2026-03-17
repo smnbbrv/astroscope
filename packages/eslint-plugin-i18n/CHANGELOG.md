@@ -1,5 +1,11 @@
 # @astroscope/eslint-plugin-i18n
 
+## 0.1.2
+
+### Patch Changes
+
+- 90a46c8: add more ignore patterns and rules, add literals recognition
+
 ## 0.1.1
 
 ### Patch Changes
