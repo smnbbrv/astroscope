@@ -13,6 +13,8 @@ export const noModuleLevelT: Rule.RuleModule = {
     schema: [],
   },
   create(context) {
+    if (context.filename.endsWith('.astro')) return {};
+
     return {
       CallExpression(node) {
         if (node.callee.type !== 'Identifier' || node.callee.name !== 't') return;
