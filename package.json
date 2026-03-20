@@ -3,6 +3,9 @@
   "type": "module",
   "private": true,
   "packageManager": "pnpm@10.32.1",
+  "overrides": {
+    "vite": "^7"
+  },
   "scripts": {
     "build": "turbo run build",
     "lint": "turbo run lint",

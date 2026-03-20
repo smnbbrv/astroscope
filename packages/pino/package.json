@@ -48,9 +48,6 @@
     "lint": "eslint src",
     "lint:fix": "eslint src --fix"
   },
-  "dependencies": {
-    "pino": "^10.3.1"
-  },
   "devDependencies": {
     "astro": "^6.0.7",
     "pino": "^10.3.1",
@@ -59,6 +56,7 @@
   },
   "peerDependencies": {
     "@astroscope/excludes": "workspace:^",
-    "astro": "^6.0.0"
+    "astro": "^6.0.0",
+    "pino": "^10.0.0"
   }
 }
