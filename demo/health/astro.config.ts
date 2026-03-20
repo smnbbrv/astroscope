@@ -9,6 +9,6 @@ export default defineConfig({
   adapter: node({ mode: 'standalone' }),
   integrations: [boot({ hmr: true }), health({ dev: true })],
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [tailwindcss() as any],
   },
 });

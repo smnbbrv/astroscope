@@ -21,6 +21,13 @@ export interface BootOptions {
    * @default false
    */
   hmr?: boolean | undefined;
+  /**
+   * Pre-import all page modules and middleware on startup to eliminate cold-start latency
+   * on first request. When enabled, a warmup manifest is generated at build time and all
+   * discovered modules are imported before `onStartup` runs.
+   * @default false
+   */
+  warmup?: boolean | undefined;
 }
 
 function resolveEntry(entry: string | undefined): string {
@@ -87,6 +94,7 @@ const getState = perEnvironmentState<BuildState>(() => ({ bootChunkRef: null, wa
 export default function boot(options: BootOptions = {}): AstroIntegration {
   const entry = resolveEntry(options.entry);
   const hmr = options.hmr ?? false;
+  const enableWarmup = options.warmup ?? false;
 
   let astroConfig: AstroConfig | null = null;
 
@@ -137,7 +145,9 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                     return;
                   }
 
-                  state.warmupModules = collectWarmupModules(bundle);
+                  if (enableWarmup) {
+                    state.warmupModules = collectWarmupModules(bundle);
+                  }
 
                   const { host, port } = getServerDefaults(astroConfig);
 
@@ -148,7 +158,7 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                     `${prefix}globalThis.__astroscope_server_url = import.meta.url;\n` +
                     `import * as __astroscope_boot from './${bootChunkName}';\n` +
                     `import { setup as __astroscope_bootSetup } from '@astroscope/boot/setup';\n` +
-                    `await __astroscope_bootSetup(__astroscope_boot, ${JSON.stringify({ host, port })});\n`;
+                    `await __astroscope_bootSetup(__astroscope_boot, ${JSON.stringify({ host, port, warmup: enableWarmup })});\n`;
 
                   // inject at start of entry.mjs preserving source maps
                   const s = new MagicString(entryChunk.code);

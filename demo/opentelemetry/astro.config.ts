@@ -20,6 +20,6 @@ export default defineConfig({
     boot(),
   ],
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [tailwindcss() as any],
   },
 });
