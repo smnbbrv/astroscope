@@ -1,5 +1,11 @@
 # @astroscope/pino
 
+## 0.4.2
+
+### Patch Changes
+
+- 5f5fc87: revert pino to peer dep
+
 ## 0.4.1
 
 ### Patch Changes
