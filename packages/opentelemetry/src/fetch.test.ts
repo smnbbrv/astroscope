@@ -1,22 +1,22 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { instrumentFetch } from './fetch';
 
 // mock OpenTelemetry API
 const mockSpan = {
-  setAttribute: mock(() => {}),
-  setStatus: mock(() => {}),
-  end: mock(() => {}),
+  setAttribute: vi.fn(() => {}),
+  setStatus: vi.fn(() => {}),
+  end: vi.fn(() => {}),
 };
 
 const mockTracer = {
-  startSpan: mock(() => mockSpan),
+  startSpan: vi.fn(() => mockSpan),
 };
 
-mock.module('@opentelemetry/api', () => ({
+vi.mock('@opentelemetry/api', () => ({
   SpanKind: { CLIENT: 1 },
   SpanStatusCode: { OK: 0, ERROR: 1 },
   context: { active: () => ({}) },
-  propagation: { inject: mock(() => {}) },
+  propagation: { inject: vi.fn(() => {}) },
   trace: {
     getTracer: () => mockTracer,
     setSpan: (_ctx: unknown, span: unknown) => span,
@@ -24,17 +24,17 @@ mock.module('@opentelemetry/api', () => ({
 }));
 
 // mock metrics
-mock.module('./metrics.js', () => ({
-  recordFetchRequestDuration: mock(() => {}),
+vi.mock('./metrics.js', () => ({
+  recordFetchRequestDuration: vi.fn(() => {}),
 }));
 
 describe('instrumentFetch', () => {
   let originalFetch: typeof globalThis.fetch;
-  let mockFetch: ReturnType<typeof mock<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>>;
+  let mockFetch: ReturnType<typeof vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>>;
 
   beforeEach(() => {
     originalFetch = globalThis.fetch;
-    mockFetch = mock(() => Promise.resolve(new Response('ok', { status: 200 })));
+    mockFetch = vi.fn(() => Promise.resolve(new Response('ok', { status: 200 })));
     globalThis.fetch = mockFetch as unknown as typeof globalThis.fetch;
 
     // reset mocks
@@ -323,7 +323,7 @@ describe('instrumentFetch', () => {
 
   test('preserves static properties from original fetch (e.g., preconnect)', () => {
     // add a static property to mock fetch
-    (mockFetch as any).preconnect = mock(() => {});
+    (mockFetch as any).preconnect = vi.fn(() => {});
     (mockFetch as any).customProperty = 'test';
 
     instrumentFetch();

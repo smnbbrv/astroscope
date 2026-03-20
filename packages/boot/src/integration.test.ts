@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { getServerDefaults } from './integration';
 import boot from './index';
 
@@ -8,7 +8,7 @@ describe('boot', () => {
 
     expect(integration.name).toBe('@astroscope/boot');
     expect(integration.hooks).toBeDefined();
-    expect(integration.hooks['astro:config:setup']).toBeFunction();
+    expect(integration.hooks['astro:config:setup']).toBeTypeOf('function');
   });
 
   test('accepts custom entry option', () => {

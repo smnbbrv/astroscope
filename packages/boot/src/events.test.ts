@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, mock, test } from 'bun:test';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { emit, off, on } from './events';
 import type { BootContext } from './types';
 
@@ -13,7 +13,7 @@ afterEach(() => {
 
 describe('on / off / emit', () => {
   test('registered handler fires on emit', async () => {
-    const handler = mock(() => {});
+    const handler = vi.fn(() => {});
 
     on('afterOnStartup', handler);
 
@@ -24,7 +24,7 @@ describe('on / off / emit', () => {
   });
 
   test('handler only fires for its registered event', async () => {
-    const handler = mock(() => {});
+    const handler = vi.fn(() => {});
 
     on('afterOnStartup', handler);
 
@@ -34,7 +34,7 @@ describe('on / off / emit', () => {
   });
 
   test('off removes a handler', async () => {
-    const handler = mock(() => {});
+    const handler = vi.fn(() => {});
 
     on('afterOnStartup', handler);
     off('afterOnStartup', handler);
@@ -90,7 +90,7 @@ describe('on / off / emit', () => {
   });
 
   test('same handler can be registered for different events', async () => {
-    const handler = mock(() => {});
+    const handler = vi.fn(() => {});
 
     on('beforeOnStartup', handler);
     on('afterOnStartup', handler);

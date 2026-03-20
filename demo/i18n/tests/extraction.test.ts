@@ -1,12 +1,12 @@
-import { type Subprocess, spawn } from 'bun';
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
+import { type ChildProcess, spawn } from 'node:child_process';
 import { type CheerioAPI, load } from 'cheerio';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 const DEV_PORT = 14321;
 const PROD_PORT = 14322;
 
-let devServer: Subprocess | null = null;
-let prodServer: Subprocess | null = null;
+let devServer: ChildProcess | null = null;
+let prodServer: ChildProcess | null = null;
 
 async function waitForServer(port: number, timeout = 30000): Promise<void> {
   const start = Date.now();
@@ -45,18 +45,16 @@ function extractManifestJson($: CheerioAPI, label: string): unknown {
 
 beforeAll(async () => {
   // start dev server
-  devServer = spawn(['bun', 'run', 'dev', '--port', String(DEV_PORT)], {
-    cwd: `${import.meta.dir}/..`,
-    stdout: 'pipe',
-    stderr: 'pipe',
+  devServer = spawn('npx', ['astro', 'dev', '--port', String(DEV_PORT)], {
+    cwd: new URL('..', import.meta.url).pathname,
+    stdio: 'pipe',
   });
 
   // start prod server (assumes build already done)
-  prodServer = spawn(['bun', 'run', 'start:prod'], {
-    cwd: `${import.meta.dir}/..`,
+  prodServer = spawn('node', ['./dist/server/entry.mjs'], {
+    cwd: new URL('..', import.meta.url).pathname,
     env: { ...process.env, PORT: String(PROD_PORT) },
-    stdout: 'pipe',
-    stderr: 'pipe',
+    stdio: 'pipe',
   });
 
   await Promise.all([waitForServer(DEV_PORT), waitForServer(PROD_PORT)]);

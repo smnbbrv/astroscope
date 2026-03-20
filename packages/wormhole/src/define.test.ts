@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, mock, test } from 'bun:test';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { defineWormhole } from './define';
 
 describe('defineWormhole', () => {
@@ -53,7 +53,7 @@ describe('defineWormhole', () => {
       (globalThis as any).window = {};
 
       const wh = defineWormhole<number>('test-sub');
-      const handler = mock(() => {});
+      const handler = vi.fn(() => {});
 
       wh.subscribe(handler);
       wh.set(42);
@@ -66,7 +66,7 @@ describe('defineWormhole', () => {
       (globalThis as any).window = {};
 
       const wh = defineWormhole<number>('test-unsub');
-      const handler = mock(() => {});
+      const handler = vi.fn(() => {});
 
       const unsub = wh.subscribe(handler);
 

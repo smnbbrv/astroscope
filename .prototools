@@ -1,2 +1,2 @@
-[tools.bun]
-version = "1.3.4"
+[tools.node]
+version = "24"

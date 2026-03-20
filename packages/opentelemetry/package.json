@@ -61,7 +61,7 @@
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "@astroscope/excludes": "^0.3.0",
+    "@astroscope/excludes": "workspace:^",
     "@opentelemetry/api": "^1.0.0",
     "@opentelemetry/core": "^2.0.0",
     "astro": "^6.0.0"

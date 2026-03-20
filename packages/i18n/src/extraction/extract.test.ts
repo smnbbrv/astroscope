@@ -1,5 +1,5 @@
 import type { AstroIntegrationLogger } from 'astro';
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 import { extractKeysFromFile } from './extract.js';
 
 const mockLogger = {

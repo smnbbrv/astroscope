@@ -5,26 +5,6 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
-    "@astroscope/csrf#build": {
-      "dependsOn": ["@astroscope/excludes#build"],
-      "outputs": ["dist/**"]
-    },
-    "@astroscope/pino#build": {
-      "dependsOn": ["@astroscope/excludes#build"],
-      "outputs": ["dist/**"]
-    },
-    "@astroscope/opentelemetry#build": {
-      "dependsOn": ["@astroscope/excludes#build"],
-      "outputs": ["dist/**"]
-    },
-    "@astroscope/i18n#build": {
-      "dependsOn": ["@astroscope/excludes#build"],
-      "outputs": ["dist/**"]
-    },
-    "@astroscope/health#build": {
-      "dependsOn": ["@astroscope/boot#build"],
-      "outputs": ["dist/**"]
-    },
     "typecheck": {
       "dependsOn": ["^build"]
     },

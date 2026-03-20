@@ -12,7 +12,7 @@
     "typecheck": "astro check",
     "lint": "eslint src astro.config.ts",
     "lint:fix": "eslint src astro.config.ts --fix",
-    "test": "bun test"
+    "test": "vitest run"
   },
   "dependencies": {
     "@astrojs/node": "^10.0.0",

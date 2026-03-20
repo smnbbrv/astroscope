@@ -58,7 +58,7 @@
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "@astroscope/excludes": "^0.3.0",
+    "@astroscope/excludes": "workspace:^",
     "astro": "^6.0.0"
   }
 }

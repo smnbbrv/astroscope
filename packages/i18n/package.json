@@ -104,7 +104,7 @@
     "vite": "^7.3.1"
   },
   "peerDependencies": {
-    "@astroscope/excludes": "^0.3.0",
+    "@astroscope/excludes": "workspace:^",
     "astro": "^6.0.0"
   }
 }

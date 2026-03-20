@@ -1,21 +1,21 @@
 import type { AstroIntegrationLogger } from 'astro';
-import { describe, expect, mock, test } from 'bun:test';
+import { type Mock, describe, expect, test, vi } from 'vitest';
 import { KeyStore } from './key-store.js';
 import type { ExtractedKeyOccurrence } from './types.js';
 
 const createMockLogger = () =>
   ({
-    info: mock(() => {}),
-    warn: mock(() => {}),
-    error: mock(() => {}),
+    info: vi.fn(() => {}),
+    warn: vi.fn(() => {}),
+    error: vi.fn(() => {}),
     debug: () => {},
     label: 'test',
     fork() {
       return this;
     },
   }) as unknown as AstroIntegrationLogger & {
-    warn: ReturnType<typeof mock>;
-    error: ReturnType<typeof mock>;
+    warn: Mock;
+    error: Mock;
   };
 
 const createOccurrence = (
