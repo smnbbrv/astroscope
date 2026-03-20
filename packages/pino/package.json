@@ -1,6 +1,6 @@
 {
   "name": "@astroscope/pino",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Pino logging for Astro — request-scoped context, pino-http style API",
   "type": "module",
   "main": "./dist/index.js",

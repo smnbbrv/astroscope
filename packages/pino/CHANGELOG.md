@@ -1,5 +1,12 @@
 # @astroscope/pino
 
+## 0.4.1
+
+### Patch Changes
+
+- 181ca22: make pino a non-peer dependency
+- e9ed961: update versions
+
 ## 0.4.0
 
 ### Minor Changes

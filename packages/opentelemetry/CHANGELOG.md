@@ -1,5 +1,11 @@
 # @astroscope/opentelemetry
 
+## 0.3.1
+
+### Patch Changes
+
+- e9ed961: update versions
+
 ## 0.3.0
 
 ### Minor Changes
