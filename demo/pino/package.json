@@ -14,14 +14,14 @@
     "lint:fix": "eslint src astro.config.ts --fix"
   },
   "dependencies": {
-    "@astrojs/node": "^10.0.0",
+    "@astrojs/node": "^10.0.3",
     "@astroscope/excludes": "workspace:*",
     "@astroscope/pino": "workspace:*",
-    "astro": "^6.0.2",
+    "astro": "^6.0.7",
     "pino": "^10.3.1"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.7",
+    "@astrojs/check": "^0.9.8",
     "typescript": "^5.9.3"
   }
 }
