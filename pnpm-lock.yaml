@@ -497,13 +497,13 @@ importers:
       '@astroscope/excludes':
         specifier: workspace:^
         version: link:../excludes
-      pino:
-        specifier: ^10.3.1
-        version: 10.3.1
     devDependencies:
       astro:
         specifier: ^6.0.7
         version: 6.0.7(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.59.0)(typescript@5.9.3)(yaml@2.8.2)
+      pino:
+        specifier: ^10.3.1
+        version: 10.3.1
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.2)
