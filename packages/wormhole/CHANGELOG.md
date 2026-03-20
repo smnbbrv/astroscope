@@ -1,5 +1,11 @@
 # @astroscope/wormhole
 
+## 0.2.1
+
+### Patch Changes
+
+- e9ed961: update versions
+
 ## 0.2.0
 
 ### Minor Changes

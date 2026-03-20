@@ -1,5 +1,11 @@
 # @astroscope/boot
 
+## 0.5.0
+
+### Minor Changes
+
+- bbbf4fa: add warmup option on the integration level
+
 ## 0.4.0
 
 ### Minor Changes
