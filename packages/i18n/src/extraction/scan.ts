@@ -1,6 +1,6 @@
 import fs from 'node:fs';
+import path from 'node:path';
 import type { AstroIntegrationLogger } from 'astro';
-import { glob } from 'glob';
 import type { ConsistencyCheckLevel } from '../integration/types.js';
 import { ALL_EXTENSIONS, extractKeysFromFile } from './extract.js';
 import { KeyStore } from './key-store.js';
@@ -37,11 +37,14 @@ export async function scan(options: ScanOptions): Promise<KeyStore> {
   const { projectRoot, logger, consistency } = options;
   const store = new KeyStore(logger, consistency);
 
-  const files = await glob(GLOB_PATTERN, {
+  const files: string[] = [];
+
+  for await (const entry of fs.promises.glob(GLOB_PATTERN, {
     cwd: projectRoot,
-    absolute: true,
-    ignore: ['**/node_modules/**'],
-  });
+    exclude: (name) => name === 'node_modules',
+  })) {
+    files.push(path.resolve(projectRoot, entry));
+  }
 
   const results = await Promise.all(
     files.map(async (file) => {
