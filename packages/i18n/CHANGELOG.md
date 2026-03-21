@@ -1,5 +1,11 @@
 # @astroscope/i18n
 
+## 0.4.2
+
+### Patch Changes
+
+- e7f0a69: remove glob dependency
+
 ## 0.4.1
 
 ### Patch Changes

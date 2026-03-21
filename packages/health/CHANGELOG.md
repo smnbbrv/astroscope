@@ -1,5 +1,11 @@
 # @astroscope/health
 
+## 0.3.2
+
+### Patch Changes
+
+- 71a5eed: fix health-probes not being externalized
+
 ## 0.3.1
 
 ### Patch Changes
