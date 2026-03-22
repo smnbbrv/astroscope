@@ -1,5 +1,12 @@
 # @astroscope/health
 
+## 1.0.0
+
+### Patch Changes
+
+- Updated dependencies [903296a]
+  - @astroscope/boot@0.6.0
+
 ## 0.3.2
 
 ### Patch Changes
