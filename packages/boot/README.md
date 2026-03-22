@@ -176,7 +176,8 @@ boot({ warmup: [...WARMUP_MODULES, "src/components/**/*.tsx"] });
 
 ## Requirements
 
-- Only works with SSR output mode (`output: "server"`)
+- Node.js runtime
+- SSR output mode (`output: "server"`)
 
 ## License
 
