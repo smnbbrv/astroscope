@@ -32,7 +32,7 @@ export interface BootOptions {
    * Pre-import all page modules and middleware on startup to eliminate cold-start latency.
    *
    * - `true` — warmup using default glob patterns ({@link WARMUP_MODULES})
-   * - `string[]` — additional glob patterns to warmup on top of the defaults
+   * - `string[]` — custom glob patterns (use `{@link WARMUP_MODULES}` to include defaults)
    *
    * @default false
    */
@@ -91,7 +91,7 @@ function resolveWarmupPatterns(warmup: boolean | string[] | undefined): string[]
   if (!warmup) return null;
 
   if (Array.isArray(warmup)) {
-    return [...WARMUP_MODULES, ...warmup];
+    return warmup;
   }
 
   return WARMUP_MODULES;

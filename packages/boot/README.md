@@ -89,44 +89,46 @@ Called when the server is shutting down (SIGTERM in production, server close in 
 - Cleaning up resources
 - Graceful shutdown of external services
 
-## V8 Warmup
+## Warmup
 
-The package includes a warmup utility that pre-imports all page modules and middleware to warm up the V8 JIT compiler, reducing cold start latency for the first requests.
+Pre-imports server modules at startup to eliminate cold-start latency on the first request. At build time, a virtual module is generated that statically imports all matched files. At runtime, this module is loaded in parallel with `onStartup`, so warmup doesn't delay server readiness.
 
-```ts
-// src/boot.ts
-import type { BootContext } from "@astroscope/boot";
-import { warmup } from "@astroscope/boot/warmup";
-
-export async function onStartup({ host, port }: BootContext) {
-  const result = await warmup();
-
-  if (result.success.length > 0) {
-    console.log(`Warmed up ${result.success.length} modules in ${result.duration}ms`);
-  }
-
-  if (result.failed.length > 0) {
-    console.warn(`Failed to warm up: ${result.failed.join(", ")}`);
-  }
-
-  console.log(`Server ready at ${host}:${port}`);
-}
-```
-
-### `WarmupResult`
+### Enable warmup
 
 ```ts
-interface WarmupResult {
-  /** Modules that were successfully loaded */
-  success: string[];
-  /** Modules that failed to load */
-  failed: string[];
-  /** Time taken in milliseconds */
-  duration: number;
-}
+boot({ warmup: true });
 ```
 
-In development mode, `warmup()` is a no-op that returns empty results. In production, it reads a manifest generated during the build and imports all discovered page modules and middleware in parallel.
+This uses the default glob patterns (`WARMUP_MODULES`) which cover:
+
+- `src/pages/**/*.{astro,ts,tsx,js,jsx,md,mdx}`
+- `src/middleware.{ts,js}` / `src/middleware/index.{ts,js}`
+
+### Custom patterns
+
+Pass an array of glob patterns to control exactly which files are warmed up:
+
+```ts
+import { WARMUP_MODULES } from "@astroscope/boot";
+
+// defaults + custom patterns
+boot({ warmup: [...WARMUP_MODULES, "src/components/**/*.tsx"] });
+
+// only custom patterns (no defaults)
+boot({ warmup: ["src/lib/heavy-module.ts"] });
+```
+
+### Exported constants
+
+The default glob patterns are exported for composition:
+
+```ts
+import {
+  WARMUP_PAGE_MODULES,
+  WARMUP_MIDDLEWARE_MODULES,
+  WARMUP_MODULES,
+} from "@astroscope/boot";
+```
 
 ## Options
 
@@ -152,10 +154,25 @@ Re-run `onStartup` when the boot file changes during development. This is disabl
 boot({ hmr: true });
 ```
 
+### `warmup`
+
+Pre-import server modules on startup to eliminate cold-start latency.
+
+- **Type**: `boolean | string[]`
+- **Default**: `false`
+
+```ts
+// use default patterns
+boot({ warmup: true });
+
+// custom patterns
+boot({ warmup: [...WARMUP_MODULES, "src/components/**/*.tsx"] });
+```
+
 ## How it works
 
 - **Development**: The boot file runs _after_ the dev server starts listening (Vite limitation). `onShutdown` is called when the dev server closes.
-- **Production**: `onStartup` runs _before_ the server starts handling requests. `onShutdown` is called on SIGTERM.
+- **Production**: `onStartup` runs _before_ the server starts handling requests. `onShutdown` is called on SIGTERM. When warmup is enabled, module pre-loading runs in parallel with `onStartup`.
 
 ## Requirements
 
