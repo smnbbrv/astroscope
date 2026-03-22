@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import type { AstroConfig, AstroIntegration } from 'astro';
 import MagicString from 'magic-string';
 import { perEnvironmentState } from 'vite';
@@ -8,7 +9,13 @@ import { getPrependCode } from './prepend.js';
 import type { BootContext } from './types.js';
 import { serializeError } from './utils.js';
 import { ssrImport } from './vite-env.js';
-import { type WarmupModules, collectWarmupModules, writeWarmupManifest } from './warmup-manifest.js';
+import {
+  RESOLVED_VIRTUAL_MODULE_ID,
+  VIRTUAL_MODULE_ID,
+  WARMUP_MODULES,
+  generateWarmupCode,
+  resolveWarmupFiles,
+} from './warmup.js';
 
 export interface BootOptions {
   /**
@@ -22,12 +29,14 @@ export interface BootOptions {
    */
   hmr?: boolean | undefined;
   /**
-   * Pre-import all page modules and middleware on startup to eliminate cold-start latency
-   * on first request. When enabled, a warmup manifest is generated at build time and all
-   * discovered modules are imported before `onStartup` runs.
+   * Pre-import all page modules and middleware on startup to eliminate cold-start latency.
+   *
+   * - `true` — warmup using default glob patterns ({@link WARMUP_MODULES})
+   * - `string[]` — additional glob patterns to warmup on top of the defaults
+   *
    * @default false
    */
-  warmup?: boolean | undefined;
+  warmup?: boolean | string[] | undefined;
 }
 
 function resolveEntry(entry: string | undefined): string {
@@ -78,12 +87,22 @@ function getBootContext(
   return { dev: true, host, port };
 }
 
-interface BuildState {
-  bootChunkRef: string | null;
-  warmupModules: WarmupModules | null;
+function resolveWarmupPatterns(warmup: boolean | string[] | undefined): string[] | null {
+  if (!warmup) return null;
+
+  if (Array.isArray(warmup)) {
+    return [...WARMUP_MODULES, ...warmup];
+  }
+
+  return WARMUP_MODULES;
 }
 
-const getState = perEnvironmentState<BuildState>(() => ({ bootChunkRef: null, warmupModules: null }));
+interface BuildState {
+  bootChunkRef: string | null;
+  warmupChunkRef: string | null;
+}
+
+const getState = perEnvironmentState<BuildState>(() => ({ bootChunkRef: null, warmupChunkRef: null }));
 
 /**
  * Astro integration for application lifecycle hooks.
@@ -94,9 +113,10 @@ const getState = perEnvironmentState<BuildState>(() => ({ bootChunkRef: null, wa
 export default function boot(options: BootOptions = {}): AstroIntegration {
   const entry = resolveEntry(options.entry);
   const hmr = options.hmr ?? false;
-  const enableWarmup = options.warmup ?? false;
+  const warmupPatterns = resolveWarmupPatterns(options.warmup);
 
   let astroConfig: AstroConfig | null = null;
+  let warmupCode: string | null = null;
 
   return {
     name: '@astroscope/boot',
@@ -107,11 +127,19 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
         updateConfig({
           vite: {
             plugins: [
-              // build plugin: handles entry.mjs injection, warmup manifest
+              // build plugin: handles entry.mjs injection and warmup virtual module
               {
                 name: '@astroscope/boot',
 
-                buildStart() {
+                resolveId(id) {
+                  if (id === VIRTUAL_MODULE_ID) return RESOLVED_VIRTUAL_MODULE_ID;
+                },
+
+                load(id) {
+                  if (id === RESOLVED_VIRTUAL_MODULE_ID) return warmupCode ?? '';
+                },
+
+                async buildStart() {
                   if (this.environment.name !== 'ssr') return;
 
                   const state = getState(this);
@@ -120,6 +148,27 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                     state.bootChunkRef = this.emitFile({ type: 'chunk', id: entry, name: 'boot' });
                   } catch {
                     // not available in serve mode
+                  }
+
+                  if (warmupPatterns) {
+                    const projectRoot = astroConfig?.root ? fileURLToPath(astroConfig.root) : process.cwd();
+                    const files = await resolveWarmupFiles(warmupPatterns, projectRoot);
+
+                    warmupCode = generateWarmupCode(files);
+
+                    if (files.length > 0) {
+                      try {
+                        state.warmupChunkRef = this.emitFile({
+                          type: 'chunk',
+                          id: VIRTUAL_MODULE_ID,
+                          name: 'warmup',
+                        });
+                      } catch {
+                        // not available in serve mode
+                      }
+
+                      logger.info(`warmup: ${files.length} files`);
+                    }
                   }
                 },
 
@@ -145,20 +194,30 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                     return;
                   }
 
-                  if (enableWarmup) {
-                    state.warmupModules = collectWarmupModules(bundle);
-                  }
-
                   const { host, port } = getServerDefaults(astroConfig);
 
                   const prependCode = getPrependCode();
                   const prefix = prependCode.length ? `${prependCode.join('\n')}\n` : '';
 
+                  let warmupStart = '';
+                  let warmupEnd = '';
+
+                  if (state.warmupChunkRef) {
+                    const warmupChunkName = this.getFileName(state.warmupChunkRef);
+
+                    if (warmupChunkName) {
+                      warmupStart = `const __astroscope_warmup = import('./${warmupChunkName}');\n`;
+                      warmupEnd = `await __astroscope_warmup;\n`;
+                    }
+                  }
+
+                  const setupConfig = JSON.stringify({ host, port });
+
                   const injection =
-                    `${prefix}globalThis.__astroscope_server_url = import.meta.url;\n` +
+                    `${prefix}${warmupStart}` +
                     `import * as __astroscope_boot from './${bootChunkName}';\n` +
                     `import { setup as __astroscope_bootSetup } from '@astroscope/boot/setup';\n` +
-                    `await __astroscope_bootSetup(__astroscope_boot, ${JSON.stringify({ host, port, warmup: enableWarmup })});\n`;
+                    `await __astroscope_bootSetup(__astroscope_boot, ${setupConfig});\n${warmupEnd}`;
 
                   // inject at start of entry.mjs preserving source maps
                   const s = new MagicString(entryChunk.code);
@@ -172,18 +231,6 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                   }
 
                   logger.info(`injected ${bootChunkName} into entry.mjs`);
-                },
-
-                writeBundle(outputOptions) {
-                  const state = getState(this);
-
-                  if (!state.warmupModules) return;
-
-                  const outDir = outputOptions.dir;
-
-                  if (!outDir) return;
-
-                  writeWarmupManifest(outDir, state.warmupModules, logger);
                 },
               },
 

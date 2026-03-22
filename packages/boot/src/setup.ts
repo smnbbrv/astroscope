@@ -1,10 +1,6 @@
 import { type BootModule, runShutdown, runStartup } from './lifecycle.js';
-import { warmup } from './warmup.js';
 
-export async function setup(
-  boot: BootModule,
-  config: { host: string; port: number; warmup?: boolean | undefined },
-): Promise<void> {
+export async function setup(boot: BootModule, config: { host: string; port: number }): Promise<void> {
   const context = {
     dev: false,
     host: process.env['HOST'] ?? config.host,
@@ -12,20 +8,7 @@ export async function setup(
   };
 
   try {
-    const warmupPromise = config.warmup
-      ? warmup().then((result) => {
-          if (result.success.length > 0) {
-            console.log(`[boot] warmed up ${result.success.length} modules in ${result.duration}ms`);
-          }
-
-          if (result.failed.length > 0) {
-            console.warn(`[boot] failed to warm up ${result.failed.length} modules`);
-          }
-        })
-      : undefined;
-
     await runStartup(boot, context);
-    await warmupPromise;
   } catch (err) {
     console.error('[boot] startup failed:', err);
 

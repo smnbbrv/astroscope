@@ -1,5 +1,4 @@
 import type { BootContext } from '@astroscope/boot';
-import { warmup } from '@astroscope/boot/warmup';
 import { checks } from '@astroscope/health';
 
 // simulate a database connection
@@ -49,10 +48,6 @@ export async function onStartup({ dev, host, port }: BootContext) {
     timeout: 3000,
   });
 
-  // warmup V8 by importing all page modules before accepting traffic
-  const result = await warmup();
-
-  console.log(`[boot] warmup complete: ${result.success.length} modules in ${result.duration}ms`);
   console.log(`[boot] server ready at ${host}:${port} (dev: ${dev})`);
   // health server starts automatically after onStartup via @astroscope/health integration
 }

@@ -6,12 +6,3 @@ export interface BootContext {
   /** Server port from Astro config */
   port: number;
 }
-
-export interface WarmupResult {
-  /** Modules that were successfully loaded */
-  success: string[];
-  /** Modules that failed to load */
-  failed: string[];
-  /** Time taken in milliseconds */
-  duration: number;
-}
