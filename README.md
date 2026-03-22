@@ -24,19 +24,19 @@ A collection of Astro integrations for common server-side needs — logging, tra
 
 ```bash
 # Install dependencies
-bun install
+pnpm install
 
 # Build all packages
-bun run build
+pnpm build
 
 # Run demo app
-bun run dev
+pnpm dev
 
 # Run tests
-bun test
+pnpm test
 
 # Typecheck
-bun run typecheck
+pnpm typecheck
 ```
 
 ## License
