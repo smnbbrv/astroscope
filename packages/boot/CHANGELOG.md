@@ -1,5 +1,11 @@
 # @astroscope/boot
 
+## 0.6.0
+
+### Minor Changes
+
+- 903296a: remove user-defined warmup, extend warmup logic
+
 ## 0.5.0
 
 ### Minor Changes
