@@ -50,17 +50,16 @@
     "lint": "eslint src",
     "lint:fix": "eslint src --fix"
   },
-  "dependencies": {
-    "health-probes": "^1.1.0"
-  },
   "devDependencies": {
     "@astroscope/boot": "workspace:^",
     "astro": "^6.0.7",
+    "health-probes": "^1.1.0",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "@astroscope/boot": "workspace:^",
-    "astro": "^6.0.0"
+    "astro": "^6.0.0",
+    "health-probes": "^1.1.0"
   }
 }

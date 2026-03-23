@@ -13,7 +13,7 @@ See the [demo/health](../../demo/health) directory for a working example.
 ## Installation
 
 ```bash
-npm install @astroscope/health
+npm install @astroscope/health health-probes
 ```
 
 ## Usage
@@ -48,7 +48,7 @@ The health server and probe lifecycle are managed automatically — you only nee
 ```ts
 // src/boot.ts
 import type { BootContext } from '@astroscope/boot';
-import { checks } from '@astroscope/health';
+import { checks } from 'health-probes';
 
 export async function onStartup({ dev, host, port }: BootContext) {
   await connectToDatabase();
@@ -113,7 +113,8 @@ Probe endpoint paths. Two presets are available:
 - `SimplePaths`: `/live`, `/ready`, `/startup`, `/health`
 
 ```ts
-import health, { SimplePaths } from '@astroscope/health';
+import health from '@astroscope/health';
+import { SimplePaths } from 'health-probes';
 
 health({ paths: SimplePaths });
 ```
@@ -178,7 +179,7 @@ Status values:
 Register health checks to verify dependencies are working:
 
 ```ts
-import { checks } from '@astroscope/health';
+import { checks } from 'health-probes';
 
 // return result (recommended for boolean checks)
 checks.register('database', () => ({

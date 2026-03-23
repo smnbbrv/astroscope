@@ -63,11 +63,6 @@ export default function health(options: HealthOptions = {}): AstroIntegration {
 
         updateConfig({
           vite: {
-            ssr: {
-              // ensure health-probes is resolved at runtime, not bundled;
-              // singleton checks/probes instances must be shared across entry and user code
-              external: ['health-probes'],
-            },
             plugins: [
               {
                 name: '@astroscope/health',
@@ -85,7 +80,3 @@ export default function health(options: HealthOptions = {}): AstroIntegration {
     },
   };
 }
-
-// re-export parts of health-probes for usage in user code
-export { checks, K8sPaths, SimplePaths } from 'health-probes';
-export type { HealthCheck, HealthCheckResult, ProbePaths } from 'health-probes';
