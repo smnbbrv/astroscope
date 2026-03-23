@@ -87,6 +87,8 @@ async function fetchTranslations(locale: string): Promise<RawTranslations> {
 }
 
 export async function onStartup() {
+  await new Promise((resolve) => setTimeout(resolve, 1000)); // simulate async setup work
+
   await i18n.configure({
     locales: ['en', 'de'],
   });
