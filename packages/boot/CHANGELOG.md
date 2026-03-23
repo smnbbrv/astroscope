@@ -1,5 +1,11 @@
 # @astroscope/boot
 
+## 0.6.1
+
+### Patch Changes
+
+- fix warmup stripping css modules
+
 ## 0.6.0
 
 ### Minor Changes

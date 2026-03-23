@@ -34,5 +34,7 @@ export async function resolveWarmupFiles(patterns: string[], projectRoot: string
 export function generateWarmupCode(files: string[]): string {
   if (files.length === 0) return '';
 
-  return `${files.map((f) => `import ${JSON.stringify(f)};`).join('\n')}\n`;
+  const imports = files.map((f) => `  import(${JSON.stringify(f)})`).join(',\n');
+
+  return `await Promise.allSettled([\n${imports},\n]);\n`;
 }

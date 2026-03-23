@@ -1,4 +1,4 @@
-import { createI18nChunkMiddleware, createI18nMiddleware, detectLocale, i18n } from '@astroscope/i18n';
+import { createI18nChunkMiddleware, createI18nMiddleware, detectLocale } from '@astroscope/i18n';
 import { sequence } from 'astro:middleware';
 
 export const onRequest = sequence(
@@ -7,9 +7,6 @@ export const onRequest = sequence(
   createI18nMiddleware({
     // locale context (may depend on session)
     locale: ({ request, url, cookies }) =>
-      url.searchParams.get('locale') ??
-      cookies.get('locale')?.value ??
-      detectLocale(request) ??
-      i18n.getConfig().defaultLocale,
+      url.searchParams.get('locale') ?? cookies.get('locale')?.value ?? detectLocale(request) ?? 'en',
   }),
 );
