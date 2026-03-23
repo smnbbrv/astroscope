@@ -1,5 +1,11 @@
 # @astroscope/health
 
+## 0.4.0
+
+### Minor Changes
+
+- c36fd4e: make health-probes a peer dependency
+
 ## 0.3.3
 
 ### Patch Changes

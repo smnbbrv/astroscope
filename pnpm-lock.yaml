@@ -124,6 +124,9 @@ importers:
       astro:
         specifier: ^6.0.7
         version: 6.0.7(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.59.0)(typescript@5.9.3)(yaml@2.8.2)
+      health-probes:
+        specifier: ^1.1.0
+        version: 1.1.0
     devDependencies:
       '@astrojs/check':
         specifier: ^0.9.8
@@ -409,10 +412,6 @@ importers:
         version: 5.9.3
 
   packages/health:
-    dependencies:
-      health-probes:
-        specifier: ^1.1.0
-        version: 1.1.0
     devDependencies:
       '@astroscope/boot':
         specifier: workspace:^
@@ -420,6 +419,9 @@ importers:
       astro:
         specifier: ^6.0.7
         version: 6.0.7(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.59.0)(typescript@5.9.3)(yaml@2.8.2)
+      health-probes:
+        specifier: ^1.1.0
+        version: 1.1.0
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.2)

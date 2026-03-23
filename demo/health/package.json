@@ -16,6 +16,7 @@
     "@astrojs/node": "^10.0.3",
     "@astroscope/boot": "workspace:*",
     "@astroscope/health": "workspace:*",
+    "health-probes": "^1.1.0",
     "astro": "^6.0.7"
   },
   "devDependencies": {

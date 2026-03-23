@@ -1,5 +1,5 @@
 import type { BootContext } from '@astroscope/boot';
-import { checks } from '@astroscope/health';
+import { checks } from 'health-probes';
 
 // simulate a database connection
 let dbConnected = false;
