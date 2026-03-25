@@ -1,0 +1,61 @@
+{
+  "name": "@astroscope/hyperspace",
+  "version": "0.1.0",
+  "description": "Pre-compressed in-memory static file serving for Astro — save space, serve from hyperspace",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./middleware": {
+      "types": "./dist/middleware-entrypoint.d.ts",
+      "import": "./dist/middleware-entrypoint.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smnbbrv/astroscope.git",
+    "directory": "packages/hyperspace"
+  },
+  "keywords": [
+    "astro",
+    "astro-integration",
+    "compression",
+    "brotli",
+    "gzip",
+    "static",
+    "in-memory",
+    "middleware",
+    "performance"
+  ],
+  "author": "smnbbrv",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/smnbbrv/astroscope/issues"
+  },
+  "homepage": "https://github.com/smnbbrv/astroscope/tree/main/packages/hyperspace#readme",
+  "scripts": {
+    "build": "tsup src/index.ts src/middleware-entrypoint.ts --format esm --dts --external virtual:@astroscope/hyperspace/config",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix"
+  },
+  "devDependencies": {
+    "astro": "^6.0.7",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "astro": "^6.0.0"
+  }
+}

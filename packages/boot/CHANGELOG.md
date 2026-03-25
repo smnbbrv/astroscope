@@ -1,5 +1,11 @@
 # @astroscope/boot
 
+## 0.6.2
+
+### Patch Changes
+
+- remove named boot export
+
 ## 0.6.1
 
 ### Patch Changes

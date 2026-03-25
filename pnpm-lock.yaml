@@ -135,6 +135,25 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  demo/hyperspace:
+    dependencies:
+      '@astrojs/node':
+        specifier: ^10.0.3
+        version: 10.0.3(astro@6.0.7(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.59.0)(typescript@5.9.3)(yaml@2.8.2))
+      '@astroscope/hyperspace':
+        specifier: workspace:*
+        version: link:../../packages/hyperspace
+      astro:
+        specifier: ^6.0.7
+        version: 6.0.7(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.59.0)(typescript@5.9.3)(yaml@2.8.2)
+    devDependencies:
+      '@astrojs/check':
+        specifier: ^0.9.8
+        version: 0.9.8(prettier-plugin-astro@0.14.1)(prettier@3.8.1)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   demo/i18n:
     dependencies:
       '@astrojs/node':
@@ -422,6 +441,18 @@ importers:
       health-probes:
         specifier: ^1.1.0
         version: 1.1.0
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/hyperspace:
+    devDependencies:
+      astro:
+        specifier: ^6.0.7
+        version: 6.0.7(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(rollup@4.59.0)(typescript@5.9.3)(yaml@2.8.2)
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.2)

@@ -1,0 +1,24 @@
+{
+  "name": "demo-hyperspace",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "astro dev",
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "typecheck": "astro check",
+    "lint": "eslint src astro.config.ts",
+    "lint:fix": "eslint src astro.config.ts --fix"
+  },
+  "dependencies": {
+    "@astrojs/node": "^10.0.3",
+    "@astroscope/hyperspace": "workspace:*",
+    "astro": "^6.0.7"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.8",
+    "typescript": "^5.9.3"
+  }
+}

@@ -14,6 +14,7 @@ A collection of Astro integrations for common server-side needs — logging, tra
 | [@astroscope/csrf](./packages/csrf)                   | CSRF protection with path exclusions for webhooks and OIDC callbacks                                              |
 | [@astroscope/excludes](./packages/excludes)           | Reusable exclude patterns and helpers for middleware                                                              |
 | [@astroscope/health](./packages/health)               | Kubernetes-style health probes — livez, readyz, startupz, healthz                                                 |
+| [@astroscope/hyperspace](./packages/hyperspace)       | Build-time brotli/gzip compression with in-memory serving — better compression, zero runtime overhead             |
 | [@astroscope/i18n](./packages/i18n)                   | i18n for Astro + React islands — dynamic translations from any source, auto-split per component, parallel loading |
 | [@astroscope/opentelemetry](./packages/opentelemetry) | OpenTelemetry tracing and metrics — works in dev mode, no monkey-patching                                         |
 | [@astroscope/pino](./packages/pino)                   | Pino logging with request-scoped context                                                                          |
