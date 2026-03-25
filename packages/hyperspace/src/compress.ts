@@ -21,8 +21,8 @@ export async function compressClientDir(
   const files = await walkDir(clientDir);
 
   let compressed = 0;
-  let moved = 0;
   let savedBytes = 0;
+  let totalRaw = 0;
   let totalMemory = 0;
 
   await Promise.all(
@@ -35,7 +35,7 @@ export async function compressClientDir(
           const { size } = await stat(filePath);
 
           await moveFile(clientDir, staticDir, filePath);
-          moved++;
+          // non-compressible file moved to memory
           totalMemory += size;
         }
 
@@ -70,7 +70,7 @@ export async function compressClientDir(
       }
 
       compressed++;
-      moved++;
+      totalRaw += raw.byteLength;
       totalMemory += raw.byteLength;
 
       if (brBuf.byteLength < raw.byteLength) {
@@ -92,8 +92,10 @@ export async function compressClientDir(
 
   await cleanEmptyDirs(clientDir);
 
+  const savedPercent = totalRaw > 0 ? Math.round((savedBytes / totalRaw) * 100) : 0;
+
   logger.info(
-    `${moved} files in memory (${compressed} compressed), saved ${formatBytes(savedBytes)}, footprint ~${formatBytes(totalMemory)}`,
+    `${compressed} files compressed, saved up to ${formatBytes(savedBytes)} (${savedPercent}%), runtime memory footprint ~${formatBytes(totalMemory)}`,
   );
 
   if (totalMemory > budget) {
