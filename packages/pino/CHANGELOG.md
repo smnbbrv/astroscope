@@ -1,5 +1,11 @@
 # @astroscope/pino
 
+## 0.4.4
+
+### Patch Changes
+
+- bf90c38: roll back the externalization
+
 ## 0.4.3
 
 ### Patch Changes
