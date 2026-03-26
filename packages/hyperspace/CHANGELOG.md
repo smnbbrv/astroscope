@@ -1,5 +1,11 @@
 # @astroscope/hyperspace
 
+## 0.1.3
+
+### Patch Changes
+
+- b0ce786: use relative path to the static folder
+
 ## 0.1.2
 
 ### Patch Changes
