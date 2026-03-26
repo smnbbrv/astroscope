@@ -18,6 +18,9 @@
   "files": [
     "dist"
   ],
+  "astro": {
+    "external": true
+  },
   "sideEffects": false,
   "publishConfig": {
     "access": "public"
