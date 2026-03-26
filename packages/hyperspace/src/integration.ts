@@ -4,9 +4,6 @@ import type { AstroIntegration } from 'astro';
 
 import type { HyperspaceOptions } from './types.js';
 
-const VIRTUAL_MODULE_ID = 'virtual:@astroscope/hyperspace/config';
-const RESOLVED_VIRTUAL_MODULE_ID = `\0${VIRTUAL_MODULE_ID}`;
-
 const DEFAULT_BUDGET = 10 * 1024 * 1024; // 10 MB
 
 export default function hyperspace(options: HyperspaceOptions = {}): AstroIntegration {
@@ -18,32 +15,10 @@ export default function hyperspace(options: HyperspaceOptions = {}): AstroIntegr
   return {
     name: '@astroscope/hyperspace',
     hooks: {
-      'astro:config:setup': ({ addMiddleware, updateConfig }) => {
+      'astro:config:setup': ({ addMiddleware }) => {
         addMiddleware({
           entrypoint: '@astroscope/hyperspace/middleware',
           order: 'pre',
-        });
-
-        updateConfig({
-          vite: {
-            plugins: [
-              {
-                name: '@astroscope/hyperspace/virtual-config',
-                resolveId(id) {
-                  if (id === VIRTUAL_MODULE_ID) {
-                    return RESOLVED_VIRTUAL_MODULE_ID;
-                  }
-                },
-                load(id) {
-                  if (id === RESOLVED_VIRTUAL_MODULE_ID) {
-                    const staticDir = path.join(fileURLToPath(outDir), 'hyperclient');
-
-                    return `export const staticDir = ${JSON.stringify(staticDir)};`;
-                  }
-                },
-              },
-            ],
-          },
         });
       },
 

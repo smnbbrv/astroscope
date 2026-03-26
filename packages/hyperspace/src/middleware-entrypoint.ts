@@ -1,8 +1,8 @@
-// @ts-expect-error virtual module provided by integration
-import { staticDir } from 'virtual:@astroscope/hyperspace/config';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { createHyperspaceMiddleware } from './middleware.js';
 
-const configStaticDir = staticDir as string;
+const staticDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'hyperclient');
 
-export const onRequest = createHyperspaceMiddleware(configStaticDir);
+export const onRequest = createHyperspaceMiddleware(staticDir);
