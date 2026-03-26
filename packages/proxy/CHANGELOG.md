@@ -1,5 +1,11 @@
 # @astroscope/proxy
 
+## 0.3.1
+
+### Patch Changes
+
+- b65b90d: externalize package for astro
+
 ## 0.3.0
 
 ### Minor Changes

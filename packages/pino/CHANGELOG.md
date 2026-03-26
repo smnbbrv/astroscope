@@ -1,5 +1,11 @@
 # @astroscope/pino
 
+## 0.4.3
+
+### Patch Changes
+
+- b65b90d: externalize package for astro
+
 ## 0.4.2
 
 ### Patch Changes
