@@ -75,27 +75,6 @@ Only text-based files are loaded. Images, fonts, and other binaries are left to 
 
 In development, there are no compressed files — the middleware gracefully no-ops and passes all requests through to Astro.
 
-## Behind nginx
-
-Since hyperspace sets `Content-Encoding` and `Vary` headers, nginx needs to cache separate variants per encoding. A minimal reverse proxy config:
-
-```nginx
-proxy_cache_path /tmp/astro-cache levels=1:2 keys_zone=astro:10m inactive=60m;
-
-server {
-    listen 443 ssl http2;
-
-    location / {
-        proxy_pass http://localhost:4321;
-        proxy_cache astro;
-        proxy_cache_key $host$uri$upstream_http_content_encoding;
-        proxy_cache_valid 200 304 10m;
-    }
-}
-```
-
-The key part is `proxy_cache_key` — without `$upstream_http_content_encoding`, nginx can cache a brotli response and serve it to clients that only support gzip.
-
 ## Requirements
 
 - Node.js runtime
