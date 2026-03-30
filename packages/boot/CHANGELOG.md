@@ -1,5 +1,11 @@
 # @astroscope/boot
 
+## 0.6.3
+
+### Patch Changes
+
+- 5a1367f: reboot on vite program reload as well
+
 ## 0.6.2
 
 ### Patch Changes
