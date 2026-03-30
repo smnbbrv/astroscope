@@ -242,11 +242,14 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                 async configureServer(server) {
                   if (command !== 'dev') return; // skip in build / sync modes (Astro uses 'sync' for 'astro check' command)
 
+                  let bootModule: BootModule | undefined;
+
                   try {
                     const bootContext = getBootContext(server, astroConfig);
-                    const module = await ssrImport<BootModule>(server, `/${entry}`);
 
-                    await runStartup(module, bootContext);
+                    bootModule = await ssrImport<BootModule>(server, `/${entry}`);
+
+                    await runStartup(bootModule, bootContext);
                   } catch (error) {
                     logger.error(`Error running startup script: ${serializeError(error)}`);
                   }
@@ -254,16 +257,16 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                   server.httpServer?.once('close', async () => {
                     try {
                       const bootContext = getBootContext(server, astroConfig);
-                      const module = await ssrImport<BootModule>(server, `/${entry}`);
+                      const mod = await ssrImport<BootModule>(server, `/${entry}`);
 
-                      await runShutdown(module, bootContext);
+                      await runShutdown(mod, bootContext);
                     } catch (error) {
                       logger.error(`Error running shutdown script: ${serializeError(error)}`);
                     }
                   });
 
-                  if (hmr) {
-                    setupBootHmr(server, entry, logger, () => getBootContext(server, astroConfig));
+                  if (hmr && bootModule) {
+                    setupBootHmr(server, entry, logger, () => getBootContext(server, astroConfig), bootModule);
                   }
                 },
               },

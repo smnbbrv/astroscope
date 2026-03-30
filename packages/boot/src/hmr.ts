@@ -1,5 +1,6 @@
+import type { EventEmitter } from 'node:events';
 import path from 'node:path';
-import type { ViteDevServer } from 'vite';
+import type { HotPayload, ViteDevServer } from 'vite';
 import { ignoredSuffixes } from './ignored.js';
 import { type BootModule, runShutdown, runStartup } from './lifecycle.js';
 import type { BootContext } from './types.js';
@@ -11,6 +12,7 @@ export function setupBootHmr(
   entry: string,
   logger: { info(msg: string): void; error(msg: string): void },
   getBootContext: () => BootContext,
+  initialModule: BootModule,
 ): void {
   const bootModuleId = `/${entry}`;
   const bootFilePath = path.resolve(server.config.root, entry);
@@ -45,10 +47,15 @@ export function setupBootHmr(
     return ignoredSuffixes.some((suffix) => p.endsWith(suffix));
   };
 
+  // keep a reference to the current boot module so we can call onShutdown
+  // even after the SSR module runner clears its cache on full-reload
+  let currentBootModule: BootModule = initialModule;
+
   // "latest wins" rerun: if a rerun is in progress, queue exactly one follow-up
   // so that the last event in a burst always triggers a fresh restart
   let running = false;
   let pendingReason: string | undefined;
+  let rerunPromise: Promise<void> | null = null;
 
   const rerunBoot = async (reason: string): Promise<void> => {
     if (running) {
@@ -64,10 +71,10 @@ export function setupBootHmr(
 
       const bootContext = getBootContext();
 
+      // use the cached module reference for shutdown — works even if
+      // the SSR module runner has already cleared its evaluated modules
       try {
-        const oldModule = await ssrImport<BootModule>(server, bootModuleId);
-
-        await runShutdown(oldModule, bootContext);
+        await runShutdown(currentBootModule, bootContext);
       } catch (error) {
         logger.error(`Error during boot HMR shutdown: ${serializeError(error)}`);
       }
@@ -79,6 +86,8 @@ export function setupBootHmr(
         const newModule = await ssrImport<BootModule>(server, bootModuleId);
 
         await runStartup(newModule, bootContext);
+
+        currentBootModule = newModule;
       } catch (error) {
         logger.error(`Error during boot HMR startup: ${serializeError(error)}`);
       }
@@ -104,14 +113,67 @@ export function setupBootHmr(
     const bootDeps = getBootDependencies();
 
     if (bootDeps.has(changedPath)) {
-      await rerunBoot(`boot dependency changed: ${changedPath}`);
+      rerunPromise = rerunBoot(`boot dependency changed: ${changedPath}`);
+
+      await rerunPromise;
+
+      rerunPromise = null;
     }
   });
 
-  // handle Vite's full program reload (triggered by non-boot file changes)
-  // when Vite does a full reload, all modules get re-evaluated but boot hooks
-  // don't re-run unless we explicitly handle it here
-  server.hot.on('vite:beforeFullReload', async () => {
-    await rerunBoot('full reload detected');
+  // ignore full-reloads sent during server startup (dep optimization, port retries, etc.)
+  let handleFullReloads = false;
+
+  if (server.httpServer) {
+    server.httpServer.once('listening', () => {
+      handleFullReloads = true;
+    });
+  } else {
+    // middleware mode — no httpServer, enable immediately
+    handleFullReloads = true;
+  }
+
+  const scheduleFullReloadRerun = (payload: HotPayload): void => {
+    if (!handleFullReloads) return;
+
+    if (payload.type !== 'full-reload') return;
+
+    // skip if already handled by the boot dependency watcher
+    const triggeredBy = 'triggeredBy' in payload ? (payload.triggeredBy as string) : undefined;
+
+    if (triggeredBy && getBootDependencies().has(triggeredBy)) return;
+
+    rerunPromise = rerunBoot('full reload detected');
+
+    void rerunPromise.then(() => {
+      rerunPromise = null;
+    });
+  };
+
+  // detect full-reload via the SSR environment's hot channel.
+  // when Vite can't HMR an SSR module (no HMR boundary), it sends
+  // { type: 'full-reload' } through the SSR hot channel. the module runner
+  // listens on the same outsideEmitter and clears ALL evaluated modules —
+  // so boot state is lost and needs re-running.
+  //
+  // note: Astro-triggered full-reloads (for SSR-only modules like .astro files)
+  // go through server.ws.send() instead and only invalidate specific modules,
+  // NOT the entire SSR module cache. boot state is preserved in that case,
+  // so we intentionally don't intercept server.ws.send().
+  const ssrOutsideEmitter = (server.environments['ssr']?.hot as { api?: { outsideEmitter?: EventEmitter } })?.api
+    ?.outsideEmitter;
+
+  if (ssrOutsideEmitter) {
+    ssrOutsideEmitter.on('send', scheduleFullReloadRerun);
+  }
+
+  // gate incoming requests while boot is re-running so the first request
+  // after a full-reload doesn't hit uninitialized state
+  server.middlewares.use(async (_req, _res, next) => {
+    if (rerunPromise) {
+      await rerunPromise;
+    }
+
+    next();
   });
 }

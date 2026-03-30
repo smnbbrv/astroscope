@@ -1,5 +1,6 @@
 import EventEmitter from 'node:events';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import type { BootModule } from './lifecycle';
 import type { BootContext } from './types';
 
 vi.mock('./vite-env.js', () => ({
@@ -22,9 +23,11 @@ const mockedRunShutdown = vi.mocked(runShutdown);
 
 const ctx: BootContext = { dev: true, host: 'localhost', port: 4321 };
 
+const initialModule: BootModule = { onStartup: vi.fn(), onShutdown: vi.fn() };
+
 function createMockServer(opts?: { bootDeps?: string[] | undefined }) {
   const watcher = new EventEmitter();
-  const hot = new EventEmitter();
+  const ssrOutsideEmitter = new EventEmitter();
   const bootFile = '/project/src/boot.ts';
 
   // build a minimal module graph
@@ -38,17 +41,49 @@ function createMockServer(opts?: { bootDeps?: string[] | undefined }) {
     ),
   };
 
+  // collect middlewares so tests can inspect them
+  const middlewares: ((...args: unknown[]) => unknown)[] = [];
+  const httpServer = new EventEmitter();
+
   const server = {
     config: { root: '/project' },
     watcher,
-    hot,
+    httpServer,
+    environments: {
+      ssr: {
+        hot: {
+          api: { outsideEmitter: ssrOutsideEmitter },
+        },
+      },
+    },
     moduleGraph: {
       getModulesByFile: vi.fn((file: string) => (file === bootFile ? new Set([bootMod]) : undefined)),
       invalidateAll: vi.fn(),
     },
+    middlewares: {
+      use: (fn: (...args: unknown[]) => unknown) => {
+        middlewares.push(fn);
+      },
+    },
+    _middlewares: middlewares,
+    _ssrOutsideEmitter: ssrOutsideEmitter,
   };
 
   return server;
+}
+
+/** mark the server as listening so full-reload handlers are active */
+function markReady(server: ReturnType<typeof createMockServer>) {
+  server.httpServer.emit('listening');
+}
+
+/** simulate a Vite-internal SSR full-reload via the outsideEmitter */
+function emitSsrFullReload(server: ReturnType<typeof createMockServer>, triggeredBy?: string | undefined) {
+  server._ssrOutsideEmitter.emit('send', {
+    type: 'full-reload' as const,
+    path: '*',
+    ...(triggeredBy ? { triggeredBy } : {}),
+  });
 }
 
 const logger = { info: vi.fn(), error: vi.fn() };
@@ -69,14 +104,14 @@ describe('setupBootHmr', () => {
     test('reruns hooks when the boot file itself changes', async () => {
       const server = createMockServer();
 
-      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx);
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
 
       server.watcher.emit('change', '/project/src/boot.ts');
 
-      // allow async handlers to settle
-      await vi.waitFor(() => expect(mockedRunShutdown).toHaveBeenCalledTimes(1));
+      // wait for the full shutdown/startup cycle to complete
+      await vi.waitFor(() => expect(mockedRunStartup).toHaveBeenCalledTimes(1));
 
-      expect(mockedRunStartup).toHaveBeenCalledTimes(1);
+      expect(mockedRunShutdown).toHaveBeenCalledTimes(1);
       expect(server.moduleGraph.invalidateAll).toHaveBeenCalledTimes(1);
       expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('boot dependency changed'));
     });
@@ -84,19 +119,19 @@ describe('setupBootHmr', () => {
     test('reruns hooks when a transitive boot dependency changes', async () => {
       const server = createMockServer({ bootDeps: ['/project/src/services.ts'] });
 
-      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx);
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
 
       server.watcher.emit('change', '/project/src/services.ts');
 
-      await vi.waitFor(() => expect(mockedRunShutdown).toHaveBeenCalledTimes(1));
+      await vi.waitFor(() => expect(mockedRunStartup).toHaveBeenCalledTimes(1));
 
-      expect(mockedRunStartup).toHaveBeenCalledTimes(1);
+      expect(mockedRunShutdown).toHaveBeenCalledTimes(1);
     });
 
     test('does not rerun hooks for non-boot file changes', async () => {
       const server = createMockServer();
 
-      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx);
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
 
       server.watcher.emit('change', '/project/src/components/App.tsx');
 
@@ -106,13 +141,26 @@ describe('setupBootHmr', () => {
       expect(mockedRunShutdown).not.toHaveBeenCalled();
       expect(mockedRunStartup).not.toHaveBeenCalled();
     });
+
+    test('uses cached module reference for shutdown', async () => {
+      const server = createMockServer();
+
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
+
+      server.watcher.emit('change', '/project/src/boot.ts');
+
+      await vi.waitFor(() => expect(mockedRunShutdown).toHaveBeenCalledTimes(1));
+
+      // shutdown should be called with the initial module, not a fresh import
+      expect(mockedRunShutdown).toHaveBeenCalledWith(initialModule, ctx);
+    });
   });
 
   describe('ignored files', () => {
     test('ignores css file changes', async () => {
       const server = createMockServer();
 
-      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx);
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
 
       server.watcher.emit('change', '/project/src/styles/main.css');
 
@@ -124,7 +172,7 @@ describe('setupBootHmr', () => {
     test('ignores image file changes', async () => {
       const server = createMockServer();
 
-      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx);
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
 
       server.watcher.emit('change', '/project/public/logo.png');
 
@@ -136,7 +184,7 @@ describe('setupBootHmr', () => {
     test('ignores json file changes', async () => {
       const server = createMockServer();
 
-      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx);
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
 
       server.watcher.emit('change', '/project/package.json');
 
@@ -146,19 +194,113 @@ describe('setupBootHmr', () => {
     });
   });
 
-  describe('full reload', () => {
-    test('reruns hooks on vite:beforeFullReload', async () => {
+  describe('SSR full-reload', () => {
+    test('reruns hooks on SSR full-reload', async () => {
       const server = createMockServer();
 
-      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx);
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
+      markReady(server);
 
-      server.hot.emit('vite:beforeFullReload');
+      emitSsrFullReload(server);
 
-      await vi.waitFor(() => expect(mockedRunShutdown).toHaveBeenCalledTimes(1));
+      await vi.waitFor(() => expect(mockedRunStartup).toHaveBeenCalledTimes(1));
 
-      expect(mockedRunStartup).toHaveBeenCalledTimes(1);
+      expect(mockedRunShutdown).toHaveBeenCalledTimes(1);
       expect(server.moduleGraph.invalidateAll).toHaveBeenCalledTimes(1);
       expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('full reload detected'));
+    });
+
+    test('skips full-reload when triggered by a boot dependency', async () => {
+      const server = createMockServer();
+
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
+      markReady(server);
+
+      // full-reload triggered by the boot file itself — already handled by watcher
+      emitSsrFullReload(server, '/project/src/boot.ts');
+
+      await new Promise((r) => setTimeout(r, 10));
+
+      // the full-reload handler should skip this (watcher handles it)
+      expect(logger.info).not.toHaveBeenCalledWith(expect.stringContaining('full reload detected'));
+    });
+
+    test('ignores full-reloads before server is ready', async () => {
+      const server = createMockServer();
+
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
+
+      // emit full-reload BEFORE markReady — should be ignored
+      emitSsrFullReload(server);
+
+      await new Promise((r) => setTimeout(r, 10));
+
+      expect(mockedRunShutdown).not.toHaveBeenCalled();
+      expect(mockedRunStartup).not.toHaveBeenCalled();
+    });
+
+    test('ignores non-full-reload SSR hot messages', async () => {
+      const server = createMockServer();
+
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
+      markReady(server);
+
+      server._ssrOutsideEmitter.emit('send', { type: 'update', updates: [] });
+
+      await new Promise((r) => setTimeout(r, 10));
+
+      expect(mockedRunShutdown).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('request gating middleware', () => {
+    test('registers a middleware', () => {
+      const server = createMockServer();
+
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
+
+      expect(server._middlewares.length).toBe(1);
+    });
+
+    test('middleware waits for boot re-run to complete', async () => {
+      const server = createMockServer();
+      let startupResolved = false;
+
+      mockedRunStartup.mockImplementation(async () => {
+        await new Promise((r) => setTimeout(r, 50));
+        startupResolved = true;
+      });
+
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
+      markReady(server);
+
+      const middleware = server._middlewares[0]!;
+
+      // trigger a full-reload
+      emitSsrFullReload(server);
+
+      // call middleware while boot is re-running
+      const next = vi.fn();
+
+      await middleware({}, {}, next);
+
+      // next should only be called after boot finishes
+      expect(startupResolved).toBe(true);
+      expect(next).toHaveBeenCalled();
+    });
+
+    test('middleware passes through when no rerun is pending', async () => {
+      const server = createMockServer();
+
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
+
+      const middleware = server._middlewares[0]!;
+      const next = vi.fn();
+
+      await middleware({}, {}, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(mockedRunShutdown).not.toHaveBeenCalled();
     });
   });
 
@@ -177,7 +319,8 @@ describe('setupBootHmr', () => {
         callOrder.push('startup');
       });
 
-      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx);
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
+      markReady(server);
 
       // fire a boot dep change (starts running) then a full reload while it's in progress
       server.watcher.emit('change', '/project/src/boot.ts');
@@ -185,7 +328,7 @@ describe('setupBootHmr', () => {
       // small delay to ensure the first rerun has started
       await new Promise((r) => setTimeout(r, 10));
 
-      server.hot.emit('vite:beforeFullReload');
+      emitSsrFullReload(server);
 
       await vi.waitFor(() => expect(mockedRunStartup).toHaveBeenCalledTimes(2));
 
@@ -201,7 +344,8 @@ describe('setupBootHmr', () => {
         await new Promise((r) => setTimeout(r, 50));
       });
 
-      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx);
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
+      markReady(server);
 
       // start first run
       server.watcher.emit('change', '/project/src/boot.ts');
@@ -209,9 +353,9 @@ describe('setupBootHmr', () => {
       await new Promise((r) => setTimeout(r, 10));
 
       // fire three events while the first is still running
-      server.hot.emit('vite:beforeFullReload');
-      server.hot.emit('vite:beforeFullReload');
-      server.hot.emit('vite:beforeFullReload');
+      emitSsrFullReload(server);
+      emitSsrFullReload(server);
+      emitSsrFullReload(server);
 
       await vi.waitFor(() => expect(mockedRunStartup).toHaveBeenCalledTimes(2));
 
@@ -227,16 +371,16 @@ describe('setupBootHmr', () => {
         await new Promise((r) => setTimeout(r, 50));
       });
 
-      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx);
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
+      markReady(server);
 
       // start first run via boot dep change
       server.watcher.emit('change', '/project/src/boot.ts');
 
       await new Promise((r) => setTimeout(r, 10));
 
-      // queue events — the full reload should be the "last reason"
-      server.watcher.emit('change', '/project/src/dep-a.ts');
-      server.hot.emit('vite:beforeFullReload');
+      // queue a full reload (not triggered by a boot dep)
+      emitSsrFullReload(server);
 
       // wait for both runs to fully complete
       await vi.waitFor(() => expect(mockedRunStartup).toHaveBeenCalledTimes(2));
@@ -252,7 +396,7 @@ describe('setupBootHmr', () => {
 
       mockedRunShutdown.mockRejectedValueOnce(new Error('shutdown failed'));
 
-      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx);
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
 
       server.watcher.emit('change', '/project/src/boot.ts');
 
@@ -266,7 +410,7 @@ describe('setupBootHmr', () => {
 
       mockedRunStartup.mockRejectedValue(new Error('startup failed'));
 
-      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx);
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
 
       server.watcher.emit('change', '/project/src/boot.ts');
 
@@ -289,13 +433,14 @@ describe('setupBootHmr', () => {
         }
       });
 
-      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx);
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
+      markReady(server);
 
       server.watcher.emit('change', '/project/src/boot.ts');
 
       await new Promise((r) => setTimeout(r, 10));
 
-      server.hot.emit('vite:beforeFullReload');
+      emitSsrFullReload(server);
 
       await vi.waitFor(() => expect(mockedRunStartup).toHaveBeenCalledTimes(2));
 
