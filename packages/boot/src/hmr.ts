@@ -45,15 +45,22 @@ export function setupBootHmr(
     return ignoredSuffixes.some((suffix) => p.endsWith(suffix));
   };
 
-  server.watcher.on('change', async (changedPath) => {
-    // skip static assets and non-runtime files
-    if (shouldIgnore(changedPath)) return;
+  // "latest wins" rerun: if a rerun is in progress, queue exactly one follow-up
+  // so that the last event in a burst always triggers a fresh restart
+  let running = false;
+  let pendingReason: string | undefined;
 
-    // check if the changed file is the boot file or one of its dependencies
-    const bootDeps = getBootDependencies();
+  const rerunBoot = async (reason: string): Promise<void> => {
+    if (running) {
+      pendingReason = reason;
 
-    if (bootDeps.has(changedPath)) {
-      logger.info(`boot dependency changed: ${changedPath}, rerunning hooks...`);
+      return;
+    }
+
+    running = true;
+
+    try {
+      logger.info(`${reason}, rerunning hooks...`);
 
       const bootContext = getBootContext();
 
@@ -75,6 +82,36 @@ export function setupBootHmr(
       } catch (error) {
         logger.error(`Error during boot HMR startup: ${serializeError(error)}`);
       }
+    } finally {
+      running = false;
     }
+
+    // if events arrived while we were running, do one more pass with the latest reason
+    if (pendingReason) {
+      const nextReason = pendingReason;
+
+      pendingReason = undefined;
+
+      await rerunBoot(nextReason);
+    }
+  };
+
+  server.watcher.on('change', async (changedPath) => {
+    // skip static assets and non-runtime files
+    if (shouldIgnore(changedPath)) return;
+
+    // check if the changed file is the boot file or one of its dependencies
+    const bootDeps = getBootDependencies();
+
+    if (bootDeps.has(changedPath)) {
+      await rerunBoot(`boot dependency changed: ${changedPath}`);
+    }
+  });
+
+  // handle Vite's full program reload (triggered by non-boot file changes)
+  // when Vite does a full reload, all modules get re-evaluated but boot hooks
+  // don't re-run unless we explicitly handle it here
+  server.hot.on('vite:beforeFullReload', async () => {
+    await rerunBoot('full reload detected');
   });
 }
