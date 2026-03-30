@@ -1,5 +1,11 @@
 # @astroscope/boot
 
+## 0.6.4
+
+### Patch Changes
+
+- 317dd30: re-run boot hooks on Vite SSR full-reload
+
 ## 0.6.3
 
 ### Patch Changes
