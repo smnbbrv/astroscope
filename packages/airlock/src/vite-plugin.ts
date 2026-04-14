@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import type { AstroIntegrationLogger } from 'astro';
 import type { Plugin, ViteDevServer } from 'vite';
 
@@ -6,7 +7,7 @@ import { ReactAdapter } from './adapters/react.js';
 import { analyzeAstroSource } from './astro-analyze.js';
 import { DepTracker } from './dep-tracker.js';
 import { RESOLVED_VIRTUAL_MODULE_ID, SchemaRegistry, VIRTUAL_MODULE_ID } from './schema-registry.js';
-import { transformCompiledOutput } from './transform.js';
+import { type SchemaMapping, transformCompiledOutput } from './transform.js';
 
 export interface AirlockPluginOptions {
   logger: AstroIntegrationLogger;
@@ -31,6 +32,8 @@ export function airlockVitePlugin(options: AirlockPluginOptions): Plugin {
 
   let registry: SchemaRegistry;
   let server: ViteDevServer | undefined;
+  let root: string;
+  let isBuild = false;
 
   return {
     name: '@astroscope/airlock',
@@ -39,11 +42,38 @@ export function airlockVitePlugin(options: AirlockPluginOptions): Plugin {
     // the transform hook checks for .astro files, so client env is skipped naturally
 
     configResolved(config) {
-      registry = new SchemaRegistry([new ReactAdapter(config.root, logger)]);
+      root = config.root;
+      isBuild = config.command === 'build';
+      registry = new SchemaRegistry([new ReactAdapter(root, logger)]);
     },
 
     configureServer(devServer) {
       server = devServer;
+    },
+
+    async buildStart() {
+      // in build mode, pre-scan all .astro files to populate the schema registry
+      // before rollup loads the virtual module. without this, the virtual module
+      // is loaded on first import and misses schemas from later-processed files.
+      if (!isBuild) return;
+
+      const srcDir = path.join(root, 'src');
+      const entries = await fs.readdir(srcDir, { recursive: true, withFileTypes: true });
+
+      for (const entry of entries) {
+        if (!entry.isFile() || !entry.name.endsWith('.astro')) continue;
+
+        const filePath = path.join(entry.parentPath, entry.name);
+
+        const raw = await fs.readFile(filePath, 'utf-8');
+        const analyzed = await analyzeAstroSource(raw);
+
+        for (const comp of analyzed.hydratedComponents) {
+          if (!comp.importInfo) continue;
+
+          registry.resolve(comp.importInfo.specifier, comp.importInfo.exportName, filePath);
+        }
+      }
     },
 
     resolveId(id) {
@@ -71,7 +101,7 @@ export function airlockVitePlugin(options: AirlockPluginOptions): Plugin {
       deps.clear(id);
 
       // resolve schemas for each hydrated component
-      const componentsToWrap: { componentPath: string; schemaId: string }[] = [];
+      const componentsToWrap: SchemaMapping[] = [];
 
       for (const comp of analyzed.hydratedComponents) {
         totalSeen++;
@@ -97,7 +127,11 @@ export function airlockVitePlugin(options: AirlockPluginOptions): Plugin {
           continue;
         }
 
-        componentsToWrap.push({ componentPath: resolved.resolvedPath, schemaId: resolved.schemaId });
+        componentsToWrap.push({
+          specifier: comp.importInfo.specifier,
+          resolvedPath: resolved.resolvedPath,
+          schemaId: resolved.schemaId,
+        });
       }
 
       if (componentsToWrap.length === 0) return;

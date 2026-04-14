@@ -103,4 +103,19 @@ import C from "./C";
 
     expect(result.hydratedComponents).toHaveLength(0);
   });
+
+  test('detects .astro imports with client:* but they should be filtered downstream', async () => {
+    const code = `---
+import MyAstroComp from './MyAstroComp.astro';
+import ReactComp from './ReactComp';
+---
+<MyAstroComp client:load />
+<ReactComp client:visible />`;
+    const result = await analyzeAstroSource(code);
+
+    // analyzer detects both — filtering happens in the vite plugin / adapter
+    expect(result.hydratedComponents).toHaveLength(2);
+    // .astro import specifier preserved for downstream filtering
+    expect(result.hydratedComponents[0]!.importInfo?.specifier).toBe('./MyAstroComp.astro');
+  });
 });

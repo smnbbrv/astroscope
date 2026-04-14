@@ -18,14 +18,14 @@ export interface SchemaGenResult {
  * @returns schema result, or null for ALLOW_ALL (any, unknown, index signatures)
  */
 export function generateZodSchema(checker: ts.TypeChecker, propsType: ts.Type): SchemaGenResult | null {
-  const ctx: GenContext = { visiting: new Set(), types: new Map(), counter: 0 };
+  const ctx: GenContext = { visiting: new Set(), types: new Map(), counter: 0, depth: 0 };
   const root = toZod(checker, propsType, ctx);
 
   if (root === null) return null;
 
   return {
     root,
-    types: [...ctx.types.values()].map((t) => `const ${t.name}: z.ZodType<any> = z.lazy(() => ${t.code});`),
+    types: [...ctx.types.values()].map((t) => `const ${t.name} = z.lazy(() => ${t.code});`),
   };
 }
 
@@ -35,6 +35,7 @@ interface GenContext {
   visiting: Set<ts.Type>;
   types: Map<ts.Type, { name: string; code: string }>;
   counter: number;
+  depth: number;
 }
 
 // --- core: type → Zod expression ---
@@ -45,10 +46,21 @@ interface GenContext {
  * for nested properties, null is mapped to 'z.any()' by the caller.
  */
 function toZod(checker: ts.TypeChecker, type: ts.Type, ctx: GenContext): string | null {
+  // hard depth limit to prevent infinite loops on complex types
+  ctx.depth++;
+
+  if (ctx.depth > 50) {
+    ctx.depth--;
+
+    return 'z.any()';
+  }
+
   // recursion guard
   if (ctx.visiting.has(type)) return getOrCreateLazyRef(checker, type, ctx);
 
   const unwrapped = unwrapOptional(type);
+
+  if (ctx.visiting.has(unwrapped)) return getOrCreateLazyRef(checker, unwrapped, ctx);
 
   // primitives, any, unknown → can't build a schema
   if (isLeaf(unwrapped)) return null;
@@ -56,42 +68,44 @@ function toZod(checker: ts.TypeChecker, type: ts.Type, ctx: GenContext): string 
   // union of all primitives/literals (e.g. 'active' | 'inactive') → no object shape
   if (unwrapped.isUnion() && unwrapped.types.every((t) => isLeaf(t))) return null;
 
-  // arrays → z.array(elementSchema)
-  if (checker.isArrayType(type) || checker.isArrayType(unwrapped)) {
-    return arrayToZod(checker, checker.isArrayType(type) ? type : unwrapped, ctx);
+  // mark as visiting for the duration of this subtree (prevents infinite recursion)
+  ctx.visiting.add(type);
+  ctx.visiting.add(unwrapped);
+
+  try {
+    // arrays → z.array(elementSchema)
+    if (checker.isArrayType(type) || checker.isArrayType(unwrapped)) {
+      return arrayToZod(checker, checker.isArrayType(type) ? type : unwrapped, ctx);
+    }
+
+    // Record<string, ...> / { [key: string]: ... } → allow all
+    if (hasIndexSignature(checker, unwrapped)) return null;
+
+    // discriminated union → z.discriminatedUnion(...)
+    if (unwrapped.isUnion()) {
+      const discriminant = findDiscriminant(checker, unwrapped);
+
+      if (discriminant) return discriminatedUnionToZod(checker, unwrapped, discriminant, ctx);
+    }
+
+    // collect properties from the type (handles plain objects, unions, intersections)
+    const properties = collectProperties(checker, unwrapped);
+
+    if (!properties) return null;
+
+    return propsToZodObject(checker, properties, ctx);
+  } finally {
+    ctx.visiting.delete(type);
+    ctx.visiting.delete(unwrapped);
+    ctx.depth--;
   }
-
-  // Record<string, ...> / { [key: string]: ... } → allow all
-  if (hasIndexSignature(checker, unwrapped)) return null;
-
-  // discriminated union → z.discriminatedUnion(...)
-  if (unwrapped.isUnion()) {
-    const discriminant = findDiscriminant(checker, unwrapped);
-
-    if (discriminant) return discriminatedUnionToZod(checker, unwrapped, discriminant, ctx);
-  }
-
-  // collect properties from the type (handles plain objects, unions, intersections)
-  const properties = collectProperties(checker, unwrapped);
-
-  if (!properties) return null;
-
-  return propsToZodObject(checker, properties, type, ctx);
 }
 
 /**
  * build z.object({...}) from a map of property symbols.
- * marks the type as visiting for recursion detection.
  */
-function propsToZodObject(
-  checker: ts.TypeChecker,
-  properties: Map<string, ts.Symbol>,
-  type: ts.Type,
-  ctx: GenContext,
-): string {
+function propsToZodObject(checker: ts.TypeChecker, properties: Map<string, ts.Symbol>, ctx: GenContext): string {
   if (properties.size === 0) return 'z.object({})';
-
-  ctx.visiting.add(type);
 
   const fields: string[] = [];
 
@@ -106,8 +120,6 @@ function propsToZodObject(
 
     fields.push(`${safeKey(name)}: ${toZod(checker, propType, ctx) ?? 'z.any()'}`);
   }
-
-  ctx.visiting.delete(type);
 
   return `z.object({${fields.join(', ')}})`;
 }

@@ -386,6 +386,39 @@ describe('generateZodSchema', () => {
     expect(schema).toContain('z.literal(');
   });
 
+  test('recursive discriminated union inside array — no stack overflow', () => {
+    const result = extractFromSource(`
+      type ContentBlock =
+        | { type: 'text'; value: string }
+        | { type: 'group'; children: ContentBlock[] };
+      interface Props {
+        blocks: ContentBlock[];
+      }
+      export default function Comp(props: Props) { return null; }
+    `);
+
+    expect(result).not.toBeNull();
+    expect(result!.root).toContain('blocks:');
+    expect(result!.types.some((t) => t.includes('z.lazy('))).toBe(true);
+  });
+
+  test('deeply nested array of discriminated unions — no stack overflow', () => {
+    const result = extractFromSource(`
+      type Node =
+        | { kind: 'leaf'; label: string }
+        | { kind: 'branch'; items: Node[]; meta: { score: number } };
+      interface Props {
+        tree: Node[];
+        title: string;
+      }
+      export default function Comp(props: Props) { return null; }
+    `);
+
+    expect(result).not.toBeNull();
+    expect(result!.root).toContain('tree:');
+    expect(result!.root).toContain('title: z.any()');
+  });
+
   test('kitchen sink — nested types, unions, recursion, generics, discriminated unions', () => {
     const result = extractFromSource(`
       // recursive tree node
@@ -490,5 +523,76 @@ describe('generateZodSchema', () => {
 
     // quoted key
     expect(schema).toContain('"data-testid": z.any()');
+  });
+
+  test('deeply nested protobuf/GQL-like types — no infinite loop', () => {
+    const result = extractFromSource(`
+      // simulates generated protobuf/GQL types with deep nesting
+      interface Address {
+        street: string;
+        city: string;
+        country: { code: string; name: string; continent: { id: string; regions: { name: string }[] } };
+      }
+
+      interface OrderItem {
+        product: {
+          id: string;
+          name: string;
+          category: { id: string; parent?: { id: string; parent?: { id: string } | undefined } | undefined };
+          variants: { sku: string; price: { amount: number; currency: string }; attributes: Record<string, string> }[];
+        };
+        quantity: number;
+      }
+
+      interface PaymentInfo {
+        method: { type: 'card'; last4: string } | { type: 'paypal'; email: string } | { type: 'invoice'; ref: string };
+        billing: Address;
+      }
+
+      interface Props {
+        customer: { name: string; email: string; addresses: Address[] };
+        items: OrderItem[];
+        payment: PaymentInfo;
+        meta: Record<string, unknown>;
+      }
+
+      export default function Checkout(props: Props) { return null; }
+    `);
+
+    expect(result).not.toBeNull();
+    expect(result!.root).toContain('customer:');
+    expect(result!.root).toContain('items:');
+    expect(result!.root).toContain('payment:');
+    // Record<string, unknown> → z.any()
+    expect(result!.root).toContain('meta: z.any()');
+  });
+
+  test('CMS content block recursive discriminated union — no infinite loop', () => {
+    // simulates CMS rich-text content blocks (like Contello)
+    const result = extractFromSource(`
+      type InlineNode =
+        | { type: 'text'; value: string; bold?: boolean | undefined }
+        | { type: 'link'; href: string; children: InlineNode[] };
+
+      type BlockNode =
+        | { type: 'paragraph'; children: InlineNode[] }
+        | { type: 'heading'; level: number; children: InlineNode[] }
+        | { type: 'list'; ordered: boolean; items: BlockNode[] }
+        | { type: 'blockquote'; children: BlockNode[] }
+        | { type: 'image'; src: string; alt: string };
+
+      interface Props {
+        content: BlockNode[];
+        className?: string | undefined;
+      }
+
+      export default function RichText(props: Props) { return null; }
+    `);
+
+    expect(result).not.toBeNull();
+    expect(result!.root).toContain('content:');
+    expect(result!.root).toContain('className: z.any()');
+    // should have z.lazy refs for the recursive types
+    expect(result!.types.some((t) => t.includes('z.lazy('))).toBe(true);
   });
 });

@@ -10,8 +10,10 @@ export interface CompiledTransformResult {
 }
 
 export interface SchemaMapping {
-  /** component file path with extension (will be stripped for matching) */
-  componentPath: string;
+  /** import specifier as it appears in the .astro source (e.g. @/components/Cart) */
+  specifier: string;
+  /** absolute resolved file path (e.g. /Users/.../Cart.tsx) */
+  resolvedPath: string;
   /** schema ID from the registry (e.g. __s0) */
   schemaId: string;
 }
@@ -22,7 +24,7 @@ export interface SchemaMapping {
  *
  * uses Babel to:
  * 1. find the renderComponent import via AST
- * 2. get all usages via scope binding.referencePaths
+ * 2. get all call sites via scope binding.referencePaths
  * 3. for each call, check client:component-path against schema map
  * 4. wrap the props argument with __airlock_strip(schema, props)
  *
@@ -34,11 +36,15 @@ export async function transformCompiledOutput(
 ): Promise<CompiledTransformResult> {
   const babel = await import('@babel/core');
 
-  // build lookup: path without extension → schemaId
+  // build lookup: component path → schemaId
+  // astro uses the import specifier for aliases (@/) but resolved absolute paths for relative imports
   const schemaMap = new Map<string, string>();
 
   for (const m of schemas) {
-    schemaMap.set(stripExt(m.componentPath), m.schemaId);
+    // alias specifiers (e.g. @/components/Cart) — used as-is by Astro
+    schemaMap.set(m.specifier, m.schemaId);
+    // resolved absolute path without extension (e.g. /Users/.../Cart) — used for relative imports
+    schemaMap.set(stripExt(m.resolvedPath), m.schemaId);
   }
 
   const matched = new Set<string>();
@@ -107,7 +113,7 @@ export async function transformCompiledOutput(
 
   if (!renderComponentFound) {
     throw new Error(
-      '[@astroscope/airlock] could not find renderComponent import in compiled output. ' +
+      'could not find renderComponent import in compiled output. ' +
         "this may indicate a breaking change in Astro's compilation format. " +
         'airlock refuses to continue to prevent potential data leaks.',
     );
@@ -115,18 +121,19 @@ export async function transformCompiledOutput(
 
   // verify all expected components were found in compiled output
   for (const m of schemas) {
-    const pathWithoutExt = stripExt(m.componentPath);
+    if (!matched.has(m.specifier) && !matched.has(stripExt(m.resolvedPath))) {
+      const foundPaths = [...matched].join(', ') || '(none)';
 
-    if (!matched.has(pathWithoutExt)) {
       throw new Error(
-        `[@astroscope/airlock] component "${pathWithoutExt}" was detected in .astro source ` +
-          'but not found in compiled output. airlock refuses to continue to prevent potential data leaks.',
+        `component "${m.specifier}" was detected in .astro source ` +
+          `but not found in compiled output (matched: ${foundPaths}). ` +
+          'airlock refuses to continue to prevent potential data leaks.',
       );
     }
   }
 
   if (!result?.code) {
-    throw new Error('[@astroscope/airlock] babel transform returned no output.');
+    throw new Error('babel transform returned no output.');
   }
 
   // prepend: import schemas + strip helper from virtual module
