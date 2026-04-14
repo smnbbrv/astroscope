@@ -1,5 +1,11 @@
 # @astroscope/eslint-plugin-i18n
 
+## 0.1.5
+
+### Patch Changes
+
+- 67a002a: add more ignores
+
 ## 0.1.4
 
 ### Patch Changes
