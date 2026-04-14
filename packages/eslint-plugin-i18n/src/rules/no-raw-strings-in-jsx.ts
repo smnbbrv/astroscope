@@ -42,6 +42,7 @@ export const DEFAULT_IGNORE_ATTRIBUTES = [
   'referrerpolicy',
   'charset',
   'lang',
+  'srcLang',
   'property',
   'itemprop',
   'itemtype',
@@ -81,6 +82,10 @@ export const DEFAULT_IGNORE_ATTRIBUTES = [
   'aria-hidden',
   'aria-live',
   'aria-atomic',
+  'aria-current',
+  'aria-disabled',
+  'aria-expanded',
+  'aria-labelledby',
 
   // astro attributes
   'class:list',
@@ -113,6 +118,9 @@ export const DEFAULT_IGNORE_ATTRIBUTES = [
   'stroke-linejoin',
   'clip-rule',
   'fill-rule',
+  'fillRule',
+  'clipRule',
+  'mask',
   'path',
   'values',
   'operator',
