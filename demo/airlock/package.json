@@ -1,0 +1,32 @@
+{
+  "name": "demo-airlock",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "astro dev",
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "typecheck": "astro check",
+    "lint": "eslint src astro.config.ts",
+    "lint:fix": "eslint src astro.config.ts --fix"
+  },
+  "dependencies": {
+    "@astrojs/node": "^10.0.3",
+    "@astrojs/react": "^5.0.1",
+    "@astroscope/airlock": "workspace:*",
+    "astro": "^6.0.7",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.8",
+    "@tailwindcss/vite": "^4.1.11",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "daisyui": "^5.0.43",
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5.9.3"
+  }
+}

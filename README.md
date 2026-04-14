@@ -10,6 +10,7 @@ A collection of Astro integrations for common server-side needs — logging, tra
 
 | Package                                               | Description                                                                                                       |
 | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| [@astroscope/airlock](./packages/airlock)             | Strip excess props from hydrated islands — prevents server data leaking to the client                             |
 | [@astroscope/boot](./packages/boot)                   | Startup and graceful shutdown lifecycle hooks                                                                     |
 | [@astroscope/csrf](./packages/csrf)                   | CSRF protection with path exclusions for webhooks and OIDC callbacks                                              |
 | [@astroscope/excludes](./packages/excludes)           | Reusable exclude patterns and helpers for middleware                                                              |
