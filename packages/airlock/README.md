@@ -1,5 +1,7 @@
 # @astroscope/airlock
 
+> **Note:** This package is in active development. APIs may change between versions.
+
 Strip excess props from hydrated Astro islands — prevents server data leaking to the client, reduces HTML payload size.
 
 ## Why?
