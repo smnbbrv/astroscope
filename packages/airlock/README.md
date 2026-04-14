@@ -100,15 +100,15 @@ Currently supports **React / Preact** components (`.tsx`, `.ts`, `.jsx`, `.js`).
 
 The architecture uses a pluggable adapter pattern — Vue and Svelte adapters can be added without changing the core.
 
-## Debug logging
+## Logging
 
-In Astro's verbose mode, airlock logs per-component status:
+Airlock always logs a summary during build:
 
 ```
 [@astroscope/airlock] transformed 3 of 4 hydrated component usage(s)
 ```
 
-Components that aren't transformed (ALLOW_ALL types, no user props) are logged at debug level with the reason.
+Per-component details (ALLOW_ALL types, unresolved imports, etc.) are logged at debug level — visible with `--verbose`.
 
 ## License
 
