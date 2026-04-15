@@ -1,5 +1,11 @@
 # @astroscope/airlock
 
+## 0.1.3
+
+### Patch Changes
+
+- 4e4708e: fix schema generation OOM and optional property handling
+
 ## 0.1.2
 
 ### Patch Changes
