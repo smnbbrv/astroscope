@@ -76,11 +76,45 @@ function extractFromSource(source: string, exportName = 'default'): SchemaGenRes
   return generateZodSchema(checker, propsType);
 }
 
-/** shorthand: extract and return just the schema expression */
+/**
+ * recursively inline all variable references (_t0, _t1, ...) in the root schema code,
+ * producing a fully-expanded expression string for backward-compatible assertions.
+ *
+ * uses a stack to detect true recursion (a schema referencing itself) — leaves the name as-is.
+ */
+function resolveInline(result: SchemaGenResult): string {
+  const { rootRef, schemas } = result;
+  const rootCode = schemas.get(rootRef);
+
+  if (!rootCode) return rootRef;
+
+  function inline(code: string, stack: Set<string>): string {
+    return code.replace(/_s[0-9a-f]{8}/g, (match) => {
+      if (stack.has(match)) return match;
+
+      const resolved = schemas.get(match);
+
+      if (!resolved) return match;
+
+      stack.add(match);
+      const result = inline(resolved, stack);
+
+      stack.delete(match);
+
+      return result;
+    });
+  }
+
+  return inline(rootCode, new Set([rootRef]));
+}
+
+/** shorthand: extract, resolve inline, and return the fully-expanded schema expression */
 function schemaOf(source: string, exportName = 'default'): string | null {
   const result = extractFromSource(source, exportName);
 
-  return result?.root ?? null;
+  if (!result) return null;
+
+  return resolveInline(result);
 }
 
 describe('generateZodSchema', () => {
@@ -284,7 +318,7 @@ describe('generateZodSchema', () => {
     expect(result).toBeNull();
   });
 
-  test('direct recursive type — uses z.lazy()', () => {
+  test('direct recursive type — produces schemas with cycle reference', () => {
     const result = extractFromSource(`
       interface TreeNode {
         label: string;
@@ -297,13 +331,19 @@ describe('generateZodSchema', () => {
     `);
 
     expect(result).not.toBeNull();
-    expect(result!.root).toContain('tree:');
-    // should have a preamble with z.lazy()
-    expect(result!.types.length).toBeGreaterThan(0);
-    expect(result!.types.some((p) => p.includes('z.lazy('))).toBe(true);
+    // root references a named schema
+    expect(result!.schemas.has(result!.rootRef)).toBe(true);
+    // should have multiple schemas (root props + TreeNode + TreeNode[])
+    expect(result!.schemas.size).toBeGreaterThan(1);
+
+    // the inlined schema should contain tree and reference the cycle
+    const inlined = resolveInline(result!);
+
+    expect(inlined).toContain('tree:');
+    expect(inlined).toContain('children:');
   });
 
-  test('indirect recursive types — uses z.lazy()', () => {
+  test('indirect recursive types — produces schemas with cycle reference', () => {
     const result = extractFromSource(`
       interface NodeA {
         value: string;
@@ -320,11 +360,15 @@ describe('generateZodSchema', () => {
     `);
 
     expect(result).not.toBeNull();
-    expect(result!.root).toContain('root:');
-    expect(result!.types.some((p) => p.includes('z.lazy('))).toBe(true);
+    expect(result!.schemas.size).toBeGreaterThan(1);
+
+    const inlined = resolveInline(result!);
+
+    expect(inlined).toContain('root:');
+    expect(inlined).toContain('related:');
   });
 
-  test('self-referencing optional property — uses z.lazy()', () => {
+  test('self-referencing optional property — produces schemas with cycle reference', () => {
     const result = extractFromSource(`
       interface LinkedNode {
         value: number;
@@ -337,9 +381,12 @@ describe('generateZodSchema', () => {
     `);
 
     expect(result).not.toBeNull();
-    expect(result!.root).toContain('head:');
-    // the linked list reference should produce z.lazy
-    expect(result!.types.some((p) => p.includes('z.lazy('))).toBe(true);
+    expect(result!.schemas.size).toBeGreaterThan(1);
+
+    const inlined = resolveInline(result!);
+
+    expect(inlined).toContain('head:');
+    expect(inlined).toContain('next:');
   });
 
   test('generic component — unconstrained T falls back to z.any()', () => {
@@ -398,8 +445,12 @@ describe('generateZodSchema', () => {
     `);
 
     expect(result).not.toBeNull();
-    expect(result!.root).toContain('blocks:');
-    expect(result!.types.some((t) => t.includes('z.lazy('))).toBe(true);
+    expect(result!.schemas.size).toBeGreaterThan(1);
+
+    const inlined = resolveInline(result!);
+
+    expect(inlined).toContain('blocks:');
+    expect(inlined).toContain('z.discriminatedUnion(');
   });
 
   test('deeply nested array of discriminated unions — no stack overflow', () => {
@@ -415,8 +466,11 @@ describe('generateZodSchema', () => {
     `);
 
     expect(result).not.toBeNull();
-    expect(result!.root).toContain('tree:');
-    expect(result!.root).toContain('title: z.any()');
+
+    const inlined = resolveInline(result!);
+
+    expect(inlined).toContain('tree:');
+    expect(inlined).toContain('title: z.any()');
   });
 
   test('kitchen sink — nested types, unions, recursion, generics, discriminated unions', () => {
@@ -485,7 +539,7 @@ describe('generateZodSchema', () => {
 
     expect(result).not.toBeNull();
 
-    const schema = result!.root;
+    const schema = resolveInline(result!);
 
     // primitives → z.any()
     expect(schema).toContain('title: z.any()');
@@ -495,9 +549,8 @@ describe('generateZodSchema', () => {
     // nested object
     expect(schema).toContain('theme: z.object({colors: z.object({primary: z.any(), secondary: z.any()})');
 
-    // recursive → z.lazy ref
-    expect(result!.types.length).toBeGreaterThan(0);
-    expect(result!.types.some((t) => t.includes('z.lazy('))).toBe(true);
+    // recursive — produces multiple schemas
+    expect(result!.schemas.size).toBeGreaterThan(1);
 
     // discriminated union
     expect(schema).toContain('z.discriminatedUnion("kind"');
@@ -560,11 +613,14 @@ describe('generateZodSchema', () => {
     `);
 
     expect(result).not.toBeNull();
-    expect(result!.root).toContain('customer:');
-    expect(result!.root).toContain('items:');
-    expect(result!.root).toContain('payment:');
+
+    const inlined = resolveInline(result!);
+
+    expect(inlined).toContain('customer:');
+    expect(inlined).toContain('items:');
+    expect(inlined).toContain('payment:');
     // Record<string, unknown> → z.any()
-    expect(result!.root).toContain('meta: z.any()');
+    expect(inlined).toContain('meta: z.any()');
   });
 
   test('optional object prop (T | undefined) generates .optional()', () => {
@@ -620,6 +676,34 @@ describe('generateZodSchema', () => {
     expect(schema).toContain('z.literal("c")');
   });
 
+  test('discriminated union with number literal discriminant', () => {
+    const schema = schemaOf(`
+      type Item =
+        | { code: 1; label: string }
+        | { code: 2; value: number };
+      interface Props { item: Item; }
+      export default function Comp(props: Props) { return null; }
+    `);
+
+    expect(schema).toContain('z.discriminatedUnion("code"');
+    expect(schema).toContain('z.literal(1)');
+    expect(schema).toContain('z.literal(2)');
+  });
+
+  test('discriminated union with boolean literal discriminant', () => {
+    const schema = schemaOf(`
+      type Item =
+        | { active: true; data: { id: string } }
+        | { active: false; reason: string };
+      interface Props { item: Item; }
+      export default function Comp(props: Props) { return null; }
+    `);
+
+    expect(schema).toContain('z.discriminatedUnion("active"');
+    expect(schema).toContain('z.literal(true)');
+    expect(schema).toContain('z.literal(false)');
+  });
+
   test('discriminated union with enum discriminant including multi-value member', () => {
     const schema = schemaOf(`
       enum Kind { A = "a", B = "b", C = "c" }
@@ -636,6 +720,62 @@ describe('generateZodSchema', () => {
     expect(schema).toContain('z.literal("a")');
     expect(schema).toContain('z.literal("b")');
     expect(schema).toContain('z.literal("c")');
+  });
+
+  test('intersection of union and object with T | undefined prop generates .optional()', () => {
+    const result = extractFromSource(`
+      type Card = { image: string };
+      type Item = (
+        | { type: 'custom'; links: string[] }
+        | { type: 'regions'; items: string[] }
+        | { type: 'link'; url: string }
+      ) & {
+        title: string;
+        teaserCard: Card | undefined;
+      };
+      interface Props {
+        navigationItems: Item[];
+      }
+      export default function Comp(props: Props) { return null; }
+    `);
+
+    expect(result).not.toBeNull();
+
+    const inlined = resolveInline(result!);
+
+    expect(inlined).toContain('teaserCard:');
+    expect(inlined).toContain('.optional()');
+    // teaserCard should be optional, not required
+    expect(inlined).not.toMatch(/teaserCard: z\.object\(\{image: z\.any\(\)\}\)[^.]/);
+  });
+
+  test('symbol-optional object prop (foo?: T) generates .optional()', () => {
+    const schema = schemaOf(`
+      type Card = { image: string };
+      interface Props {
+        teaserCard?: Card;
+      }
+      export default function Comp(props: Props) { return null; }
+    `);
+
+    expect(schema).toContain('teaserCard: z.object({image: z.any()}).optional()');
+  });
+
+  test('non-discriminated union — variant-specific props become optional', () => {
+    const schema = schemaOf(`
+      type Item =
+        | { title: string; href: string; teaserCard: { image: string } }
+        | { title: string; href: string };
+      interface Props {
+        items: Item[];
+      }
+      export default function Comp(props: Props) { return null; }
+    `);
+
+    expect(schema).toContain('title: z.any()');
+    expect(schema).toContain('href: z.any()');
+    // teaserCard only exists on one variant → must be optional
+    expect(schema).toContain('teaserCard: z.object({image: z.any()}).optional()');
   });
 
   test('CMS content block recursive discriminated union — no infinite loop', () => {
@@ -661,13 +801,15 @@ describe('generateZodSchema', () => {
     `);
 
     expect(result).not.toBeNull();
-    expect(result!.root).toContain('content:');
-    expect(result!.root).toContain('className: z.any()');
-    // should have z.lazy refs for the recursive types
-    expect(result!.types.some((t) => t.includes('z.lazy('))).toBe(true);
+    expect(result!.schemas.size).toBeGreaterThan(1);
+
+    const inlined = resolveInline(result!);
+
+    expect(inlined).toContain('content:');
+    expect(inlined).toContain('className: z.any()');
   });
 
-  test('depth limit — nesting beyond 50 levels falls back to z.any()', () => {
+  test('deep nesting (55 levels) — no depth limit, all types get schemas', () => {
     // generate a chain of 55 distinct non-recursive types: L0 = { nested: L1 }, L1 = { nested: L2 }, ...
     const types = Array.from({ length: 55 }, (_, i) => {
       const inner = i < 54 ? `L${i + 1}` : '{ value: string }';
@@ -684,10 +826,107 @@ describe('generateZodSchema', () => {
     const result = extractFromSource(source);
 
     expect(result).not.toBeNull();
+    // no depth limit — all 55 levels + the leaf { value: string } + root props get schemas
+    expect(result!.schemas.size).toBeGreaterThan(55);
 
-    // at the depth limit, some deep nested objects should fall back to z.any()
-    // but the top-level structure should still have real schemas
-    expect(result!.root).toContain('root: z.object(');
-    expect(result!.root).toContain('z.any()');
+    const inlined = resolveInline(result!);
+
+    // the deepest leaf should be fully inlined
+    expect(inlined).toContain('value: z.any()');
+  });
+
+  test('content-hash deduplication — same type reused produces one schema', () => {
+    const result = extractFromSource(`
+      type Info = { id: string; name: string };
+      interface Props {
+        primary: Info;
+        secondary: Info;
+      }
+      export default function Comp(props: Props) { return null; }
+    `);
+
+    expect(result).not.toBeNull();
+
+    const inlined = resolveInline(result!);
+
+    expect(inlined).toContain('primary: z.object({id: z.any(), name: z.any()})');
+    expect(inlined).toContain('secondary: z.object({id: z.any(), name: z.any()})');
+    // both should reference the same schema — only 2 schemas total (root + Info)
+    expect(result!.schemas.size).toBe(2);
+  });
+
+  test('discriminated union variant with optional prop in member', () => {
+    const schema = schemaOf(`
+      type Shape =
+        | { type: 'circle'; radius: number; label?: string | undefined }
+        | { type: 'rect'; width: number };
+      interface Props { shape: Shape; }
+      export default function Comp(props: Props) { return null; }
+    `);
+
+    expect(schema).toContain('z.discriminatedUnion(');
+    expect(schema).toContain('label: z.any().optional()');
+    expect(schema).not.toMatch(/width: z\.any\(\)\.optional/);
+  });
+
+  test('mutual recursion — A references B, B references A', () => {
+    const result = extractFromSource(`
+      interface Person {
+        name: string;
+        company: Company;
+      }
+      interface Company {
+        title: string;
+        ceo: Person;
+      }
+      interface Props {
+        person: Person;
+      }
+      export default function Comp(props: Props) { return null; }
+    `);
+
+    expect(result).not.toBeNull();
+    expect(result!.schemas.size).toBeGreaterThan(2);
+
+    // no leaked temp placeholders
+    for (const code of result!.schemas.values()) {
+      expect(code).not.toMatch(/__t\d+/);
+    }
+
+    const inlined = resolveInline(result!);
+
+    expect(inlined).toContain('person:');
+    expect(inlined).toContain('company:');
+    expect(inlined).toContain('ceo:');
+  });
+
+  test('tuple-like array (no type args) falls back to z.any()', () => {
+    const schema = schemaOf(`
+      interface Props {
+        items: { id: string }[];
+        raw: any[];
+      }
+      export default function Comp(props: Props) { return null; }
+    `);
+
+    expect(schema).toContain('items:');
+    expect(schema).toContain('raw: z.array(z.any())');
+  });
+
+  test('schema result uses rootRef and schemas map', () => {
+    const result = extractFromSource(`
+      interface Props { user: { name: string }; }
+      export default function Comp(props: Props) { return null; }
+    `);
+
+    expect(result).not.toBeNull();
+    // rootRef is a hash-based variable name
+    expect(result!.rootRef).toMatch(/^_s[0-9a-f]{8}$/);
+    // schemas map contains entries
+    expect(result!.schemas.size).toBeGreaterThan(0);
+    // rootRef exists in schemas
+    expect(result!.schemas.has(result!.rootRef)).toBe(true);
+    // root schema is a z.object expression
+    expect(result!.schemas.get(result!.rootRef)).toContain('z.object(');
   });
 });

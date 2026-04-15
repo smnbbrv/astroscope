@@ -60,17 +60,35 @@ export class SchemaRegistry {
 
   /**
    * generate the virtual module source code.
-   * each schema is exported as a named constant, created once.
+   *
+   * exports all required schemas named after their content checksums.
+   * identical schemas across components are automatically deduplicated.
    */
   generateVirtualModule(): string {
     const lines: string[] = ["import { z } from 'astro/zod';"];
 
+    // merge all sub-schemas across components — hash names deduplicate automatically
+    const allSchemas = new Map<string, string>();
+    const componentExports: { schemaId: string; rootRef: string }[] = [];
+
     for (const entry of this.schemas.values()) {
       if (entry.schema === null) continue;
 
-      const body = [...entry.schema.types, `return ${entry.schema.root};`].join('\n  ');
+      for (const [name, code] of entry.schema.schemas) {
+        allSchemas.set(name, code);
+      }
 
-      lines.push(`export const ${entry.schemaId} = (() => {\n  ${body}\n})();`);
+      componentExports.push({ schemaId: entry.schemaId, rootRef: entry.schema.rootRef });
+    }
+
+    // emit flat declarations — z.lazy wrapping happens here
+    for (const [name, code] of allSchemas) {
+      lines.push(`const ${name} = z.lazy(() => ${code});`);
+    }
+
+    // emit component schema exports
+    for (const { schemaId, rootRef } of componentExports) {
+      lines.push(`export const ${schemaId} = ${rootRef};`);
     }
 
     // strip helper — shared across all pages
