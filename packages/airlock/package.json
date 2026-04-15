@@ -1,6 +1,6 @@
 {
   "name": "@astroscope/airlock",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Strip excess props from hydrated Astro islands to prevent server data leakage",
   "type": "module",
   "main": "./dist/index.js",

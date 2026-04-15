@@ -46,15 +46,6 @@ interface GenContext {
  * for nested properties, null is mapped to 'z.any()' by the caller.
  */
 function toZod(checker: ts.TypeChecker, type: ts.Type, ctx: GenContext): string | null {
-  // hard depth limit to prevent infinite loops on complex types
-  ctx.depth++;
-
-  if (ctx.depth > 50) {
-    ctx.depth--;
-
-    return 'z.any()';
-  }
-
   // recursion guard
   if (ctx.visiting.has(type)) return getOrCreateLazyRef(checker, type, ctx);
 
@@ -67,6 +58,15 @@ function toZod(checker: ts.TypeChecker, type: ts.Type, ctx: GenContext): string 
 
   // union of all primitives/literals (e.g. 'active' | 'inactive') → no object shape
   if (unwrapped.isUnion() && unwrapped.types.every((t) => isLeaf(t))) return null;
+
+  // hard depth limit to prevent infinite loops on complex types
+  ctx.depth++;
+
+  if (ctx.depth > 50) {
+    ctx.depth--;
+
+    return 'z.any()';
+  }
 
   // mark as visiting for the duration of this subtree (prevents infinite recursion)
   ctx.visiting.add(type);
@@ -118,7 +118,10 @@ function propsToZodObject(checker: ts.TypeChecker, properties: Map<string, ts.Sy
       continue;
     }
 
-    fields.push(`${safeKey(name)}: ${toZod(checker, propType, ctx) ?? 'z.any()'}`);
+    const isOptional = propType.isUnion() && propType.types.some((t) => !!(t.flags & ts.TypeFlags.Undefined));
+    const code = toZod(checker, propType, ctx) ?? 'z.any()';
+
+    fields.push(`${safeKey(name)}: ${code}${isOptional ? '.optional()' : ''}`);
   }
 
   return `z.object({${fields.join(', ')}})`;
@@ -174,19 +177,39 @@ function discriminatedUnionToZod(
   for (const member of union.types) {
     if (!isObjectLike(member)) continue;
 
-    const fields: string[] = [];
+    const discProp = member.getProperty(discriminant);
+    const discType = discProp ? checker.getTypeOfSymbol(discProp) : undefined;
 
-    for (const prop of member.getProperties()) {
-      const propType = checker.getTypeOfSymbol(prop);
+    // collect literal values for the discriminant — may be a single literal or a union of literals
+    const literalValues: string[] = [];
 
-      if (prop.name === discriminant && isLiteralType(propType)) {
-        fields.push(`${safeKey(prop.name)}: z.literal(${getLiteralValue(propType)})`);
-      } else {
-        fields.push(`${safeKey(prop.name)}: ${toZod(checker, propType, ctx) ?? 'z.any()'}`);
+    if (discType) {
+      if (isLiteralType(discType)) {
+        literalValues.push(getLiteralValue(discType));
+      } else if (discType.isUnion()) {
+        for (const t of discType.types) {
+          if (isLiteralType(t)) literalValues.push(getLiteralValue(t));
+        }
       }
     }
 
-    variants.push(`z.object({${fields.join(', ')}})`);
+    // build non-discriminant fields once (shared across expanded variants)
+    const otherFields: string[] = [];
+
+    for (const prop of member.getProperties()) {
+      if (prop.name === discriminant) continue;
+
+      const propType = checker.getTypeOfSymbol(prop);
+
+      otherFields.push(`${safeKey(prop.name)}: ${toZod(checker, propType, ctx) ?? 'z.any()'}`);
+    }
+
+    // expand: one z.object per literal value
+    for (const litVal of literalValues) {
+      const fields = [`${safeKey(discriminant)}: z.literal(${litVal})`, ...otherFields];
+
+      variants.push(`z.object({${fields.join(', ')}})`);
+    }
   }
 
   return `z.discriminatedUnion(${JSON.stringify(discriminant)}, [${variants.join(', ')}])`;
@@ -219,12 +242,12 @@ function findDiscriminant(checker: ts.TypeChecker, union: ts.UnionType): string 
   const firstMember = union.types[0]!;
 
   for (const prop of firstMember.getProperties()) {
-    if (!isLiteralType(checker.getTypeOfSymbol(prop))) continue;
+    if (!isLiteralOrUnionOfLiterals(checker.getTypeOfSymbol(prop))) continue;
 
     const allHaveLiteral = union.types.every((member) => {
       const memberProp = member.getProperty(prop.name);
 
-      return memberProp ? isLiteralType(checker.getTypeOfSymbol(memberProp)) : false;
+      return memberProp ? isLiteralOrUnionOfLiterals(checker.getTypeOfSymbol(memberProp)) : false;
     });
 
     if (allHaveLiteral) return prop.name;
@@ -267,6 +290,13 @@ function isObjectLike(type: ts.Type): boolean {
 
 function isLiteralType(type: ts.Type): boolean {
   return !!(type.flags & (ts.TypeFlags.StringLiteral | ts.TypeFlags.NumberLiteral | ts.TypeFlags.BooleanLiteral));
+}
+
+function isLiteralOrUnionOfLiterals(type: ts.Type): boolean {
+  if (isLiteralType(type)) return true;
+  if (type.isUnion()) return type.types.every((t) => isLiteralType(t));
+
+  return false;
 }
 
 function getLiteralValue(type: ts.Type): string {

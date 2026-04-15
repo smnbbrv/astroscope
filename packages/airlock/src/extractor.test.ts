@@ -567,6 +567,77 @@ describe('generateZodSchema', () => {
     expect(result!.root).toContain('meta: z.any()');
   });
 
+  test('optional object prop (T | undefined) generates .optional()', () => {
+    const schema = schemaOf(`
+      type Info = { id: string };
+      interface Props {
+        config: Info | undefined;
+      }
+      export default function Comp(props: Props) { return null; }
+    `);
+
+    expect(schema).toContain('config: z.object({id: z.any()}).optional()');
+  });
+
+  test('optional array prop (T[] | undefined) generates .optional()', () => {
+    const schema = schemaOf(`
+      interface Props {
+        items: { id: string }[] | undefined;
+      }
+      export default function Comp(props: Props) { return null; }
+    `);
+
+    expect(schema).toContain('items: z.array(z.object({id: z.any()})).optional()');
+  });
+
+  test('required object prop does not get .optional()', () => {
+    const schema = schemaOf(`
+      type Info = { id: string };
+      interface Props {
+        config: Info;
+      }
+      export default function Comp(props: Props) { return null; }
+    `);
+
+    expect(schema).toContain('config: z.object({id: z.any()})');
+    expect(schema).not.toContain('.optional()');
+  });
+
+  test('discriminated union with union-of-literals discriminant', () => {
+    const schema = schemaOf(`
+      type Item =
+        | { kind: 'a'; extras: string[] }
+        | { kind: 'b' | 'c'; price: { amount: number } };
+      interface Props {
+        items: Item[];
+      }
+      export default function Comp(props: Props) { return null; }
+    `);
+
+    expect(schema).toContain('z.discriminatedUnion("kind"');
+    expect(schema).toContain('z.literal("a")');
+    expect(schema).toContain('z.literal("b")');
+    expect(schema).toContain('z.literal("c")');
+  });
+
+  test('discriminated union with enum discriminant including multi-value member', () => {
+    const schema = schemaOf(`
+      enum Kind { A = "a", B = "b", C = "c" }
+      type Item =
+        | { kind: Kind.A; extras: string[] }
+        | { kind: Kind.B | Kind.C; price: { amount: number } };
+      interface Props {
+        items: Item[];
+      }
+      export default function Comp(props: Props) { return null; }
+    `);
+
+    expect(schema).toContain('z.discriminatedUnion("kind"');
+    expect(schema).toContain('z.literal("a")');
+    expect(schema).toContain('z.literal("b")');
+    expect(schema).toContain('z.literal("c")');
+  });
+
   test('CMS content block recursive discriminated union — no infinite loop', () => {
     // simulates CMS rich-text content blocks (like Contello)
     const result = extractFromSource(`
@@ -594,5 +665,29 @@ describe('generateZodSchema', () => {
     expect(result!.root).toContain('className: z.any()');
     // should have z.lazy refs for the recursive types
     expect(result!.types.some((t) => t.includes('z.lazy('))).toBe(true);
+  });
+
+  test('depth limit — nesting beyond 50 levels falls back to z.any()', () => {
+    // generate a chain of 55 distinct non-recursive types: L0 = { nested: L1 }, L1 = { nested: L2 }, ...
+    const types = Array.from({ length: 55 }, (_, i) => {
+      const inner = i < 54 ? `L${i + 1}` : '{ value: string }';
+
+      return `interface L${i} { nested: ${inner}; tag: string; }`;
+    }).join('\n');
+
+    const source = `
+      ${types}
+      interface Props { root: L0; }
+      export default function Comp(props: Props) { return null; }
+    `;
+
+    const result = extractFromSource(source);
+
+    expect(result).not.toBeNull();
+
+    // at the depth limit, some deep nested objects should fall back to z.any()
+    // but the top-level structure should still have real schemas
+    expect(result!.root).toContain('root: z.object(');
+    expect(result!.root).toContain('z.any()');
   });
 });
