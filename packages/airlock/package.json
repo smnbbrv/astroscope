@@ -20,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/smnbbrv/astroscope.git",
+    "url": "https://github.com/entwico/astroscope",
     "directory": "packages/airlock"
   },
   "keywords": [
@@ -33,12 +33,12 @@
     "islands",
     "serialization"
   ],
-  "author": "smnbbrv",
+  "author": "admin@entwico.com",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/smnbbrv/astroscope/issues"
+    "url": "https://github.com/entwico/astroscope/issues"
   },
-  "homepage": "https://github.com/smnbbrv/astroscope/tree/main/packages/airlock#readme",
+  "homepage": "https://github.com/entwico/astroscope/tree/main/packages/airlock#readme",
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --external @astrojs/compiler --external @babel/core",
     "typecheck": "tsc --noEmit",

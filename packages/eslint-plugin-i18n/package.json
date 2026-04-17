@@ -20,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/smnbbrv/astroscope.git",
+    "url": "https://github.com/entwico/astroscope",
     "directory": "packages/eslint-plugin-i18n"
   },
   "keywords": [
@@ -30,12 +30,12 @@
     "astroscope",
     "i18n"
   ],
-  "author": "smnbbrv",
+  "author": "admin@entwico.com",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/smnbbrv/astroscope/issues"
+    "url": "https://github.com/entwico/astroscope/issues"
   },
-  "homepage": "https://github.com/smnbbrv/astroscope/tree/main/packages/eslint-plugin-i18n#readme",
+  "homepage": "https://github.com/entwico/astroscope/tree/main/packages/eslint-plugin-i18n#readme",
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",
     "typecheck": "tsc --noEmit",
