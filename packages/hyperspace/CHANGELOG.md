@@ -1,5 +1,11 @@
 # @astroscope/hyperspace
 
+## 0.1.4
+
+### Patch Changes
+
+- af5b6d5: update license
+
 ## 0.1.3
 
 ### Patch Changes

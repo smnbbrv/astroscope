@@ -1,5 +1,11 @@
 # @astroscope/eslint-plugin-i18n
 
+## 0.1.6
+
+### Patch Changes
+
+- af5b6d5: update license
+
 ## 0.1.5
 
 ### Patch Changes

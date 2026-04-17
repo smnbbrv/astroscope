@@ -1,5 +1,13 @@
 # @astroscope/health
 
+## 0.4.1
+
+### Patch Changes
+
+- af5b6d5: update license
+- Updated dependencies [af5b6d5]
+  - @astroscope/boot@0.6.5
+
 ## 0.4.0
 
 ### Minor Changes

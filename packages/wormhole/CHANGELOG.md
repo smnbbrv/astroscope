@@ -1,5 +1,11 @@
 # @astroscope/wormhole
 
+## 0.2.2
+
+### Patch Changes
+
+- af5b6d5: update license
+
 ## 0.2.1
 
 ### Patch Changes

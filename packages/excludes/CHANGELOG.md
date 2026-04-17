@@ -1,5 +1,11 @@
 # @astroscope/excludes
 
+## 0.3.1
+
+### Patch Changes
+
+- af5b6d5: update license
+
 ## 0.3.0
 
 ### Minor Changes

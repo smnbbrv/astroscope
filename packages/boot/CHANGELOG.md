@@ -1,5 +1,11 @@
 # @astroscope/boot
 
+## 0.6.5
+
+### Patch Changes
+
+- af5b6d5: update license
+
 ## 0.6.4
 
 ### Patch Changes

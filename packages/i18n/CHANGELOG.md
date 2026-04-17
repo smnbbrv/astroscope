@@ -1,5 +1,13 @@
 # @astroscope/i18n
 
+## 0.4.3
+
+### Patch Changes
+
+- af5b6d5: update license
+- Updated dependencies [af5b6d5]
+  - @astroscope/excludes@0.3.1
+
 ## 0.4.2
 
 ### Patch Changes
