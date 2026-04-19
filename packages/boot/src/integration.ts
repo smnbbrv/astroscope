@@ -242,16 +242,27 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                 async configureServer(server) {
                   if (command !== 'dev') return; // skip in build / sync modes (Astro uses 'sync' for 'astro check' command)
 
+                  const bootContext = getBootContext(server, astroConfig);
                   let bootModule: BootModule | undefined;
 
                   try {
-                    const bootContext = getBootContext(server, astroConfig);
-
                     bootModule = await ssrImport<BootModule>(server, `/${entry}`);
 
                     await runStartup(bootModule, bootContext);
                   } catch (error) {
                     logger.error(`Error running startup script: ${serializeError(error)}`);
+
+                    // a partially-booted dev server can't be recovered via HMR — exit cleanly
+                    // (mirrors production behavior in setup.ts) so the user can fix and restart
+                    if (bootModule) {
+                      try {
+                        await runShutdown(bootModule, bootContext);
+                      } catch {
+                        // best-effort cleanup
+                      }
+                    }
+
+                    process.exit(1);
                   }
 
                   server.httpServer?.once('close', async () => {
