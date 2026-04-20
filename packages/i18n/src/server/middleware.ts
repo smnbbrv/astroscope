@@ -59,6 +59,12 @@ export function createI18nChunkMiddleware(): MiddlewareHandler {
       return next();
     }
 
+    if (!i18n.isConfigured()) {
+      console.warn(`[@astroscope/i18n] not configured, passing through: ${pathname}`);
+
+      return next();
+    }
+
     const path = pathname.slice(I18N_ENDPOINT_PREFIX.length);
 
     // attempt to parse as efficient as possible
@@ -138,6 +144,12 @@ export function createI18nChunkMiddleware(): MiddlewareHandler {
 export function createI18nMiddleware(options: I18nMiddlewareOptions): MiddlewareHandler {
   return (ctx, next) => {
     if (shouldExclude(ctx, options.exclude ?? RECOMMENDED_EXCLUDES)) {
+      return next();
+    }
+
+    if (!i18n.isConfigured()) {
+      console.warn(`[@astroscope/i18n] not configured, passing through: ${ctx.url.pathname}`);
+
       return next();
     }
 

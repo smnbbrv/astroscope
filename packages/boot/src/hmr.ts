@@ -5,7 +5,7 @@ import { ignoredSuffixes } from './ignored.js';
 import { type BootModule, runShutdown, runStartup } from './lifecycle.js';
 import type { BootContext } from './types.js';
 import { serializeError } from './utils.js';
-import { ssrImport } from './vite-env.js';
+import { getAstroHotEnv, ssrImport } from './vite-env.js';
 
 export function setupBootHmr(
   server: ViteDevServer,
@@ -91,6 +91,12 @@ export function setupBootHmr(
       } catch (error) {
         logger.error(`Error during boot HMR startup: ${serializeError(error)}`);
       }
+
+      // astro caches the resolved middleware closure and only refreshes it when the
+      // middleware file itself changes (see astro/core/middleware/vite-plugin.ts)
+      // required e.g. by i18n package since it uses middleware that is initialized in boot
+      // (but not propagated if we won't rescan middleware)
+      getAstroHotEnv(server)?.hot.send('astro:middleware-updated', {});
     } finally {
       running = false;
     }
