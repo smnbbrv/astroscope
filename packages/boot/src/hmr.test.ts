@@ -5,6 +5,7 @@ import type { BootContext } from './types';
 
 vi.mock('./vite-env.js', () => ({
   ssrImport: vi.fn(),
+  getAstroHotEnv: vi.fn(() => ({ hot: { send: vi.fn() } })),
 }));
 
 vi.mock('./lifecycle.js', () => ({
