@@ -1,5 +1,11 @@
 # @astroscope/i18n
 
+## 0.4.4
+
+### Patch Changes
+
+- c46ffba: print log message instead of throw on missing i18n configuration
+
 ## 0.4.3
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @astroscope/boot
 
+## 0.6.6
+
+### Patch Changes
+
+- c46ffba: fix when connected as linked package
+- 083c2dd: shutdown the dev server if the initial startup fails
+
 ## 0.6.5
 
 ### Patch Changes
