@@ -13,9 +13,9 @@
     "lint:fix": "eslint src astro.config.ts --fix"
   },
   "dependencies": {
-    "@astrojs/node": "^10.0.3",
+    "@astrojs/node": "^10.0.5",
     "@astroscope/proxy": "workspace:*",
-    "astro": "^6.0.7"
+    "astro": "^6.1.8"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",

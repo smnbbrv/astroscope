@@ -13,20 +13,20 @@
     "lint:fix": "eslint src astro.config.ts --fix"
   },
   "dependencies": {
-    "@astrojs/node": "^10.0.3",
-    "@astrojs/react": "^5.0.1",
+    "@astrojs/node": "^10.0.5",
+    "@astrojs/react": "^5.0.3",
     "@astroscope/airlock": "workspace:*",
-    "astro": "^6.0.7",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "astro": "^6.1.8",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",
-    "@tailwindcss/vite": "^4.1.11",
+    "@tailwindcss/vite": "^4.2.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "daisyui": "^5.0.43",
-    "tailwindcss": "^4.1.11",
+    "daisyui": "^5.5.19",
+    "tailwindcss": "^4.2.3",
     "typescript": "^5.9.3"
   }
 }
