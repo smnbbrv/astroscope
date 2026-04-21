@@ -900,6 +900,39 @@ describe('generateZodSchema', () => {
     expect(inlined).toContain('ceo:');
   });
 
+  test('indexed access on union yielding structurally identical arrays → z.array', () => {
+    // when you index a discriminated union on a shared
+    // array-typed prop, TS distributes but does NOT dedupe structurally identical members,
+    // so the resulting type is `T[] | T[]`. without explicit handling this fell through
+    // to object-property collection and emitted z.object({ length, push, ... }).
+    const schema = schemaOf(`
+      type Toggle =
+        | { categories: { id: string; title: string }[]; multiple?: false | undefined }
+        | { categories: { id: string; title: string }[]; multiple: true };
+      interface Props {
+        categories: Toggle['categories'];
+      }
+      export default function Comp(props: Props) { return null; }
+    `);
+
+    expect(schema).toContain('categories: z.array(z.object({id: z.any(), title: z.any()}))');
+    expect(schema).not.toContain('length:');
+    expect(schema).not.toContain('push:');
+  });
+
+  test('union of distinct array types → z.union of arrays', () => {
+    const schema = schemaOf(`
+      interface Props {
+        items: { a: string }[] | { b: number }[];
+      }
+      export default function Comp(props: Props) { return null; }
+    `);
+
+    expect(schema).toContain('z.union([');
+    expect(schema).toContain('z.array(z.object({a: z.any()}))');
+    expect(schema).toContain('z.array(z.object({b: z.any()}))');
+  });
+
   test('tuple-like array (no type args) falls back to z.any()', () => {
     const schema = schemaOf(`
       interface Props {

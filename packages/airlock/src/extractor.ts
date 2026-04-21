@@ -92,6 +92,13 @@ function toZod(checker: ts.TypeChecker, type: ts.Type, ctx: GenContext): string 
     code = arrayToZod(checker, checker.isArrayType(type) ? type : unwrapped, ctx);
   }
 
+  // union where every member is an array (e.g. A[] | B[]) → z.union([z.array(A), z.array(B)])
+  // typescript distributes indexed access over unions without structural dedup, so accessing
+  // a shared prop on a discriminated union often lands here even when members look identical.
+  if (code === null && unwrapped.isUnion() && unwrapped.types.every((t) => checker.isArrayType(t))) {
+    code = arrayUnionToZod(checker, unwrapped, ctx);
+  }
+
   // Record<string, ...> / { [key: string]: ... } → allow all
   if (code === null && hasIndexSignature(checker, unwrapped)) {
     ctx.typeToName.delete(type);
@@ -251,6 +258,20 @@ function arrayToZod(checker: ts.TypeChecker, arrayType: ts.Type, ctx: GenContext
   const elementRef = toZod(checker, typeArgs[0]!, ctx) ?? 'z.any()';
 
   return `z.array(${elementRef})`;
+}
+
+function arrayUnionToZod(checker: ts.TypeChecker, union: ts.UnionType, ctx: GenContext): string {
+  const codes = new Set<string>();
+
+  for (const member of union.types) {
+    codes.add(arrayToZod(checker, member, ctx));
+  }
+
+  const unique = [...codes];
+
+  if (unique.length === 1) return unique[0]!;
+
+  return `z.union([${unique.join(', ')}])`;
 }
 
 function discriminatedUnionToZod(
