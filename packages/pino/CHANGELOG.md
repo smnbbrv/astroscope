@@ -1,5 +1,13 @@
 # @astroscope/pino
 
+## 0.4.6
+
+### Patch Changes
+
+- a47a328: update deps
+- Updated dependencies [a47a328]
+  - @astroscope/excludes@0.3.2
+
 ## 0.4.5
 
 ### Patch Changes

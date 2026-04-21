@@ -1,5 +1,12 @@
 # @astroscope/airlock
 
+## 0.1.5
+
+### Patch Changes
+
+- ef54cb8: fix array unions
+- a47a328: update deps
+
 ## 0.1.4
 
 ### Patch Changes

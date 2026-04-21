@@ -1,5 +1,11 @@
 # @astroscope/wormhole
 
+## 0.2.3
+
+### Patch Changes
+
+- a47a328: update deps
+
 ## 0.2.2
 
 ### Patch Changes

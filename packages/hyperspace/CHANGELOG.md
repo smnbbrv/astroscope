@@ -1,5 +1,11 @@
 # @astroscope/hyperspace
 
+## 0.1.5
+
+### Patch Changes
+
+- a47a328: update deps
+
 ## 0.1.4
 
 ### Patch Changes

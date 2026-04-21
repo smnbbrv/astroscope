@@ -1,5 +1,13 @@
 # @astroscope/health
 
+## 0.4.2
+
+### Patch Changes
+
+- a47a328: update deps
+- Updated dependencies [a47a328]
+  - @astroscope/boot@0.6.7
+
 ## 0.4.1
 
 ### Patch Changes

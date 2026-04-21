@@ -1,5 +1,11 @@
 # @astroscope/boot
 
+## 0.6.7
+
+### Patch Changes
+
+- a47a328: update deps
+
 ## 0.6.6
 
 ### Patch Changes
