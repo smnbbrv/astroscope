@@ -1,0 +1,22 @@
+---
+// stress test: props declared as library types (React's CSSProperties +
+// HTMLAttributes). full walk should flag the typo'd CSS key + the invented
+// HTML attribute without blowing up on the library type surface.
+import StyledBadge from '../components/StyledBadge';
+
+const leakyStyle = {
+  color: 'red',
+  backgroundColor: 'blue',
+  // typo — CSSProperties has no `backgrndColor`
+  backgrndColor: 'green',
+};
+
+const leakyContainerProps = {
+  id: 'x',
+  className: 'y',
+  // invented — not a declared HTMLAttribute
+  sessionToken: 'leak',
+};
+---
+
+<StyledBadge client:load label="hi" style={leakyStyle} containerProps={leakyContainerProps} />

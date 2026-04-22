@@ -1,0 +1,32 @@
+---
+// nested-leak example — rule does NOT currently flag this.
+// demonstrates a gap in `no-excess-jsx-props` at nested object/array depth.
+import PaymentCard from '../components/PaymentCard';
+
+interface FullAddress {
+  street: string;
+  city: string;
+  // extras the component does NOT declare — leaked through nested object:
+  iban: string;
+  bic: string;
+}
+
+interface FullCard {
+  endsWith: string;
+  type: string;
+  // extras the component does NOT declare — leaked through array element:
+  fullNumber: string;
+  cvv: string;
+}
+
+const billing: FullAddress = {
+  street: 'Main 1',
+  city: 'Berlin',
+  iban: 'DE89 3704 0044 0532 0130 00',
+  bic: 'ABCDEFGH',
+};
+
+const cards: FullCard[] = [{ endsWith: '4242', type: 'Visa', fullNumber: '4111 1111 1111 4242', cvv: '123' }];
+---
+
+<PaymentCard client:load billing={billing} cards={cards} />

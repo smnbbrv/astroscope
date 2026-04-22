@@ -1,6 +1,6 @@
-# @astroscope/airlock
+# DEPRECATED @astroscope/airlock
 
-> **Note:** This package is in active development. APIs may change between versions.
+> Stripped excess props from hydrated Astro islands at runtime. Superseded by [`@astroscope/eslint-plugin`'s `no-excess-jsx-props`](../../packages/eslint-plugin), which catches the same leaks at lint time — before they ship.
 
 Strip excess props from hydrated Astro islands — prevents server data leaking to the client, reduces HTML payload size.
 

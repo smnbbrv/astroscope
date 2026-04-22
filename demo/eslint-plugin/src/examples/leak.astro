@@ -1,0 +1,22 @@
+---
+// run `pnpm lint:demo` to see @astroscope/no-excess-jsx-props fire on this file.
+import UserCard from '../components/UserCard';
+
+interface ServerUser {
+  name: string;
+  email: string;
+  passwordHash: string;
+  sessionToken: string;
+  internalId: string;
+}
+
+const fullUser: ServerUser = {
+  name: 'John Doe',
+  email: 'john@example.com',
+  passwordHash: '$2b$10$abc123...',
+  sessionToken: 'eyJhbGciOiJIUzI1NiJ9...',
+  internalId: 'usr_internal_98765',
+};
+---
+
+<UserCard client:load {...fullUser} />

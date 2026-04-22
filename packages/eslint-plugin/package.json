@@ -1,0 +1,66 @@
+{
+  "name": "@astroscope/eslint-plugin",
+  "version": "0.0.0",
+  "description": "Additional ESLint rules for Astro projects. Plays well with eslint-plugin-astro.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/entwico/astroscope",
+    "directory": "packages/eslint-plugin"
+  },
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "eslint-plugin",
+    "astroscope",
+    "astro",
+    "security"
+  ],
+  "author": "admin@entwico.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/entwico/astroscope/issues"
+  },
+  "homepage": "https://github.com/entwico/astroscope/tree/main/packages/eslint-plugin#readme",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@typescript-eslint/utils": "^8.59.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@typescript-eslint/parser": "^8.59.0",
+    "@typescript-eslint/rule-tester": "^8.59.0",
+    "astro-eslint-parser": "^1.4.0",
+    "eslint": "^9.39.3",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.4"
+  },
+  "peerDependencies": {
+    "@typescript-eslint/parser": "^8.0.0",
+    "astro-eslint-parser": "^1.0.0",
+    "eslint": "^9.0.0 || ^10.0.0",
+    "typescript": "^5.0.0"
+  }
+}

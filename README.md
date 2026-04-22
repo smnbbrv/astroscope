@@ -10,9 +10,9 @@ A collection of Astro integrations for common server-side needs — logging, tra
 
 | Package                                               | Description                                                                                                       |
 | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| [@astroscope/airlock](./packages/airlock)             | Strip excess props from hydrated islands — prevents server data leaking to the client                             |
 | [@astroscope/boot](./packages/boot)                   | Startup and graceful shutdown lifecycle hooks                                                                     |
 | [@astroscope/csrf](./packages/csrf)                   | CSRF protection with path exclusions for webhooks and OIDC callbacks                                              |
+| [@astroscope/eslint-plugin](./packages/eslint-plugin) | Additional ESLint rules for Astro projects. Plays well with `eslint-plugin-astro`.                                |
 | [@astroscope/excludes](./packages/excludes)           | Reusable exclude patterns and helpers for middleware                                                              |
 | [@astroscope/health](./packages/health)               | Kubernetes-style health probes — livez, readyz, startupz, healthz                                                 |
 | [@astroscope/hyperspace](./packages/hyperspace)       | Build-time brotli/gzip compression with in-memory serving — better compression, zero runtime overhead             |

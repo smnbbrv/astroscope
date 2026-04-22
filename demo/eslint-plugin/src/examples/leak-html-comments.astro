@@ -1,0 +1,13 @@
+---
+// HTML comments in Astro templates render into the output HTML — anything
+// inside them is visible in the served page source. JSX-style `{/* */}`
+// comments are compile-time only and never reach the browser.
+//
+// run `pnpm lint:demo` to see the rule fire; run with `--fix` to autofix.
+const user = { name: 'John', email: 'john@example.com', passwordHash: '$2b$10$...' };
+---
+
+<div>
+  <!-- debug: serving ${user.email} with password hash ${user.passwordHash} -->
+  <h1>{user.name}</h1>
+</div>
