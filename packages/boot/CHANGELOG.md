@@ -1,5 +1,11 @@
 # @astroscope/boot
 
+## 0.6.8
+
+### Patch Changes
+
+- 1a8f685: hold requests when an HMR rerun fails instead of serving them with uninitialized state
+
 ## 0.6.7
 
 ### Patch Changes
