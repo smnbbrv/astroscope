@@ -13,6 +13,7 @@ export function setupBootHmr(
   logger: { info(msg: string): void; error(msg: string): void },
   getBootContext: () => BootContext,
   initialModule: BootModule,
+  holdTimeoutMs: number = 60_000,
 ): void {
   const bootModuleId = `/${entry}`;
   const bootFilePath = path.resolve(server.config.root, entry);
@@ -57,6 +58,15 @@ export function setupBootHmr(
   let pendingReason: string | undefined;
   let rerunPromise: Promise<void> | null = null;
 
+  // on a failed rerun, the previous module's resources have already been destroyed
+  // and the fresh module's onStartup never completed — so the app is in a broken
+  // state. hold app requests until a subsequent rerun succeeds, otherwise they
+  // hit uninitialized app code and produce misleading errors. the browser just
+  // sees the request as "still loading" and resolves naturally once the fix lands.
+  let startupFailed = false;
+  let lastStartupError: unknown;
+  let pendingRequests: (() => void)[] = [];
+
   const rerunBoot = async (reason: string): Promise<void> => {
     if (running) {
       pendingReason = reason;
@@ -88,8 +98,23 @@ export function setupBootHmr(
         await runStartup(newModule, bootContext);
 
         currentBootModule = newModule;
+        startupFailed = false;
+        lastStartupError = undefined;
+
+        if (pendingRequests.length > 0) {
+          logger.info(`boot recovered — releasing ${pendingRequests.length} held request(s)`);
+        }
+
+        const pending = pendingRequests;
+
+        pendingRequests = [];
+
+        for (const resolve of pending) resolve();
       } catch (error) {
         logger.error(`Error during boot HMR startup: ${serializeError(error)}`);
+
+        startupFailed = true;
+        lastStartupError = error;
       }
 
       // astro caches the resolved middleware closure and only refreshes it when the
@@ -174,12 +199,82 @@ export function setupBootHmr(
   }
 
   // gate incoming requests while boot is re-running so the first request
-  // after a full-reload doesn't hit uninitialized state
-  server.middlewares.use(async (_req, _res, next) => {
-    if (rerunPromise) {
-      await rerunPromise;
+  // after a full-reload doesn't hit uninitialized state. after a failed rerun,
+  // hold app requests until a subsequent rerun succeeds — the browser sees the
+  // request as pending and resolves naturally once the code is fixed. vite/astro
+  // dev-internal paths bypass the gate so HMR keeps flowing and can trigger the
+  // recovery rerun in the first place.
+  server.middlewares.use(async (req, res, next) => {
+    if (isDevInternalPath(req.url)) {
+      next();
+
+      return;
+    }
+
+    while (true) {
+      if (rerunPromise) {
+        await rerunPromise;
+      }
+
+      if (!startupFailed) break;
+
+      const timedOut = await waitUntilHealthy();
+
+      if (timedOut) {
+        res.statusCode = 503;
+        res.setHeader('Content-Type', 'text/plain');
+
+        const errMsg = lastStartupError instanceof Error ? lastStartupError.message : String(lastStartupError);
+
+        res.end(
+          `boot startup failed and did not recover within ${Math.round(holdTimeoutMs / 1000)}s — last error: ${errMsg}`,
+        );
+
+        return;
+      }
     }
 
     next();
   });
+
+  function waitUntilHealthy(): Promise<boolean> {
+    const isFirst = pendingRequests.length === 0;
+
+    return new Promise<boolean>((resolve) => {
+      let settled = false;
+
+      const release = (): void => {
+        if (settled) return;
+
+        settled = true;
+
+        clearTimeout(timer);
+        resolve(false);
+      };
+
+      const timer = setTimeout(() => {
+        if (settled) return;
+
+        settled = true;
+
+        const idx = pendingRequests.indexOf(release);
+
+        if (idx >= 0) pendingRequests.splice(idx, 1);
+
+        resolve(true);
+      }, holdTimeoutMs);
+
+      pendingRequests.push(release);
+
+      if (isFirst) {
+        logger.info('boot startup failed — holding request(s) until next rerun succeeds');
+      }
+    });
+  }
+}
+
+function isDevInternalPath(url: string | undefined): boolean {
+  if (!url) return false;
+
+  return url.startsWith('/@') || url.startsWith('/__') || url.includes('/node_modules/');
 }

@@ -420,6 +420,108 @@ describe('setupBootHmr', () => {
       expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('startup'));
     });
 
+    test('holds app requests after a failed rerun until the next rerun succeeds', async () => {
+      const server = createMockServer();
+
+      mockedRunStartup.mockRejectedValueOnce(new Error('startup failed'));
+
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
+      markReady(server);
+
+      // first rerun: startup fails — app requests should be held
+      server.watcher.emit('change', '/project/src/boot.ts');
+
+      await vi.waitFor(() => expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('startup')));
+
+      const middleware = server._middlewares[0]!;
+      const next = vi.fn();
+      const req = { url: '/' };
+      const res = {};
+      const pending = middleware(req, res, next) as Promise<void>;
+      let settled = false;
+
+      void pending.then(() => {
+        settled = true;
+      });
+
+      await new Promise((r) => setTimeout(r, 30));
+
+      // request is still hanging because startup is broken
+      expect(next).not.toHaveBeenCalled();
+      expect(settled).toBe(false);
+
+      // first hold logs prominently
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('holding request'));
+
+      // user fixes the code — next rerun succeeds (default mock)
+      mockedRunStartup.mockResolvedValueOnce(undefined);
+      server.watcher.emit('change', '/project/src/boot.ts');
+
+      await pending;
+
+      expect(next).toHaveBeenCalledTimes(1);
+      // recovery log names the released count
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('boot recovered'));
+    });
+
+    test('times out a held request with 503 after holdTimeoutMs', async () => {
+      const server = createMockServer();
+      const startupError = new Error('boom');
+
+      mockedRunStartup.mockRejectedValue(startupError);
+
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule, 50);
+      markReady(server);
+
+      server.watcher.emit('change', '/project/src/boot.ts');
+
+      await vi.waitFor(() => expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('startup')));
+
+      const middleware = server._middlewares[0]!;
+      const next = vi.fn();
+      const res = {
+        statusCode: 200,
+        _headers: {} as Record<string, string>,
+        setHeader(k: string, v: string) {
+          this._headers[k] = v;
+        },
+        _body: '',
+        end(body: string) {
+          this._body = body;
+        },
+      };
+
+      await middleware({ url: '/' }, res, next);
+
+      expect(next).not.toHaveBeenCalled();
+      expect(res.statusCode).toBe(503);
+      expect(res._body).toContain('boom');
+      expect(res._body).toMatch(/did not recover within/);
+    });
+
+    test('dev-internal requests bypass the hold after a failed rerun', async () => {
+      const server = createMockServer();
+
+      mockedRunStartup.mockRejectedValueOnce(new Error('startup failed'));
+
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
+      markReady(server);
+
+      server.watcher.emit('change', '/project/src/boot.ts');
+
+      await vi.waitFor(() => expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('startup')));
+
+      const middleware = server._middlewares[0]!;
+
+      for (const url of ['/@vite/client', '/@id/x', '/__vite_ping', '/node_modules/foo/bar.js']) {
+        const next = vi.fn();
+
+        await middleware({ url }, {}, next);
+
+        expect(next, `expected ${url} to pass through`).toHaveBeenCalledTimes(1);
+      }
+    });
+
     test('queued event still runs after current run errors', async () => {
       const server = createMockServer();
       let shutdownCallCount = 0;
