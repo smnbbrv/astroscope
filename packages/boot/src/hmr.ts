@@ -222,12 +222,10 @@ export function setupBootHmr(
 
       if (timedOut) {
         res.statusCode = 503;
-        res.setHeader('Content-Type', 'text/plain');
-
-        const errMsg = lastStartupError instanceof Error ? lastStartupError.message : String(lastStartupError);
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
 
         res.end(
-          `boot startup failed and did not recover within ${Math.round(holdTimeoutMs / 1000)}s — last error: ${errMsg}`,
+          `boot startup failed and did not recover within ${Math.round(holdTimeoutMs / 1000)}s — last error: ${serializeError(lastStartupError)}`,
         );
 
         return;
