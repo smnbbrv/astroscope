@@ -1,5 +1,13 @@
 # @astroscope/boot
 
+## 0.6.9
+
+### Patch Changes
+
+- a0957a3: show a readable error message in the startup-failure 503 response
+- d8ab642: avoid double-shutdowns
+- ebcea5e: rerun hooks when a boot dependency is replaced via rm + rewrite
+
 ## 0.6.8
 
 ### Patch Changes
