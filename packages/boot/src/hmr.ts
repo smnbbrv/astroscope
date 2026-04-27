@@ -17,6 +17,7 @@ export function setupBootHmr(
 ): void {
   const bootModuleId = `/${entry}`;
   const bootFilePath = path.resolve(server.config.root, entry);
+  let lastKnownBootDeps = new Set<string>();
 
   // collect all transitive dependencies of the boot module
   const getBootDependencies = (): Set<string> => {
@@ -24,7 +25,7 @@ export function setupBootHmr(
     const bootModules = server.moduleGraph.getModulesByFile(bootFilePath);
     const bootModule = bootModules ? [...bootModules][0] : undefined;
 
-    if (!bootModule) return deps;
+    if (!bootModule) return lastKnownBootDeps;
 
     const collectDeps = (mod: typeof bootModule, visited = new Set<string>()): void => {
       if (!mod?.file || visited.has(mod.file)) return;
@@ -38,6 +39,12 @@ export function setupBootHmr(
     };
 
     collectDeps(bootModule);
+
+    // most likely a failed reload that cleared the graph
+    // returning last good known set
+    if (deps.size <= 1 && !!lastKnownBootDeps.size) {
+      return lastKnownBootDeps;
+    }
 
     return deps;
   };
@@ -60,9 +67,12 @@ export function setupBootHmr(
   let needsShutdown = true;
 
   // "latest wins" rerun: if a rerun is in progress, queue exactly one follow-up
-  // so that the last event in a burst always triggers a fresh restart
-  let running = false;
+  // so that the last event in a burst always triggers a fresh restart.
   let pendingReason: string | undefined;
+
+  // `rerunPromise` is the single source of truth — concurrent callers receive
+  // the same in-flight promise, which resolves only once the entire chain
+  // (current rerun + any pending follow-ups) has finished.
   let rerunPromise: Promise<void> | null = null;
 
   // on a failed rerun, the previous module's resources have already been destroyed
@@ -74,82 +84,111 @@ export function setupBootHmr(
   let lastStartupError: unknown;
   let pendingRequests: (() => void)[] = [];
 
-  const rerunBoot = async (reason: string): Promise<void> => {
-    if (running) {
-      pendingReason = reason;
+  const runOneRerun = async (reason: string): Promise<void> => {
+    logger.info(`${reason}, rerunning hooks...`);
 
-      return;
+    const bootContext = getBootContext();
+
+    // use the cached module reference for shutdown — works even if
+    // the SSR module runner has already cleared its evaluated modules.
+    // skip if we already tore this module down on a previous rerun whose
+    // startup failed (currentBootModule still points at the old, torn-down
+    // module). on shutdown error we keep the flag set so the next rerun
+    // retries cleanup.
+    if (needsShutdown) {
+      try {
+        await runShutdown(currentBootModule, bootContext);
+
+        needsShutdown = false;
+      } catch (error) {
+        logger.error(`Error during boot HMR shutdown: ${serializeError(error)}`);
+      }
     }
 
-    running = true;
+    // invalidate the module graph to reload fresh code
+    server.moduleGraph.invalidateAll();
 
     try {
-      logger.info(`${reason}, rerunning hooks...`);
+      const newModule = await ssrImport<BootModule>(server, bootModuleId);
 
-      const bootContext = getBootContext();
+      await runStartup(newModule, bootContext);
 
-      // use the cached module reference for shutdown — works even if
-      // the SSR module runner has already cleared its evaluated modules.
-      // skip if we already tore this module down on a previous rerun whose
-      // startup failed (currentBootModule still points at the old, torn-down
-      // module). on shutdown error we keep the flag set so the next rerun
-      // retries cleanup.
-      if (needsShutdown) {
-        try {
-          await runShutdown(currentBootModule, bootContext);
+      currentBootModule = newModule;
+      needsShutdown = true;
+      startupFailed = false;
+      lastStartupError = undefined;
 
-          needsShutdown = false;
-        } catch (error) {
-          logger.error(`Error during boot HMR shutdown: ${serializeError(error)}`);
-        }
+      // capture the now-fully-populated graph for fallback on the next failed rerun
+      const newDeps = new Set<string>();
+      const bootMod = server.moduleGraph.getModulesByFile(bootFilePath);
+      const root = bootMod ? [...bootMod][0] : undefined;
+
+      if (root) {
+        const collect = (mod: typeof root, seen = new Set<string>()): void => {
+          if (!mod?.file || seen.has(mod.file)) return;
+          seen.add(mod.file);
+          newDeps.add(mod.file);
+          for (const imp of mod.importedModules) collect(imp, seen);
+        };
+        collect(root);
       }
 
-      // invalidate the module graph to reload fresh code
-      server.moduleGraph.invalidateAll();
+      if (newDeps.size > 0) lastKnownBootDeps = newDeps;
 
-      try {
-        const newModule = await ssrImport<BootModule>(server, bootModuleId);
-
-        await runStartup(newModule, bootContext);
-
-        currentBootModule = newModule;
-        needsShutdown = true;
-        startupFailed = false;
-        lastStartupError = undefined;
-
-        if (pendingRequests.length > 0) {
-          logger.info(`boot recovered — releasing ${pendingRequests.length} held request(s)`);
-        }
-
-        const pending = pendingRequests;
-
-        pendingRequests = [];
-
-        for (const resolve of pending) resolve();
-      } catch (error) {
-        logger.error(`Error during boot HMR startup: ${serializeError(error)}`);
-
-        startupFailed = true;
-        lastStartupError = error;
+      if (pendingRequests.length > 0) {
+        logger.info(`boot recovered — releasing ${pendingRequests.length} held request(s)`);
       }
 
-      // astro caches the resolved middleware closure and only refreshes it when the
-      // middleware file itself changes (see astro/core/middleware/vite-plugin.ts)
-      // required e.g. by i18n package since it uses middleware that is initialized in boot
-      // (but not propagated if we won't rescan middleware)
-      getAstroHotEnv(server)?.hot.send('astro:middleware-updated', {});
-    } finally {
-      running = false;
+      const pending = pendingRequests;
+
+      pendingRequests = [];
+
+      for (const resolve of pending) resolve();
+    } catch (error) {
+      logger.error(`Error during boot HMR startup: ${serializeError(error)}`);
+
+      startupFailed = true;
+      lastStartupError = error;
     }
 
-    // if events arrived while we were running, do one more pass with the latest reason
-    if (pendingReason) {
-      const nextReason = pendingReason;
+    // astro caches the resolved middleware closure and only refreshes it when the
+    // middleware file itself changes (see astro/core/middleware/vite-plugin.ts)
+    // required e.g. by i18n package since it uses middleware that is initialized in boot
+    // (but not propagated if we won't rescan middleware)
+    getAstroHotEnv(server)?.hot.send('astro:middleware-updated', {});
+  };
 
-      pendingReason = undefined;
+  const rerunBoot = (reason: string): Promise<void> => {
+    // re-entrant call: rerun is already in-flight. just queue the latest reason
+    // and hand back the same in-flight promise so the caller awaits the actual
+    // chained work — not an immediately-resolving stub.
+    if (rerunPromise) {
+      pendingReason = reason;
 
-      await rerunBoot(nextReason);
+      return rerunPromise;
     }
+
+    rerunPromise = (async () => {
+      let nextReason: string | undefined = reason;
+
+      while (nextReason !== undefined) {
+        const currentReason = nextReason;
+
+        nextReason = undefined;
+
+        await runOneRerun(currentReason);
+
+        // events that arrived while we were running collapse into a single follow-up
+        if (pendingReason) {
+          nextReason = pendingReason;
+          pendingReason = undefined;
+        }
+      }
+    })().finally(() => {
+      rerunPromise = null;
+    });
+
+    return rerunPromise;
   };
 
   // listen to add/unlink in addition to change — some codegen tools rewrite
@@ -160,11 +199,7 @@ export function setupBootHmr(
     const bootDeps = getBootDependencies();
 
     if (bootDeps.has(changedPath)) {
-      rerunPromise = rerunBoot(`boot dependency changed: ${changedPath}`);
-
-      await rerunPromise;
-
-      rerunPromise = null;
+      await rerunBoot(`boot dependency changed: ${changedPath}`);
     }
   };
 
@@ -194,11 +229,7 @@ export function setupBootHmr(
 
     if (triggeredBy && getBootDependencies().has(triggeredBy)) return;
 
-    rerunPromise = rerunBoot('full reload detected');
-
-    void rerunPromise.then(() => {
-      rerunPromise = null;
-    });
+    void rerunBoot('full reload detected');
   };
 
   // detect full-reload via the SSR environment's hot channel.

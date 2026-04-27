@@ -585,4 +585,150 @@ describe('setupBootHmr', () => {
       expect(mockedRunShutdown).toHaveBeenCalledTimes(2);
     });
   });
+
+  describe('concurrent watcher events', () => {
+    test('gates requests across the full chain when two events fire while a rerun is running', async () => {
+      // regression: codegen tools that delete-then-rewrite a file fire `unlink`
+      // followed by `add`. before the fix, the second event called rerunBoot()
+      // re-entrantly, which returned an immediately-resolving stub and clobbered
+      // the in-flight `rerunPromise` — opening the gate while the original rerun
+      // (and the queued follow-up) were still running.
+      const server = createMockServer({ bootDeps: ['/project/src/generated.ts'] });
+
+      mockedRunShutdown.mockImplementation(async () => {
+        await new Promise((r) => setTimeout(r, 50));
+      });
+
+      mockedRunStartup.mockImplementation(async () => {
+        await new Promise((r) => setTimeout(r, 30));
+      });
+
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
+      markReady(server);
+
+      // first event starts a rerun
+      server.watcher.emit('unlink', '/project/src/generated.ts');
+
+      // small tick so the first rerun actually starts
+      await new Promise((r) => setTimeout(r, 5));
+
+      // second event arrives while the first rerun is still running
+      server.watcher.emit('add', '/project/src/generated.ts');
+
+      // a request hits the gate during the rerun chain
+      const middleware = server._middlewares[0]!;
+      const next = vi.fn();
+      const requestPromise = middleware({ url: '/page' }, {}, next);
+
+      // request must NOT pass through while the rerun chain is in flight
+      await new Promise((r) => setTimeout(r, 20));
+      expect(next).not.toHaveBeenCalled();
+
+      await requestPromise;
+
+      // gate held until both rerun iterations finished, then released the request
+      expect(mockedRunStartup).toHaveBeenCalledTimes(2);
+      expect(next).toHaveBeenCalledTimes(1);
+    });
+
+    test('re-entrant rerunBoot returns the in-flight promise so concurrent callers wait for the chain', async () => {
+      // ensures the watcher handler awaits the actual chained work, not a stub
+      const server = createMockServer({ bootDeps: ['/project/src/generated.ts'] });
+      const completionOrder: string[] = [];
+
+      mockedRunStartup.mockImplementation(async () => {
+        completionOrder.push('startup');
+      });
+
+      mockedRunShutdown.mockImplementation(async () => {
+        completionOrder.push('shutdown');
+        await new Promise((r) => setTimeout(r, 30));
+      });
+
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
+
+      // simulate two concurrent watcher events: each emit returns once its handler awaits
+      const firstHandled = new Promise<void>((resolve) => {
+        // emit synchronously — handler will run async, we resolve when the chain finishes
+        server.watcher.emit('unlink', '/project/src/generated.ts');
+        // give microtask queue a chance to schedule the handler
+        queueMicrotask(resolve);
+      });
+
+      await firstHandled;
+
+      // second event during the running rerun — the handler must wait for the FULL chain
+      server.watcher.emit('add', '/project/src/generated.ts');
+
+      await vi.waitFor(() => expect(mockedRunStartup).toHaveBeenCalledTimes(2));
+
+      // shutdown1 → startup1 → shutdown2 → startup2 (no interleaving)
+      expect(completionOrder).toEqual(['shutdown', 'startup', 'shutdown', 'startup']);
+    });
+  });
+
+  describe('bootDeps fallback after a failed re-import', () => {
+    test('matches a watcher event using last-known deps when the module graph is empty', async () => {
+      // regression: when an `unlink` triggers a rerun and `ssrImport` fails (because
+      // the codegen briefly deleted the file before rewriting it), Vite's module
+      // graph is left with a half-built boot entry. on the subsequent `add` event,
+      // walking the graph produces an empty/near-empty deps set — so the path
+      // wouldn't match and the recovery rerun would never fire. the fix snapshots
+      // the deps after each successful boot and falls back to that snapshot.
+      const server = createMockServer({ bootDeps: ['/project/src/generated.ts'] });
+      const bootMod = {
+        file: '/project/src/boot.ts',
+        importedModules: new Set([
+          {
+            file: '/project/src/generated.ts',
+            importedModules: new Set(),
+          },
+        ]),
+      };
+      const emptyBootMod = {
+        file: '/project/src/boot.ts',
+        importedModules: new Set(),
+      };
+
+      // graph is healthy until we explicitly degrade it (mid-test, between reruns,
+      // simulating the state Vite is left in after a failed re-import)
+      let graphHealthy = true;
+
+      server.moduleGraph.getModulesByFile = vi.fn((file: string) => {
+        if (file !== '/project/src/boot.ts') return undefined;
+        return new Set([graphHealthy ? bootMod : emptyBootMod]);
+      }) as never;
+
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
+
+      // first event: graph is healthy → match → triggers a successful rerun → deps snapshotted
+      server.watcher.emit('change', '/project/src/generated.ts');
+
+      await vi.waitFor(() => expect(mockedRunStartup).toHaveBeenCalledTimes(1));
+
+      // now degrade the live graph (simulating the post-failed-re-import state)
+      graphHealthy = false;
+
+      // next event: live graph is empty, but the fallback to last-known deps must still match
+      server.watcher.emit('change', '/project/src/generated.ts');
+
+      await vi.waitFor(() => expect(mockedRunStartup).toHaveBeenCalledTimes(2));
+
+      expect(mockedRunShutdown).toHaveBeenCalledTimes(2);
+    });
+
+    test('does not fall back when the live graph is healthy', async () => {
+      // sanity check: fallback only kicks in when the live graph is empty/near-empty
+      const server = createMockServer({ bootDeps: ['/project/src/services.ts'] });
+
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
+
+      // change a file that is NOT a boot dep — must not trigger a rerun
+      server.watcher.emit('change', '/project/src/components/App.tsx');
+
+      await new Promise((r) => setTimeout(r, 10));
+
+      expect(mockedRunStartup).not.toHaveBeenCalled();
+    });
+  });
 });
