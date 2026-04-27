@@ -1,6 +1,6 @@
 {
   "name": "@astroscope/boot",
-  "version": "0.6.9",
+  "version": "0.6.10",
   "description": "Startup and graceful shutdown hooks for Astro SSR",
   "type": "module",
   "main": "./dist/index.js",

@@ -1,5 +1,11 @@
 # @astroscope/boot
 
+## 0.6.10
+
+### Patch Changes
+
+- 3b55ab9: correctly chain multiple reruns
+
 ## 0.6.9
 
 ### Patch Changes
