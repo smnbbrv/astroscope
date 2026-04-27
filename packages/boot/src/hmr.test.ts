@@ -143,6 +143,19 @@ describe('setupBootHmr', () => {
       expect(mockedRunStartup).not.toHaveBeenCalled();
     });
 
+    test('reruns hooks when a boot dependency is replaced via unlink+add (rm+rewrite)', async () => {
+      const server = createMockServer({ bootDeps: ['/project/src/generated.ts'] });
+
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
+
+      server.watcher.emit('unlink', '/project/src/generated.ts');
+      server.watcher.emit('add', '/project/src/generated.ts');
+
+      await vi.waitFor(() => expect(mockedRunStartup).toHaveBeenCalled());
+
+      expect(mockedRunShutdown).toHaveBeenCalled();
+    });
+
     test('uses cached module reference for shutdown', async () => {
       const server = createMockServer();
 

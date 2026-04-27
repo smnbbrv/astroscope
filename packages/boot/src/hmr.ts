@@ -136,11 +136,11 @@ export function setupBootHmr(
     }
   };
 
-  server.watcher.on('change', async (changedPath) => {
-    // skip static assets and non-runtime files
+  // listen to add/unlink in addition to change — some codegen tools rewrite
+  // files via rm + write, which fires unlink + add (no change event)
+  const onWatcherEvent = async (changedPath: string): Promise<void> => {
     if (shouldIgnore(changedPath)) return;
 
-    // check if the changed file is the boot file or one of its dependencies
     const bootDeps = getBootDependencies();
 
     if (bootDeps.has(changedPath)) {
@@ -150,7 +150,11 @@ export function setupBootHmr(
 
       rerunPromise = null;
     }
-  });
+  };
+
+  server.watcher.on('change', onWatcherEvent);
+  server.watcher.on('add', onWatcherEvent);
+  server.watcher.on('unlink', onWatcherEvent);
 
   // ignore full-reloads sent during server startup (dep optimization, port retries, etc.)
   let handleFullReloads = false;
