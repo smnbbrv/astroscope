@@ -52,6 +52,13 @@ export function setupBootHmr(
   // even after the SSR module runner clears its cache on full-reload
   let currentBootModule: BootModule = initialModule;
 
+  // tracks whether currentBootModule has live state that still needs tearing down.
+  // true after a successful startup, false once shutdown has run. without this,
+  // a failed-then-retried rerun would call shutdown twice on the same module
+  // (initial shutdown succeeds, then ssrImport fails leaving currentBootModule
+  // unchanged, so the next rerun would shut it down again).
+  let needsShutdown = true;
+
   // "latest wins" rerun: if a rerun is in progress, queue exactly one follow-up
   // so that the last event in a burst always triggers a fresh restart
   let running = false;
@@ -82,11 +89,19 @@ export function setupBootHmr(
       const bootContext = getBootContext();
 
       // use the cached module reference for shutdown — works even if
-      // the SSR module runner has already cleared its evaluated modules
-      try {
-        await runShutdown(currentBootModule, bootContext);
-      } catch (error) {
-        logger.error(`Error during boot HMR shutdown: ${serializeError(error)}`);
+      // the SSR module runner has already cleared its evaluated modules.
+      // skip if we already tore this module down on a previous rerun whose
+      // startup failed (currentBootModule still points at the old, torn-down
+      // module). on shutdown error we keep the flag set so the next rerun
+      // retries cleanup.
+      if (needsShutdown) {
+        try {
+          await runShutdown(currentBootModule, bootContext);
+
+          needsShutdown = false;
+        } catch (error) {
+          logger.error(`Error during boot HMR shutdown: ${serializeError(error)}`);
+        }
       }
 
       // invalidate the module graph to reload fresh code
@@ -98,6 +113,7 @@ export function setupBootHmr(
         await runStartup(newModule, bootContext);
 
         currentBootModule = newModule;
+        needsShutdown = true;
         startupFailed = false;
         lastStartupError = undefined;
 

@@ -143,6 +143,27 @@ describe('setupBootHmr', () => {
       expect(mockedRunStartup).not.toHaveBeenCalled();
     });
 
+    test('does not call shutdown twice on the same module across a failed-then-recovered rerun', async () => {
+      const server = createMockServer();
+
+      mockedRunStartup.mockRejectedValueOnce(new Error('startup failed'));
+
+      setupBootHmr(server as never, 'src/boot.ts', logger, () => ctx, initialModule);
+
+      // first rerun: shutdown succeeds, startup fails — currentBootModule stays as initialModule
+      server.watcher.emit('change', '/project/src/boot.ts');
+      await vi.waitFor(() => expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('startup')));
+
+      expect(mockedRunShutdown).toHaveBeenCalledTimes(1);
+      expect(mockedRunShutdown).toHaveBeenCalledWith(initialModule, ctx);
+
+      // second rerun: should NOT shut down initialModule again — it's already torn down
+      server.watcher.emit('change', '/project/src/boot.ts');
+      await vi.waitFor(() => expect(mockedRunStartup).toHaveBeenCalledTimes(2));
+
+      expect(mockedRunShutdown).toHaveBeenCalledTimes(1);
+    });
+
     test('reruns hooks when a boot dependency is replaced via unlink+add (rm+rewrite)', async () => {
       const server = createMockServer({ bootDeps: ['/project/src/generated.ts'] });
 
