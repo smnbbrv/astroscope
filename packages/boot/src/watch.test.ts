@@ -27,12 +27,12 @@ function createMockServer(opts?: { bootDeps?: string[] | undefined }) {
     config: { root: '/project' },
     watcher,
     httpServer,
-    moduleGraph: {
-      getModulesByFile: vi.fn((file: string) => (file === bootFile ? new Set([bootMod]) : undefined)),
-    },
     environments: {
       ssr: {
         runner: { import: vi.fn() },
+        moduleGraph: {
+          getModulesByFile: vi.fn((file: string) => (file === bootFile ? new Set([bootMod]) : undefined)),
+        },
         hot: { api: { outsideEmitter: ssrOutsideEmitter } },
       },
     },
@@ -155,7 +155,7 @@ describe('setupBootWatch', () => {
     test('does not crash and does not schedule when the boot module is missing from the graph', () => {
       const server = createMockServer();
 
-      server.moduleGraph.getModulesByFile = vi.fn(() => undefined);
+      server.environments.ssr.moduleGraph.getModulesByFile = vi.fn(() => undefined);
 
       const scheduler = createMockScheduler();
 
@@ -164,6 +164,42 @@ describe('setupBootWatch', () => {
       server.watcher.emit('change', '/project/src/anything.ts');
 
       expect(scheduler.schedule).not.toHaveBeenCalled();
+    });
+
+    test('reads the boot dep graph from the runnable env (Astro 6 shape: astro env runnable, ssr non-runnable)', () => {
+      const watcher = new EventEmitter();
+      const httpServer = new EventEmitter();
+      const astroOutsideEmitter = new EventEmitter();
+      const bootMod = {
+        file: '/project/src/boot.ts',
+        importedModules: new Set([{ file: '/project/src/server/tour-types.ts', importedModules: new Set() }]),
+      };
+      const server = {
+        config: { root: '/project' },
+        watcher,
+        httpServer,
+        environments: {
+          ssr: { hot: { api: { outsideEmitter: new EventEmitter() } } },
+          astro: {
+            runner: { import: vi.fn() },
+            moduleGraph: {
+              getModulesByFile: vi.fn((file: string) =>
+                file === '/project/src/boot.ts' ? new Set([bootMod]) : undefined,
+              ),
+            },
+            hot: { api: { outsideEmitter: astroOutsideEmitter } },
+          },
+        },
+        middlewares: { use: vi.fn() },
+      };
+      const scheduler = createMockScheduler();
+
+      setupBootWatch(server as never, 'src/boot.ts', scheduler as never);
+
+      watcher.emit('change', '/project/src/server/tour-types.ts');
+
+      expect(scheduler.schedule).toHaveBeenCalledTimes(1);
+      expect(scheduler.schedule).toHaveBeenCalledWith(server, '/project/src/server/tour-types.ts');
     });
   });
 
@@ -180,11 +216,14 @@ describe('setupBootWatch', () => {
       return {
         config: { root: '/project' },
         watcher,
-        moduleGraph: {
-          getModulesByFile: vi.fn((file: string) => (file === bootFile ? new Set([bootMod]) : undefined)),
-        },
         environments: {
-          ssr: { runner: { import: vi.fn() }, hot: { api: { outsideEmitter: new EventEmitter() } } },
+          ssr: {
+            runner: { import: vi.fn() },
+            moduleGraph: {
+              getModulesByFile: vi.fn((file: string) => (file === bootFile ? new Set([bootMod]) : undefined)),
+            },
+            hot: { api: { outsideEmitter: new EventEmitter() } },
+          },
         },
         middlewares: { use: vi.fn() },
         restart: vi.fn(async () => {}),
@@ -348,14 +387,16 @@ describe('setupBootWatch', () => {
         config: { root: '/project' },
         watcher,
         httpServer,
-        moduleGraph: {
-          getModulesByFile: vi.fn((file: string) => (file === '/project/src/boot.ts' ? new Set([bootMod]) : undefined)),
-        },
         environments: {
           // ssr exists but has no runner — Astro 6 shape
           ssr: { hot: { api: { outsideEmitter: ssrOutsideEmitter } } },
           astro: {
             runner: { import: vi.fn() },
+            moduleGraph: {
+              getModulesByFile: vi.fn((file: string) =>
+                file === '/project/src/boot.ts' ? new Set([bootMod]) : undefined,
+              ),
+            },
             hot: { api: { outsideEmitter: astroOutsideEmitter } },
           },
         },
@@ -414,11 +455,16 @@ describe('setupBootWatch', () => {
         config: { root: '/project' },
         watcher,
         httpServer,
-        moduleGraph: {
-          getModulesByFile: vi.fn((file: string) => (file === '/project/src/boot.ts' ? new Set([bootMod]) : undefined)),
-        },
         environments: {
-          ssr: { runner: { import: vi.fn() }, hot: { api: { outsideEmitter: ssrOutsideEmitter } } },
+          ssr: {
+            runner: { import: vi.fn() },
+            moduleGraph: {
+              getModulesByFile: vi.fn((file: string) =>
+                file === '/project/src/boot.ts' ? new Set([bootMod]) : undefined,
+              ),
+            },
+            hot: { api: { outsideEmitter: ssrOutsideEmitter } },
+          },
         },
         middlewares: { use: vi.fn() },
         restart: vi.fn(async () => {}),
@@ -482,11 +528,16 @@ describe('setupBootWatch', () => {
         config: { root: '/project' },
         watcher,
         httpServer,
-        moduleGraph: {
-          getModulesByFile: vi.fn((file: string) => (file === '/project/src/boot.ts' ? new Set([bootMod]) : undefined)),
-        },
         environments: {
-          ssr: { runner: { import: vi.fn() }, hot: { api: { outsideEmitter: ssrOutsideEmitter } } },
+          ssr: {
+            runner: { import: vi.fn() },
+            moduleGraph: {
+              getModulesByFile: vi.fn((file: string) =>
+                file === '/project/src/boot.ts' ? new Set([bootMod]) : undefined,
+              ),
+            },
+            hot: { api: { outsideEmitter: ssrOutsideEmitter } },
+          },
         },
         middlewares: { use: vi.fn() },
         restart: vi.fn(async () => {}),
@@ -523,11 +574,16 @@ describe('setupBootWatch', () => {
         config: { root: '/project' },
         watcher,
         httpServer,
-        moduleGraph: {
-          getModulesByFile: vi.fn((file: string) => (file === '/project/src/boot.ts' ? new Set([bootMod]) : undefined)),
-        },
         environments: {
-          ssr: { runner: { import: vi.fn() }, hot: { api: { outsideEmitter: ssrOutsideEmitter } } },
+          ssr: {
+            runner: { import: vi.fn() },
+            moduleGraph: {
+              getModulesByFile: vi.fn((file: string) =>
+                file === '/project/src/boot.ts' ? new Set([bootMod]) : undefined,
+              ),
+            },
+            hot: { api: { outsideEmitter: ssrOutsideEmitter } },
+          },
         },
         middlewares: { use: (fn: (typeof middlewares)[number]) => middlewares.push(fn) },
         _middlewares: middlewares,

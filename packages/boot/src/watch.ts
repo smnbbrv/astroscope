@@ -8,9 +8,12 @@ import { getAstroHotEnv } from './vite-env.js';
 export function setupBootWatch(server: ViteDevServer, entry: string, scheduler: RestartScheduler): void {
   const bootFilePath = path.resolve(server.config.root, entry);
 
+  const runnableEnv = getAstroHotEnv(server);
+  const bootModuleGraph = runnableEnv?.moduleGraph;
+
   const collectBootDependencies = (): Set<string> => {
     const deps = new Set<string>();
-    const bootModules = server.moduleGraph.getModulesByFile(bootFilePath);
+    const bootModules = bootModuleGraph?.getModulesByFile(bootFilePath);
     const bootModule = bootModules ? [...bootModules][0] : undefined;
 
     if (!bootModule) return deps;
@@ -63,9 +66,6 @@ export function setupBootWatch(server: ViteDevServer, entry: string, scheduler: 
 
   // SSR full-reloads come through the runnable env's hot channel and clear
   // its module runner's cache — onStartup needs to run again on a fresh server.
-  // Astro 6 uses an 'astro' env; older versions use 'ssr'. Match whichever
-  // env actually holds the boot module (same precedence as ssrImport).
-  const runnableEnv = getAstroHotEnv(server);
   const outsideEmitter = (runnableEnv?.hot as { api?: { outsideEmitter?: EventEmitter } } | undefined)?.api
     ?.outsideEmitter;
 
