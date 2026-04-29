@@ -17,8 +17,8 @@ describe('boot', () => {
     expect(integration.name).toBe('@astroscope/boot');
   });
 
-  test('accepts hmr option', () => {
-    const integration = boot({ hmr: true });
+  test('accepts watch option', () => {
+    const integration = boot({ watch: true });
 
     expect(integration.name).toBe('@astroscope/boot');
   });

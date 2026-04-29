@@ -20,10 +20,10 @@ npm install @astroscope/boot
 
 ```ts
 // src/boot.ts
-import type { BootContext } from "@astroscope/boot";
+import type { BootContext } from '@astroscope/boot';
 
 export async function onStartup({ dev, host, port }: BootContext) {
-  console.log("Starting up...");
+  console.log('Starting up...');
 
   await someAsyncInitialization();
 
@@ -31,11 +31,11 @@ export async function onStartup({ dev, host, port }: BootContext) {
 }
 
 export async function onShutdown({ dev }: BootContext) {
-  console.log("Shutting down...");
+  console.log('Shutting down...');
 
   await closeConnections();
 
-  console.log("Goodbye!");
+  console.log('Goodbye!');
 }
 ```
 
@@ -43,11 +43,11 @@ export async function onShutdown({ dev }: BootContext) {
 
 ```ts
 // astro.config.ts
-import { defineConfig } from "astro/config";
-import boot from "@astroscope/boot";
+import { defineConfig } from 'astro/config';
+import boot from '@astroscope/boot';
 
 export default defineConfig({
-  output: "server",
+  output: 'server',
   integrations: [boot()],
 });
 ```
@@ -109,13 +109,13 @@ This uses the default glob patterns (`WARMUP_MODULES`) which cover:
 Pass an array of glob patterns to control exactly which files are warmed up:
 
 ```ts
-import { WARMUP_MODULES } from "@astroscope/boot";
+import { WARMUP_MODULES } from '@astroscope/boot';
 
 // defaults + custom patterns
-boot({ warmup: [...WARMUP_MODULES, "src/components/**/*.tsx"] });
+boot({ warmup: [...WARMUP_MODULES, 'src/components/**/*.tsx'] });
 
 // only custom patterns (no defaults)
-boot({ warmup: ["src/lib/heavy-module.ts"] });
+boot({ warmup: ['src/lib/heavy-module.ts'] });
 ```
 
 ### Exported constants
@@ -123,11 +123,7 @@ boot({ warmup: ["src/lib/heavy-module.ts"] });
 The default glob patterns are exported for composition:
 
 ```ts
-import {
-  WARMUP_PAGE_MODULES,
-  WARMUP_MIDDLEWARE_MODULES,
-  WARMUP_MODULES,
-} from "@astroscope/boot";
+import { WARMUP_PAGE_MODULES, WARMUP_MIDDLEWARE_MODULES, WARMUP_MODULES } from '@astroscope/boot';
 ```
 
 ## Options
@@ -140,18 +136,20 @@ Path to the boot file relative to the project root.
 - **Default**: `"src/boot.ts"`
 
 ```ts
-boot({ entry: "src/startup.ts" });
+boot({ entry: 'src/startup.ts' });
 ```
 
-### `hmr`
+### `watch`
 
-Re-run `onStartup` when the boot file changes during development. This is disabled by default to avoid side effects, because `onStartup` may perform operations that should only run once (e.g., database connections). Please ensure your `onShutdown` function destroys any resources created by `onStartup` to prevent leaks / unexpected behavior.
+Restart the dev server when the boot file (or any of its dependencies) changes, and when Vite issues an SSR full-reload (which would otherwise wipe singletons configured in `onStartup`).
+
+Make sure your `onShutdown` releases everything `onStartup` acquired (sockets, ports, intervals, locks) — the previous module is fully shut down before the new one starts on each restart.
 
 - **Type**: `boolean`
-- **Default**: `false`
+- **Default**: `true`
 
 ```ts
-boot({ hmr: true });
+boot({ watch: false });
 ```
 
 ### `warmup`
@@ -166,7 +164,7 @@ Pre-import server modules on startup to eliminate cold-start latency.
 boot({ warmup: true });
 
 // custom patterns
-boot({ warmup: [...WARMUP_MODULES, "src/components/**/*.tsx"] });
+boot({ warmup: [...WARMUP_MODULES, 'src/components/**/*.tsx'] });
 ```
 
 ## How it works

@@ -3,9 +3,9 @@ import { fileURLToPath } from 'node:url';
 import type { AstroConfig, AstroIntegration } from 'astro';
 import MagicString from 'magic-string';
 import { perEnvironmentState } from 'vite';
-import { setupBootHmr } from './hmr.js';
 import { type BootModule, runShutdown, runStartup } from './lifecycle.js';
 import { getPrependCode } from './prepend.js';
+import { RestartScheduler } from './scheduler.js';
 import type { BootContext } from './types.js';
 import { serializeError } from './utils.js';
 import { ssrImport } from './vite-env.js';
@@ -16,6 +16,7 @@ import {
   generateWarmupCode,
   resolveWarmupFiles,
 } from './warmup.js';
+import { setupBootWatch } from './watch.js';
 
 export interface BootOptions {
   /**
@@ -24,10 +25,11 @@ export interface BootOptions {
    */
   entry?: string | undefined;
   /**
-   * Enable HMR for the boot file. When true, `onStartup` will re-run when the boot file changes.
-   * @default false
+   * Restart the dev server when the boot file (or any of its dependencies) changes,
+   * and when Vite issues an SSR full-reload. Dev-only — has no effect in production.
+   * @default true
    */
-  hmr?: boolean | undefined;
+  watch?: boolean | undefined;
   /**
    * Pre-import all page modules and middleware on startup to eliminate cold-start latency.
    *
@@ -112,11 +114,17 @@ const getState = perEnvironmentState<BuildState>(() => ({ bootChunkRef: null, wa
  */
 export default function boot(options: BootOptions = {}): AstroIntegration {
   const entry = resolveEntry(options.entry);
-  const hmr = options.hmr ?? false;
+  const watch = options.watch ?? true;
   const warmupPatterns = resolveWarmupPatterns(options.warmup);
 
   let astroConfig: AstroConfig | null = null;
   let warmupCode: string | null = null;
+  let hasStartupSucceededOnce = false;
+  // run by the next configureServer before its startup so resources (ports,
+  // sockets, locks) from the previous module are released first. idempotent.
+  let priorShutdown: (() => Promise<void>) | undefined;
+  // shared across restart-induced reruns so chain coordination survives.
+  let scheduler: RestartScheduler | undefined;
 
   return {
     name: '@astroscope/boot',
@@ -242,6 +250,13 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                 async configureServer(server) {
                   if (command !== 'dev') return; // skip in build / sync modes (Astro uses 'sync' for 'astro check' command)
 
+                  // tear down the previous module first so its resources are released
+                  // before the new startup tries to claim them.
+                  if (priorShutdown) {
+                    await priorShutdown();
+                    priorShutdown = undefined;
+                  }
+
                   const bootContext = getBootContext(server, astroConfig);
                   let bootModule: BootModule | undefined;
 
@@ -252,8 +267,6 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                   } catch (error) {
                     logger.error(`Error running startup script: ${serializeError(error)}`);
 
-                    // a partially-booted dev server can't be recovered via HMR — exit cleanly
-                    // (mirrors production behavior in setup.ts) so the user can fix and restart
                     if (bootModule) {
                       try {
                         await runShutdown(bootModule, bootContext);
@@ -262,22 +275,43 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                       }
                     }
 
+                    // restart failure: re-throw so vite keeps the previous server alive.
+                    if (hasStartupSucceededOnce) {
+                      throw error;
+                    }
+
+                    // initial failure: exit cleanly (mirrors production setup.ts).
                     process.exit(1);
                   }
 
-                  server.httpServer?.once('close', async () => {
-                    try {
-                      const bootContext = getBootContext(server, astroConfig);
-                      const mod = await ssrImport<BootModule>(server, `/${entry}`);
+                  hasStartupSucceededOnce = true;
 
-                      await runShutdown(mod, bootContext);
+                  // capture so shutdown sees the same instance that started.
+                  const startedModule = bootModule;
+                  let shutdownDone = false;
+
+                  const shutdown = async (): Promise<void> => {
+                    if (shutdownDone) return;
+
+                    shutdownDone = true;
+
+                    try {
+                      await runShutdown(startedModule, getBootContext(server, astroConfig));
                     } catch (error) {
                       logger.error(`Error running shutdown script: ${serializeError(error)}`);
                     }
+                  };
+
+                  priorShutdown = shutdown;
+
+                  // sigint/sigterm path. also fires during restart but shutdown is idempotent.
+                  server.httpServer?.once('close', () => {
+                    void shutdown();
                   });
 
-                  if (hmr && bootModule) {
-                    setupBootHmr(server, entry, logger, () => getBootContext(server, astroConfig), bootModule);
+                  if (watch) {
+                    scheduler ??= new RestartScheduler(100, logger);
+                    setupBootWatch(server, entry, scheduler);
                   }
                 },
               },

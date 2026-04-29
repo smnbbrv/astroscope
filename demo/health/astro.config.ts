@@ -7,7 +7,7 @@ import { defineConfig } from 'astro/config';
 export default defineConfig({
   output: 'server',
   adapter: node({ mode: 'standalone' }),
-  integrations: [boot({ hmr: true }), health({ dev: true })],
+  integrations: [boot({ watch: true }), health({ dev: true })],
   vite: {
     plugins: [tailwindcss() as any],
   },
