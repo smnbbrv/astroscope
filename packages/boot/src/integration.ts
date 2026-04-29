@@ -1,6 +1,7 @@
 import fs from 'node:fs';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { AstroConfig, AstroIntegration } from 'astro';
+import type { AstroConfig, AstroIntegration, IntegrationResolvedRoute } from 'astro';
 import MagicString from 'magic-string';
 import { perEnvironmentState } from 'vite';
 import { type BootModule, runShutdown, runStartup } from './lifecycle.js';
@@ -10,11 +11,12 @@ import type { BootContext } from './types.js';
 import { serializeError } from './utils.js';
 import { ssrImport } from './vite-env.js';
 import {
+  BOOT_VIRTUAL_MODULE_ID,
+  RESOLVED_BOOT_VIRTUAL_MODULE_ID,
   RESOLVED_VIRTUAL_MODULE_ID,
   VIRTUAL_MODULE_ID,
-  WARMUP_MODULES,
+  collectWarmupSpecifiers,
   generateWarmupCode,
-  resolveWarmupFiles,
 } from './warmup.js';
 import { setupBootWatch } from './watch.js';
 
@@ -31,14 +33,12 @@ export interface BootOptions {
    */
   watch?: boolean | undefined;
   /**
-   * Pre-import all page modules and middleware on startup to eliminate cold-start latency.
+   * Pre-import server modules on startup to eliminate cold-start latency on
+   * the first request. Has no effect in dev mode, production only.
    *
-   * - `true` — warmup using default glob patterns ({@link WARMUP_MODULES})
-   * - `string[]` — custom glob patterns (use `{@link WARMUP_MODULES}` to include defaults)
-   *
-   * @default false
+   * @default true
    */
-  warmup?: boolean | string[] | undefined;
+  warmup?: boolean | undefined;
 }
 
 function resolveEntry(entry: string | undefined): string {
@@ -89,16 +89,6 @@ function getBootContext(
   return { dev: true, host, port };
 }
 
-function resolveWarmupPatterns(warmup: boolean | string[] | undefined): string[] | null {
-  if (!warmup) return null;
-
-  if (Array.isArray(warmup)) {
-    return warmup;
-  }
-
-  return WARMUP_MODULES;
-}
-
 interface BuildState {
   bootChunkRef: string | null;
   warmupChunkRef: string | null;
@@ -115,10 +105,11 @@ const getState = perEnvironmentState<BuildState>(() => ({ bootChunkRef: null, wa
 export default function boot(options: BootOptions = {}): AstroIntegration {
   const entry = resolveEntry(options.entry);
   const watch = options.watch ?? true;
-  const warmupPatterns = resolveWarmupPatterns(options.warmup);
+  const warmupEnabled = options.warmup ?? true;
 
   let astroConfig: AstroConfig | null = null;
   let warmupCode: string | null = null;
+  let resolvedRoutes: readonly IntegrationResolvedRoute[] = [];
   let hasStartupSucceededOnce = false;
   // run by the next configureServer before its startup so resources (ports,
   // sockets, locks) from the previous module are released first. idempotent.
@@ -129,6 +120,9 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
   return {
     name: '@astroscope/boot',
     hooks: {
+      'astro:routes:resolved': ({ routes }) => {
+        resolvedRoutes = routes;
+      },
       'astro:config:setup': ({ command, updateConfig, logger, config }) => {
         astroConfig = config;
 
@@ -141,43 +135,56 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
 
                 resolveId(id) {
                   if (id === VIRTUAL_MODULE_ID) return RESOLVED_VIRTUAL_MODULE_ID;
+                  if (id === BOOT_VIRTUAL_MODULE_ID) return RESOLVED_BOOT_VIRTUAL_MODULE_ID;
                 },
 
                 load(id) {
                   if (id === RESOLVED_VIRTUAL_MODULE_ID) return warmupCode ?? '';
+
+                  if (id === RESOLVED_BOOT_VIRTUAL_MODULE_ID) {
+                    const projectRoot = astroConfig?.root ? fileURLToPath(astroConfig.root) : process.cwd();
+                    const abs = path.resolve(projectRoot, entry);
+
+                    // re-export to avoid an absolute path manifest leaks
+                    return `export * from ${JSON.stringify(abs)};`;
+                  }
                 },
 
                 async buildStart() {
                   if (this.environment.name !== 'ssr') return;
 
                   const state = getState(this);
+                  const projectRoot = astroConfig?.root ? fileURLToPath(astroConfig.root) : process.cwd();
 
                   try {
-                    state.bootChunkRef = this.emitFile({ type: 'chunk', id: entry, name: 'boot' });
+                    state.bootChunkRef = this.emitFile({ type: 'chunk', id: BOOT_VIRTUAL_MODULE_ID, name: 'boot' });
                   } catch {
                     // not available in serve mode
                   }
 
-                  if (warmupPatterns) {
-                    const projectRoot = astroConfig?.root ? fileURLToPath(astroConfig.root) : process.cwd();
-                    const files = await resolveWarmupFiles(warmupPatterns, projectRoot);
+                  if (!warmupEnabled) {
+                    warmupCode = '';
 
-                    warmupCode = generateWarmupCode(files);
-
-                    if (files.length > 0) {
-                      try {
-                        state.warmupChunkRef = this.emitFile({
-                          type: 'chunk',
-                          id: VIRTUAL_MODULE_ID,
-                          name: 'warmup',
-                        });
-                      } catch {
-                        // not available in serve mode
-                      }
-
-                      logger.info(`warmup: ${files.length} files`);
-                    }
+                    return;
                   }
+
+                  const specifiers = collectWarmupSpecifiers(resolvedRoutes, projectRoot);
+
+                  if (!specifiers.length) {
+                    warmupCode = '';
+
+                    return;
+                  }
+
+                  warmupCode = generateWarmupCode(specifiers);
+
+                  try {
+                    state.warmupChunkRef = this.emitFile({ type: 'chunk', id: VIRTUAL_MODULE_ID, name: 'warmup' });
+                  } catch {
+                    // not available in serve mode
+                  }
+
+                  logger.info(`warmup: ${specifiers.length} module${specifiers.length === 1 ? '' : 's'}`);
                 },
 
                 generateBundle(_, bundle) {
