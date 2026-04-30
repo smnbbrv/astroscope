@@ -317,7 +317,7 @@ export default function boot(options: BootOptions = {}): AstroIntegration {
                   });
 
                   if (watch) {
-                    scheduler ??= new RestartScheduler(100, logger);
+                    scheduler ??= new RestartScheduler(100, logger, 300);
                     setupBootWatch(server, entry, scheduler);
                   }
                 },

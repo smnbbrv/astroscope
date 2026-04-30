@@ -4,7 +4,10 @@ import { RestartScheduler } from './scheduler';
 import { setupBootWatch } from './watch';
 
 function createMockScheduler() {
-  return { schedule: vi.fn(), scheduleFullReload: vi.fn() };
+  return {
+    schedule: vi.fn(),
+    scheduleFullReload: vi.fn(),
+  };
 }
 
 function createMockServer(opts?: { bootDeps?: string[] | undefined }) {

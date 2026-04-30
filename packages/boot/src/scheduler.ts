@@ -28,6 +28,7 @@ export class RestartScheduler {
   constructor(
     private readonly debounceMs: number,
     private readonly logger: Logger,
+    private readonly restartDelayMs: number = 0,
   ) {}
 
   schedule(server: ViteDevServer, changedPath: string): void {
@@ -92,6 +93,11 @@ export class RestartScheduler {
 
         if (bootDeps.length > 0 || fullReloads.length > 0) {
           this.logger.info(this._formatReason(server, bootDeps, fullReloads));
+        }
+
+        if (this.restartDelayMs > 0) {
+          // reduces amount of errors logged during restarts
+          await new Promise<void>((resolve) => setTimeout(resolve, this.restartDelayMs));
         }
 
         try {
