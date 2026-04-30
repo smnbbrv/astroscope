@@ -1,5 +1,12 @@
 # @astroscope/boot
 
+## 0.7.0
+
+### Minor Changes
+
+- fe9cd9f: warmup is enabled by default and uses better routes and middleware chunk matching
+- 9d91369: rename `hmr` option to `watch`; boot file changes now trigger a full dev-server restart instead of an in-process rerun
+
 ## 0.6.10
 
 ### Patch Changes
